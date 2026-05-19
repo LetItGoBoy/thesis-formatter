@@ -9,6 +9,12 @@ import re
 from abc import ABC, abstractmethod
 
 # ============================================================
+# 超时配置 - 单次AI调用最长等待时间（秒）
+# ============================================================
+AI_TIMEOUT = float(os.environ.get("AI_TIMEOUT", 30))
+
+
+# ============================================================
 # 抽象基类 - 所有模型都实现这个接口
 # ============================================================
 class BaseAIClient(ABC):
@@ -27,7 +33,8 @@ class DeepSeekClient(BaseAIClient):
         from openai import OpenAI
         self.client = OpenAI(
             api_key=os.environ["DEEPSEEK_API_KEY"],
-            base_url="https://api.deepseek.com"
+            base_url="https://api.deepseek.com",
+            timeout=AI_TIMEOUT,
         )
         self.model = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 
@@ -38,7 +45,8 @@ class DeepSeekClient(BaseAIClient):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
             ],
-            temperature=0.1  # 低温度，格式识别任务要稳定
+            temperature=0.1,  # 低温度，格式识别任务要稳定
+            timeout=AI_TIMEOUT,
         )
         return response.choices[0].message.content
 
@@ -48,7 +56,8 @@ class QwenClient(BaseAIClient):
         from openai import OpenAI
         self.client = OpenAI(
             api_key=os.environ["QWEN_API_KEY"],
-            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            timeout=AI_TIMEOUT,
         )
         self.model = os.environ.get("QWEN_MODEL", "qwen-plus")
 
@@ -59,7 +68,8 @@ class QwenClient(BaseAIClient):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
             ],
-            temperature=0.1
+            temperature=0.1,
+            timeout=AI_TIMEOUT,
         )
         return response.choices[0].message.content
 
@@ -69,7 +79,8 @@ class ZhipuClient(BaseAIClient):
         from openai import OpenAI
         self.client = OpenAI(
             api_key=os.environ["ZHIPU_API_KEY"],
-            base_url="https://open.bigmodel.cn/api/paas/v4"
+            base_url="https://open.bigmodel.cn/api/paas/v4",
+            timeout=AI_TIMEOUT,
         )
         self.model = os.environ.get("ZHIPU_MODEL", "glm-4-flash")
 
@@ -80,7 +91,8 @@ class ZhipuClient(BaseAIClient):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
             ],
-            temperature=0.1
+            temperature=0.1,
+            timeout=AI_TIMEOUT,
         )
         return response.choices[0].message.content
 
@@ -90,7 +102,8 @@ class MoonshotClient(BaseAIClient):
         from openai import OpenAI
         self.client = OpenAI(
             api_key=os.environ["MOONSHOT_API_KEY"],
-            base_url="https://api.moonshot.cn/v1"
+            base_url="https://api.moonshot.cn/v1",
+            timeout=AI_TIMEOUT,
         )
         self.model = os.environ.get("MOONSHOT_MODEL", "moonshot-v1-8k")
 
@@ -101,7 +114,8 @@ class MoonshotClient(BaseAIClient):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
             ],
-            temperature=0.1
+            temperature=0.1,
+            timeout=AI_TIMEOUT,
         )
         return response.choices[0].message.content
 
@@ -110,7 +124,8 @@ class ClaudeClient(BaseAIClient):
     def __init__(self):
         import anthropic
         self.client = anthropic.Anthropic(
-            api_key=os.environ["ANTHROPIC_API_KEY"]
+            api_key=os.environ["ANTHROPIC_API_KEY"],
+            timeout=AI_TIMEOUT,
         )
         self.model = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
 
@@ -119,7 +134,8 @@ class ClaudeClient(BaseAIClient):
             model=self.model,
             max_tokens=4096,
             system=system_prompt,
-            messages=[{"role": "user", "content": user_message}]
+            messages=[{"role": "user", "content": user_message}],
+            timeout=AI_TIMEOUT,
         )
         return message.content[0].text
 
@@ -127,7 +143,10 @@ class OpenAIClient(BaseAIClient):
     """OpenAI - 海外可用"""
     def __init__(self):
         from openai import OpenAI
-        self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        self.client = OpenAI(
+            api_key=os.environ["OPENAI_API_KEY"],
+            timeout=AI_TIMEOUT,
+        )
         self.model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
     def chat(self, system_prompt: str, user_message: str) -> str:
@@ -137,7 +156,8 @@ class OpenAIClient(BaseAIClient):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
             ],
-            temperature=0.1
+            temperature=0.1,
+            timeout=AI_TIMEOUT,
         )
         return response.choices[0].message.content
 
@@ -179,43 +199,74 @@ SYSTEM_PROMPT = """你是一个专业的学术论文格式分析助手。
 必须返回合法的JSON，格式如下，不要有任何其他文字：
 {"type": "body", "confidence": 0.95, "reason": "正文段落，首行缩进，内容为研究描述"}"""
 
+
+class AIFatalError(Exception):
+    """无法恢复的AI错误（认证/网络/模型不存在等），应中止整个解析"""
+    pass
+
+
+def _is_fatal_error(exc: Exception) -> bool:
+    """识别需要立即中止的错误：认证失败、模型不存在、网络不可达"""
+    msg = str(exc).lower()
+    fatal_keywords = (
+        "authentication", "api key", "apikey", "unauthorized", "401",
+        "not found", "404", "invalid model",
+        "name or service not known", "connection refused", "ssl",
+    )
+    return any(k in msg for k in fatal_keywords)
+
+
+def classify_paragraph(client: BaseAIClient, text: str) -> dict:
+    """
+    对单个段落文字进行AI分类。
+    返回 {"type": str, "confidence": float, "reason": str}
+    遇到致命错误（认证/网络）抛出 AIFatalError，其他异常向上传递。
+    """
+    text = (text or "").strip()
+    if not text:
+        return {"type": "body", "confidence": 1.0, "reason": "空段落"}
+
+    user_message = f"请识别以下段落的类型：\n\n{text[:500]}"
+    try:
+        response = client.chat(SYSTEM_PROMPT, user_message)
+    except Exception as e:
+        if _is_fatal_error(e):
+            raise AIFatalError(f"AI服务不可用: {e}") from e
+        raise
+
+    response = (response or "").strip()
+    if "```" in response:
+        m = re.search(r'\{.*\}', response, re.DOTALL)
+        if m:
+            response = m.group()
+    try:
+        data = json.loads(response)
+    except json.JSONDecodeError:
+        return {
+            "type": "body",
+            "confidence": 0.3,
+            "reason": f"模型返回非JSON: {response[:80]}",
+        }
+
+    return {
+        "type": data.get("type", "body"),
+        "confidence": float(data.get("confidence", 0.5)),
+        "reason": data.get("reason", ""),
+    }
+
+
 def classify_paragraphs(paragraphs: list[dict]) -> list[dict]:
     """
-    对段落列表进行分类识别
-    paragraphs: [{"index": 0, "text": "..."}, ...]
-    返回: [{"index": 0, "text": "...", "type": "body", "confidence": 0.95}, ...]
+    （兼容旧接口）对段落列表进行分类识别。新代码请用parser.py中的循环。
     """
     client = get_ai_client()
     results = []
-
     for para in paragraphs:
-        text = para["text"].strip()
-        if not text:
-            results.append({**para, "type": "body", "confidence": 1.0})
-            continue
-
-        user_message = f"请识别以下段落的类型：\n\n{text[:500]}"
-
         try:
-            response = client.chat(SYSTEM_PROMPT, user_message)
-            # 清理响应，防止模型输出多余内容
-            response = response.strip()
-            if "```" in response:
-                response = re.search(r'\{.*\}', response, re.DOTALL).group()
-            data = json.loads(response)
-            results.append({
-                **para,
-                "type": data.get("type", "body"),
-                "confidence": float(data.get("confidence", 0.5)),
-                "reason": data.get("reason", "")
-            })
+            res = classify_paragraph(client, para.get("text", ""))
+        except AIFatalError:
+            raise
         except Exception as e:
-            results.append({
-                **para,
-                "type": "body",
-                "confidence": 0.3,
-                "reason": f"识别失败: {str(e)}"
-            })
-
+            res = {"type": "body", "confidence": 0.3, "reason": f"识别失败: {e}"}
+        results.append({**para, **res})
     return results
-
