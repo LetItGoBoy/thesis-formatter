@@ -1,58 +1,167 @@
-# ==================================================
-# 论文格式化工具 - 环境变量配置
-# 复制此文件为 .env，填入你的API Key
-# ==================================================
-
-# ✅ 选择使用哪个AI提供商（只填一个）
-# 可选值: deepseek | qwen | zhipu | moonshot | claude | openai
-AI_PROVIDER=deepseek
-
-# --------------------------------------------------
-# DeepSeek（推荐）
-# 官网: https://platform.deepseek.com
-# 价格: 约¥0.001/千tokens，识别一篇论文约¥0.01
-# --------------------------------------------------
-DEEPSEEK_API_KEY=sk-xxx
-DEEPSEEK_MODEL=deepseek-chat
-
-# --------------------------------------------------
-# 通义千问（备选）
-# 官网: https://dashscope.console.aliyun.com
-# 价格: qwen-plus约¥0.004/千tokens
-# --------------------------------------------------
-QWEN_API_KEY=sk-xxx
-QWEN_MODEL=qwen-plus
-
-# --------------------------------------------------
-# 智谱GLM（备选，有免费额度）
-# 官网: https://open.bigmodel.cn
-# 价格: glm-4-flash完全免费
-# --------------------------------------------------
-ZHIPU_API_KEY=xxx.xxx
-ZHIPU_MODEL=glm-4-flash
-
-# --------------------------------------------------
-# 月之暗面Kimi（备选，长文本强）
-# 官网: https://platform.moonshot.cn
-# 价格: moonshot-v1-8k约¥0.012/千tokens
-# --------------------------------------------------
-MOONSHOT_API_KEY=sk-xxx
-MOONSHOT_MODEL=moonshot-v1-8k
-
-# --------------------------------------------------
-# Anthropic Claude（备用，效果最好但最贵）
-# 价格: claude-haiku约¥0.02/千tokens
-# --------------------------------------------------
-ANTHROPIC_API_KEY=sk-ant-xxx
-CLAUDE_MODEL=claude-haiku-4-5-20251001
-
-# --------------------------------------------------
-# Flask服务地址（前端调用后端）
-# --------------------------------------------------
-FLASK_URL=http://localhost:5000
-FLASK_PORT=5000
-
-# --------------------------------------------------
-# 前端配置
-# --------------------------------------------------
-NEXT_PUBLIC_API_URL=http://localhost:5000
+{
+  "name": "呼伦贝尔学院本科毕业论文格式",
+  "version": "1.0.0",
+  "page": {
+    "size": "A4",
+    "margin_top_cm": 2.54,
+    "margin_bottom_cm": 2.54,
+    "margin_left_cm": 3.17,
+    "margin_right_cm": 3.17,
+    "header_cm": 1.5,
+    "footer_cm": 1.75
+  },
+  "fonts": {
+    "chinese_default": "宋体",
+    "ascii_default": "Times New Roman",
+    "heading_chinese": "黑体"
+  },
+  "paragraph_styles": {
+    "h1": {
+      "chinese_font": "黑体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 16,
+      "bold": true,
+      "alignment": "center",
+      "line_spacing": 1.5,
+      "space_before_pt": 24,
+      "space_after_pt": 18,
+      "first_line_indent_chars": 0,
+      "page_break_before": true
+    },
+    "h2": {
+      "chinese_font": "黑体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 14,
+      "bold": true,
+      "alignment": "left",
+      "line_spacing": 1.5,
+      "space_before_pt": 12,
+      "space_after_pt": 6,
+      "first_line_indent_chars": 0
+    },
+    "h3": {
+      "chinese_font": "黑体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 12,
+      "bold": true,
+      "alignment": "left",
+      "line_spacing": 1.5,
+      "space_before_pt": 6,
+      "space_after_pt": 6,
+      "first_line_indent_chars": 0
+    },
+    "abstract": {
+      "chinese_font": "宋体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 12,
+      "bold": false,
+      "alignment": "justify",
+      "line_spacing": 1.5,
+      "space_before_pt": 0,
+      "space_after_pt": 0,
+      "first_line_indent_chars": 2
+    },
+    "body": {
+      "chinese_font": "宋体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 12,
+      "bold": false,
+      "alignment": "justify",
+      "line_spacing": 1.5,
+      "space_before_pt": 0,
+      "space_after_pt": 0,
+      "first_line_indent_chars": 2
+    },
+    "ref": {
+      "chinese_font": "宋体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 10.5,
+      "bold": false,
+      "alignment": "left",
+      "line_spacing": 1.0,
+      "space_before_pt": 0,
+      "space_after_pt": 0,
+      "first_line_indent_chars": 0,
+      "hanging_indent_chars": 2
+    },
+    "caption": {
+      "chinese_font": "宋体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 10.5,
+      "bold": true,
+      "alignment": "center",
+      "line_spacing": 1.0,
+      "space_before_pt": 6,
+      "space_after_pt": 6,
+      "first_line_indent_chars": 0
+    },
+    "cover": {
+      "chinese_font": "宋体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 16,
+      "bold": false,
+      "alignment": "center",
+      "line_spacing": 1.5,
+      "space_before_pt": 6,
+      "space_after_pt": 6,
+      "first_line_indent_chars": 0
+    },
+    "toc": {
+      "chinese_font": "宋体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 12,
+      "bold": false,
+      "alignment": "left",
+      "line_spacing": 1.5,
+      "space_before_pt": 0,
+      "space_after_pt": 0,
+      "first_line_indent_chars": 0
+    },
+    "keywords": {
+      "chinese_font": "宋体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 12,
+      "bold": false,
+      "alignment": "left",
+      "line_spacing": 1.5,
+      "space_before_pt": 6,
+      "space_after_pt": 6,
+      "first_line_indent_chars": 0,
+      "label_bold": true
+    },
+    "conclusion": {
+      "chinese_font": "宋体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 12,
+      "bold": false,
+      "alignment": "justify",
+      "line_spacing": 1.5,
+      "space_before_pt": 0,
+      "space_after_pt": 0,
+      "first_line_indent_chars": 2
+    }
+  },
+  "table": {
+    "cant_split": true,
+    "three_line": {
+      "enabled": true,
+      "top_border_pt": 1.5,
+      "bottom_border_pt": 1.5,
+      "header_bottom_border_pt": 1.0,
+      "inner_border_pt": 0
+    },
+    "font": {
+      "chinese_font": "宋体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 10.5
+    },
+    "alignment": "center"
+  },
+  "page_number": {
+    "enabled": true,
+    "alignment": "center",
+    "font": "Times New Roman",
+    "font_size_pt": 10.5,
+    "format": "1"
+  }
+}
