@@ -1,0 +1,194 @@
+"use client";
+
+import type { Paragraph } from "@/lib/api";
+import type { BlockKey } from "@/lib/store";
+
+/**
+ * 重构预览：按当前段落类型，把每一段渲染成接近最终 Word 输出的样式。
+ *
+ * 字符级中英文字体：通过 CSS font fallback 模拟——
+ *   font-family: "Times New Roman", <中文字体>, serif;
+ * 浏览器会优先用 Times New Roman 渲染 ASCII，剩下的中文 fallback 到指定字体。
+ */
+
+const CN_FONT_CSS: Record<string, string> = {
+  宋体: '"SimSun", "Songti SC", serif',
+  黑体: '"SimHei", "Heiti SC", sans-serif',
+  仿宋: '"FangSong", "STFangsong", serif',
+  "Times New Roman": '"Times New Roman", serif',
+};
+
+// 类型 → 渲染样式描述
+interface RenderStyle {
+  chineseFont: string;
+  ptSize: number;
+  bold?: boolean;
+  align?: "left" | "center" | "right" | "justify";
+  indent?: number; // first-line indent in chars
+  leadingFullWidthSpaces?: number;
+  block?: BlockKey;
+  fixed?: string;
+  isKeywords?: boolean;
+  keywordPrefix?: string;
+  isChapterTitle?: boolean;
+}
+
+const STYLES: Record<string, RenderStyle> = {
+  // toc
+  toc_title: { chineseFont: "黑体", ptSize: 16, bold: true, align: "center", fixed: "目  录" },
+  toc_h1: { chineseFont: "宋体", ptSize: 12, align: "left" },
+  toc_h2: { chineseFont: "宋体", ptSize: 12, align: "left", leadingFullWidthSpaces: 2 },
+  toc_h3: { chineseFont: "宋体", ptSize: 12, align: "left", leadingFullWidthSpaces: 4 },
+
+  // abstract
+  paper_title: { chineseFont: "宋体", ptSize: 18, bold: true, align: "center" },
+  author_line: { chineseFont: "仿宋", ptSize: 12, align: "center" },
+  instructor: { chineseFont: "仿宋", ptSize: 12, align: "center" },
+  abstract_title_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", fixed: "摘要" },
+  abstract_body_cn: { chineseFont: "仿宋", ptSize: 12, align: "justify", indent: 2 },
+  keywords_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "关键词：" },
+  abstract_title_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", fixed: "Abstract" },
+  abstract_body_en: { chineseFont: "Times New Roman", ptSize: 12, align: "justify" },
+  keywords_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "Keywords:" },
+
+  // body
+  h1: { chineseFont: "宋体", ptSize: 15, bold: true, align: "center", isChapterTitle: true },
+  h2: { chineseFont: "宋体", ptSize: 14, bold: true, align: "left" },
+  h3: { chineseFont: "宋体", ptSize: 12, bold: true, align: "left" },
+  body: { chineseFont: "宋体", ptSize: 12, align: "justify", indent: 2 },
+  numbered_item: { chineseFont: "宋体", ptSize: 12, align: "justify", indent: 2 },
+  table_caption: { chineseFont: "宋体", ptSize: 10.5, align: "center" },
+  table: { chineseFont: "宋体", ptSize: 10.5, align: "center" },
+  formula: { chineseFont: "Times New Roman", ptSize: 10.5, align: "center" },
+  formula_number: { chineseFont: "Times New Roman", ptSize: 10.5, align: "right" },
+  figure_caption: { chineseFont: "宋体", ptSize: 10.5, align: "center" },
+  caption: { chineseFont: "宋体", ptSize: 10.5, align: "center" },
+
+  // conclusion
+  conclusion_title: { chineseFont: "宋体", ptSize: 15, bold: true, align: "center", fixed: "总  结" },
+  conclusion_body: { chineseFont: "宋体", ptSize: 12, align: "justify", indent: 2 },
+
+  // references
+  references_title: { chineseFont: "宋体", ptSize: 14, bold: true, align: "center", fixed: "参考文献" },
+  reference_item: { chineseFont: "仿宋", ptSize: 12, align: "left" },
+  ref: { chineseFont: "仿宋", ptSize: 12, align: "left" },
+
+  // 旧版兼容
+  cover: { chineseFont: "宋体", ptSize: 14, align: "center" },
+  future_work: { chineseFont: "宋体", ptSize: 12, align: "justify", indent: 2 },
+};
+
+// 文本归一化（与 backend formatter._normalize_text_for_type 对齐）
+function normalizeText(text: string, type: string): string {
+  const st = STYLES[type];
+  if (!st) return text;
+
+  // 固定文字
+  if (st.fixed) {
+    const bare = text.replace(/\s+/g, "");
+    if (bare === st.fixed.replace(/\s+/g, "")) return st.fixed;
+  }
+
+  // 关键词清理：分号 / 逗号 / 顿号 → 空格
+  if (st.isKeywords) {
+    let body = text;
+    const prefixes = [st.keywordPrefix, st.keywordPrefix?.replace(/[:：]/, ":"), st.keywordPrefix?.replace(/[:：]/, "：")];
+    for (const p of prefixes) {
+      if (p && body.startsWith(p)) {
+        body = body.slice(p.length);
+        break;
+      }
+    }
+    body = body.replace(/[;；,，、]/g, " ").replace(/\s+/g, " ").trim();
+    return st.keywordPrefix ? `${st.keywordPrefix} ${body}` : body;
+  }
+
+  // 数字序号 1、 → 1.
+  if (type === "numbered_item") {
+    text = text.replace(/^(\s*\d+)\s*[、,，]\s*/, "$1. ");
+  }
+
+  // h1 章号两个全角空格
+  if (st.isChapterTitle) {
+    const m = text.match(/^(第[一二三四五六七八九十百零\d]+章)\s*(.*)$/);
+    if (m && m[2]) text = `${m[1]}　　${m[2]}`;
+  }
+
+  // toc 前导全角空格
+  if (st.leadingFullWidthSpaces) {
+    const stripped = text.replace(/^[\s　]+/, "");
+    text = "　".repeat(st.leadingFullWidthSpaces) + stripped;
+  }
+
+  return text;
+}
+
+function ParagraphLine({ p }: { p: Paragraph }) {
+  const st = STYLES[p.type] || STYLES.body;
+  const text = normalizeText(p.text, p.type);
+  const fontFamily = `"Times New Roman", ${CN_FONT_CSS[st.chineseFont] || "serif"}`;
+  return (
+    <div
+      style={{
+        fontFamily,
+        fontSize: `${st.ptSize}pt`,
+        fontWeight: st.bold ? 700 : 400,
+        textAlign: st.align || "left",
+        textIndent: st.indent ? `${st.indent * st.ptSize}pt` : 0,
+        lineHeight: 1.7,
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
+      }}
+    >
+      {text || <span className="text-slate-300">（空段）</span>}
+    </div>
+  );
+}
+
+interface Props {
+  block: BlockKey;
+  paragraphs: Paragraph[]; // 该大块的段落（已按 index 升序）
+}
+
+const BLOCK_TITLES: Record<BlockKey, string> = {
+  toc: "目录重构预览",
+  abstract: "摘要重构预览",
+  body: "正文重构预览",
+  conclusion: "总结重构预览",
+  references: "参考文献重构预览",
+};
+
+export function BlockPreview({ block, paragraphs }: Props) {
+  return (
+    <div className="rounded-lg border border-slate-300 bg-white shadow-sm">
+      <div className="border-b border-dashed border-orange-300 bg-orange-50 px-4 py-2 text-xs text-orange-700 flex items-center justify-between">
+        <span>↳ 新一页（{BLOCK_TITLES[block]}）</span>
+        <span className="text-slate-400">
+          ASCII / 数字 → Times New Roman · 中文按段落类型字体
+        </span>
+      </div>
+      <div className="p-6 space-y-2 max-h-[60vh] overflow-y-auto">
+        {paragraphs.length === 0 ? (
+          <div className="text-center text-slate-400 text-sm">本块暂无段落</div>
+        ) : (
+          paragraphs.map((p) => {
+            const st = STYLES[p.type] || STYLES.body;
+            // 正文大块内 h1 视觉提示"另起一页"
+            const isH1Break = block === "body" && p.type === "h1";
+            return (
+              <div key={p.index}>
+                {isH1Break && (
+                  <div className="my-3 border-t border-dashed border-orange-300 text-xs text-orange-600 text-center bg-orange-50 py-1">
+                    ↳ 一级标题另起一页
+                  </div>
+                )}
+                <ParagraphLine p={p} />
+                {st.fixed === "公式" || p.type === "formula" ? null : null}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}

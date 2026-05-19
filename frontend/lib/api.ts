@@ -12,6 +12,7 @@ export interface Paragraph {
   confidence: number;
   reason?: string;
   confirmed?: boolean;
+  block?: string;
 }
 
 export interface ParseResponse {
