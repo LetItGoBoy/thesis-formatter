@@ -14,6 +14,7 @@ export interface Paragraph {
   reason?: string;
   confirmed?: boolean;
   block?: string;
+  cells?: string[][]; // 仅当 type==="table" 时存在：表格单元格网格（行 × 列）
 }
 
 export interface ParseResponse {
@@ -44,6 +45,7 @@ export async function formatDocx(
         index: p.index,
         type: p.type,
         text: p.text,
+        ...(p.cells ? { cells: p.cells } : {}),
       })),
       template,
       docx_base64: docxBase64,

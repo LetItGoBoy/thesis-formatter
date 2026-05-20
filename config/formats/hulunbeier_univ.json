@@ -416,6 +416,22 @@
     }
   },
 
+  "table_format": {
+    "cant_split": true,
+    "three_line": {
+      "enabled": true,
+      "top_border_pt": 1.5,
+      "bottom_border_pt": 1.5,
+      "header_bottom_border_pt": 1.0,
+      "inner_border_pt": 0
+    },
+    "font": {
+      "chinese_font": "宋体",
+      "ascii_font": "Times New Roman",
+      "font_size_pt": 10.5
+    }
+  },
+
   "compatibility": {
     "cover": {
       "backend_only": true,

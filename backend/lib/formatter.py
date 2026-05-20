@@ -285,6 +285,19 @@ def _set_cell_borders(cell, borders):
     tcPr.append(tcb)
 
 
+def _add_table(doc, cells):
+    """按二维文本网格新建表格。样式（三线/字体/居中）由 _format_tables 之后统一施加。"""
+    rows = len(cells)
+    cols = max((len(r) for r in cells), default=0)
+    if rows == 0 or cols == 0:
+        return None
+    table = doc.add_table(rows=rows, cols=cols)
+    for i, row in enumerate(cells):
+        for j in range(cols):
+            table.rows[i].cells[j].text = row[j] if j < len(row) else ""
+    return table
+
+
 def _format_tables(doc, table_cfg):
     cant_split = bool(table_cfg.get("cant_split", True))
     tl = table_cfg.get("three_line", {})
@@ -412,15 +425,25 @@ def format_docx(paragraphs, format_config, source_bytes=None):
     for p in ordered:
         ptype = p.get("type", "body")
         style = styles.get(ptype) or styles.get("body", {})
+        cur_block = _block_of(ptype, styles)
+        need_page_break = last_block is not None and cur_block != last_block
+        last_block = cur_block
+
+        # 表格：用 cells 网格重建为真正的 Word 表格（三线表样式由 _format_tables 统一施加）
+        if ptype == "table" and p.get("cells"):
+            if need_page_break:
+                brk = doc.add_paragraph()
+                brk.paragraph_format.page_break_before = True
+            _add_table(doc, p["cells"])
+            continue
+
         text = _normalize_text(p.get("text", ""), ptype, style)
 
         para = doc.add_paragraph()
 
         # 大块切换 -> 另起一页
-        cur_block = _block_of(ptype, styles)
-        if last_block is not None and cur_block != last_block:
+        if need_page_break:
             para.paragraph_format.page_break_before = True
-        last_block = cur_block
 
         # 目录条目：右对齐点状前导制表位 + 分离页码
         if ptype in ("toc_h1", "toc_h2", "toc_h3"):
