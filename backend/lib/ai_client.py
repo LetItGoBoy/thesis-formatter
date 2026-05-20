@@ -252,6 +252,10 @@ def _build_whole_doc_prompt() -> str:
         "- 「摘要」之前可能重复出现论文题目页（题目 / 作者 / 学号 / 专业 / 指导教师），这些属于摘要部分"
         "（paper_title / author_line / instructor），不是目录。",
         "- 只有带页码的目录条目才是 toc_*；正文里的标题是 h1 / h2 / h3。",
+        "- 英文摘要紧跟中文摘要、位于第一章/绪论之前：成段的英文叙述是 abstract_body_en（不是 h1/正文）；"
+        "以 Keywords/Key words 开头的英文是 keywords_en（不是 h2）；单独一行的 Abstract 是 abstract_title_en。"
+        "这些都属于摘要部分，第一章/绪论开始后才算正文。",
+        "- 标题（h1/h2/h3/toc_*）都很短，通常不超过一行；成段的长句叙述绝不是标题，按其所在部分归类（摘要里就是摘要正文，正文里就是 body）。",
         "",
         "全部可用类型（按所在部分分组）：",
     ]
