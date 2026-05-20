@@ -1,6 +1,8 @@
 {
-  "name": "呼伦贝尔学院本科毕业论文格式",
-  "version": "2.0.0",
+  "school": "呼伦贝尔学院",
+  "version": "2023",
+  "description": "呼伦贝尔学院本科毕业论文格式规则",
+
   "page": {
     "size": "A4",
     "orientation": "portrait",
@@ -8,463 +10,422 @@
     "margin_bottom_cm": 2.0,
     "margin_left_cm": 3.0,
     "margin_right_cm": 2.0,
-    "gutter_cm": 0,
-    "header_cm": 1.5,
-    "footer_cm": 1.75
+    "gutter_cm": 0
   },
-  "global": {
-    "disable_snap_to_grid": true,
-    "ascii_font": "Times New Roman",
-    "keyword_separator": " ",
-    "page_break_per_block": true,
-    "page_break_per_chapter_h1": true
+
+  "global_rules": {
+    "snap_to_grid": false,
+    "numbers_and_english_font": "Times New Roman",
+    "keyword_separator": "space",
+    "note": "所有段落必须先取消文档网格再设置行间距；所有数字和英文字母统一Times New Roman；关键词用空格分隔"
   },
+
   "blocks": {
     "toc": {
-      "display_name": "目录大块",
-      "order": 1,
+      "label": "目录",
       "page_break_before": true,
       "types": ["toc_title", "toc_h1", "toc_h2", "toc_h3"]
     },
     "abstract": {
-      "display_name": "摘要大块",
-      "order": 2,
+      "label": "摘要",
       "page_break_before": true,
-      "types": [
-        "paper_title", "author_line", "instructor",
-        "abstract_title_cn", "abstract_body_cn", "keywords_cn",
-        "abstract_title_en", "abstract_body_en", "keywords_en"
-      ]
+      "types": ["paper_title", "author_line", "instructor", "abstract_title_cn", "abstract_body_cn", "keywords_cn", "abstract_title_en", "abstract_body_en", "keywords_en"]
     },
     "body": {
-      "display_name": "正文大块",
-      "order": 3,
+      "label": "正文",
       "page_break_before": true,
-      "types": [
-        "h1", "h2", "h3", "body", "numbered_item",
-        "table_caption", "table", "formula", "formula_number",
-        "figure_caption", "caption"
-      ]
+      "forbidden_types": ["cover", "future_work"],
+      "types": ["h1", "h2", "h3", "body", "numbered_item", "table_caption", "table", "formula", "formula_number", "figure_caption", "caption"]
     },
     "conclusion": {
-      "display_name": "总结大块",
-      "order": 4,
+      "label": "总结",
       "page_break_before": true,
+      "forbidden_types": ["future_work"],
       "types": ["conclusion_title", "conclusion_body"]
     },
     "references": {
-      "display_name": "参考文献大块",
-      "order": 5,
+      "label": "参考文献",
       "page_break_before": true,
       "types": ["references_title", "reference_item", "ref"]
     }
   },
+
   "paragraph_styles": {
+
     "toc_title": {
       "block": "toc",
-      "display_name": "目录标题",
-      "fixed_text": "目  录",
-      "chinese_font": "黑体",
-      "ascii_font": "Times New Roman",
+      "label": "目录标题",
+      "fixed_content": "目   录",
+      "use_fixed_content": true,
+      "font_cn": "黑体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 16,
       "bold": true,
       "alignment": "center",
-      "line_spacing": 1.5,
-      "space_before_pt": 0,
-      "space_after_pt": 18,
-      "first_line_indent_chars": 0
+      "snap_to_grid": false
     },
     "toc_h1": {
       "block": "toc",
-      "display_name": "一级目录",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
+      "label": "一级目录",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "left",
       "line_spacing": 1.5,
-      "first_line_indent_chars": 0
+      "indent_chars": 0,
+      "space_before_lines_after_toc_title_only": 1,
+      "snap_to_grid": false,
+      "note": "与目录标题间隔一行，无缩进"
     },
     "toc_h2": {
       "block": "toc",
-      "display_name": "二级目录",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
+      "label": "二级目录",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "left",
       "line_spacing": 1.5,
-      "first_line_indent_chars": 0,
-      "leading_full_width_spaces": 2
+      "indent_chars": 2,
+      "snap_to_grid": false,
+      "note": "前置两个空格缩进"
     },
     "toc_h3": {
       "block": "toc",
-      "display_name": "三级目录",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
+      "label": "三级目录",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "left",
       "line_spacing": 1.5,
-      "first_line_indent_chars": 0,
-      "leading_full_width_spaces": 4
+      "indent_chars": 4,
+      "snap_to_grid": false,
+      "note": "前置四个空格缩进"
     },
+
     "paper_title": {
       "block": "abstract",
-      "display_name": "论文题目",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
+      "label": "论文题目",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 18,
       "bold": true,
       "alignment": "center",
-      "line_spacing": 1.5,
-      "space_before_pt": 0,
-      "space_after_pt": 24,
-      "first_line_indent_chars": 0
+      "snap_to_grid": false
     },
     "author_line": {
       "block": "abstract",
-      "display_name": "作者",
-      "chinese_font": "仿宋",
-      "ascii_font": "Times New Roman",
+      "label": "作者",
+      "font_cn": "仿宋",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "center",
       "line_spacing": 1.5,
-      "first_line_indent_chars": 0
+      "space_before_lines": 1,
+      "snap_to_grid": false,
+      "note": "与题目空一行，作者在前"
     },
     "instructor": {
       "block": "abstract",
-      "display_name": "指导老师",
-      "chinese_font": "仿宋",
-      "ascii_font": "Times New Roman",
+      "label": "指导老师",
+      "font_cn": "仿宋",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "center",
       "line_spacing": 1.5,
-      "first_line_indent_chars": 0
+      "snap_to_grid": false
     },
     "abstract_title_cn": {
       "block": "abstract",
-      "display_name": "摘要标题（中文）",
-      "fixed_text": "摘要",
-      "chinese_font": "仿宋",
-      "ascii_font": "Times New Roman",
+      "label": "摘要标题（中文）",
+      "font_cn": "仿宋",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": true,
       "alignment": "left",
-      "line_spacing": 1.5,
-      "space_before_pt": 12,
-      "space_after_pt": 6,
-      "first_line_indent_chars": 0
+      "first_line_indent_chars": 0,
+      "snap_to_grid": false,
+      "hint": "摘要字数建议200-400字"
     },
     "abstract_body_cn": {
       "block": "abstract",
-      "display_name": "摘要正文（中文）",
-      "chinese_font": "仿宋",
-      "ascii_font": "Times New Roman",
+      "label": "摘要正文（中文）",
+      "font_cn": "仿宋",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "justify",
       "line_spacing": 1.5,
-      "first_line_indent_chars": 2
+      "snap_to_grid": false
     },
     "keywords_cn": {
       "block": "abstract",
-      "display_name": "关键词（中文）",
-      "chinese_font": "仿宋",
-      "ascii_font": "Times New Roman",
+      "label": "关键词（中文）",
+      "font_cn": "仿宋",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": true,
       "alignment": "left",
-      "line_spacing": 1.5,
-      "space_before_pt": 12,
       "first_line_indent_chars": 0,
-      "is_keywords": true,
-      "keywords_prefix": "关键词："
+      "space_before_lines": 1,
+      "line_spacing": 1.5,
+      "keyword_separator": "space",
+      "snap_to_grid": false,
+      "note": "与摘要正文空一行，关键词之间用空格分隔"
     },
     "abstract_title_en": {
       "block": "abstract",
-      "display_name": "Abstract标题",
-      "fixed_text": "Abstract",
-      "chinese_font": "Times New Roman",
-      "ascii_font": "Times New Roman",
+      "label": "Abstract标题",
+      "font_cn": "Times New Roman",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": true,
       "alignment": "left",
-      "line_spacing": 1.5,
-      "space_before_pt": 18,
-      "space_after_pt": 6,
-      "first_line_indent_chars": 0
+      "first_line_indent_chars": 0,
+      "space_before_lines": 1,
+      "snap_to_grid": false,
+      "note": "与上文空一行，左对齐加粗"
     },
     "abstract_body_en": {
       "block": "abstract",
-      "display_name": "摘要正文（英文）",
-      "chinese_font": "Times New Roman",
-      "ascii_font": "Times New Roman",
+      "label": "摘要正文（英文）",
+      "font_cn": "Times New Roman",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "justify",
       "line_spacing": 1.5,
-      "first_line_indent_chars": 0
+      "snap_to_grid": false
     },
     "keywords_en": {
       "block": "abstract",
-      "display_name": "关键词（英文）",
-      "chinese_font": "Times New Roman",
-      "ascii_font": "Times New Roman",
+      "label": "关键词（英文）",
+      "font_cn": "Times New Roman",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": true,
       "alignment": "left",
-      "line_spacing": 1.5,
-      "space_before_pt": 12,
       "first_line_indent_chars": 0,
-      "is_keywords": true,
-      "keywords_prefix": "Keywords:"
+      "line_spacing": 1.5,
+      "keyword_separator": "space",
+      "space_before_lines": 1,
+      "snap_to_grid": false,
+      "note": "关键词之间用空格分隔"
     },
+
     "h1": {
       "block": "body",
-      "display_name": "一级标题",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
+      "label": "一级标题",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 15,
       "bold": true,
       "alignment": "center",
-      "line_spacing": 1.5,
-      "space_before_pt": 24,
-      "space_after_pt": 18,
-      "first_line_indent_chars": 0,
       "page_break_before": true,
-      "chapter_two_space_normalize": true
+      "chapter_spacing": 2,
+      "snap_to_grid": false,
+      "note": "每章另起一页，章和标题之间自动规范为两个空格，例：第一章  绪论"
     },
     "h2": {
       "block": "body",
-      "display_name": "二级标题",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
+      "label": "二级标题",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 14,
       "bold": true,
       "alignment": "left",
-      "line_spacing": 1.5,
-      "space_before_pt": 12,
-      "space_after_pt": 6,
-      "first_line_indent_chars": 0
+      "space_before_lines_after_h1_only": 1,
+      "snap_to_grid": false,
+      "note": "与一级标题空一行"
     },
     "h3": {
       "block": "body",
-      "display_name": "三级标题",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
+      "label": "三级标题",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": true,
       "alignment": "left",
-      "line_spacing": 1.5,
-      "space_before_pt": 6,
-      "space_after_pt": 6,
-      "first_line_indent_chars": 0
+      "snap_to_grid": false
     },
     "body": {
       "block": "body",
-      "display_name": "正文",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
+      "label": "正文",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "justify",
       "line_spacing": 1.5,
-      "first_line_indent_chars": 2
+      "char_spacing": "standard",
+      "first_line_indent_chars": 2,
+      "snap_to_grid": false
     },
     "numbered_item": {
       "block": "body",
-      "display_name": "数字序号",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
+      "label": "数字序号",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
+      "font_size_pt": 12,
+      "bold": false,
+      "alignment": "left",
+      "line_spacing": 1.5,
+      "number_separator": ".",
+      "forbidden_separator": "、",
+      "snap_to_grid": false,
+      "note": "自动将1、2、3、替换为1. 2. 3."
+    },
+    "table_caption": {
+      "block": "body",
+      "label": "表说明",
+      "position": "above_table",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
+      "font_size_pt": 10.5,
+      "bold": false,
+      "alignment": "center",
+      "snap_to_grid": false,
+      "note": "置于表格上方，表序与表题之间空一格，例：表2-1 实验参数设置"
+    },
+    "table": {
+      "block": "body",
+      "label": "表",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
+      "font_size_pt": 10.5,
+      "alignment": "center",
+      "table_style": "three_line",
+      "top_border_pt": 1.5,
+      "bottom_border_pt": 1.5,
+      "middle_border_pt": 1.0,
+      "no_page_break": true,
+      "snap_to_grid": false,
+      "note": "三线表，不跨页"
+    },
+    "formula": {
+      "block": "body",
+      "label": "公式",
+      "font_cn": "Times New Roman",
+      "font_en_num": "Times New Roman",
+      "font_size_pt": 10.5,
+      "alignment": "center",
+      "snap_to_grid": false,
+      "note": "公式居中，序号在最右边"
+    },
+    "formula_number": {
+      "block": "body",
+      "label": "公式序号",
+      "font_cn": "Times New Roman",
+      "font_en_num": "Times New Roman",
+      "font_size_pt": 10.5,
+      "alignment": "right",
+      "snap_to_grid": false,
+      "note": "格式：(章号-序号)，例：(2-1)"
+    },
+    "figure_caption": {
+      "block": "body",
+      "label": "图说明",
+      "position": "below_figure",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
+      "font_size_pt": 10.5,
+      "bold": false,
+      "alignment": "center",
+      "snap_to_grid": false,
+      "note": "置于图片下方，图序与图题之间空一格，例：图2-2 单管换热系统流程图"
+    },
+    "caption": {
+      "block": "body",
+      "label": "图表题注",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
+      "font_size_pt": 10.5,
+      "bold": false,
+      "alignment": "center",
+      "snap_to_grid": false,
+      "note": "兼容旧类型，新格式优先使用table_caption或figure_caption"
+    },
+
+    "conclusion_title": {
+      "block": "conclusion",
+      "label": "总结标题",
+      "fixed_content": "总  结",
+      "use_fixed_content": true,
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
+      "font_size_pt": 15,
+      "bold": true,
+      "alignment": "center",
+      "snap_to_grid": false,
+      "note": "固定内容：总  结（中间两个字符空格），本块另起一页"
+    },
+    "conclusion_body": {
+      "block": "conclusion",
+      "label": "总结正文",
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "justify",
       "line_spacing": 1.5,
       "first_line_indent_chars": 2,
-      "normalize_numbered_prefix": true
+      "snap_to_grid": false
     },
-    "table_caption": {
-      "block": "body",
-      "display_name": "表说明",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 10.5,
-      "bold": false,
-      "alignment": "center",
-      "line_spacing": 1.5,
-      "space_before_pt": 6,
-      "space_after_pt": 3,
-      "first_line_indent_chars": 0
-    },
-    "table": {
-      "block": "body",
-      "display_name": "表",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 10.5,
-      "bold": false,
-      "alignment": "center",
-      "line_spacing": 1.5,
-      "first_line_indent_chars": 0
-    },
-    "formula": {
-      "block": "body",
-      "display_name": "公式",
-      "chinese_font": "Times New Roman",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 10.5,
-      "bold": false,
-      "alignment": "center",
-      "line_spacing": 1.5,
-      "first_line_indent_chars": 0
-    },
-    "formula_number": {
-      "block": "body",
-      "display_name": "公式序号",
-      "chinese_font": "Times New Roman",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 10.5,
-      "bold": false,
-      "alignment": "right",
-      "line_spacing": 1.5,
-      "first_line_indent_chars": 0
-    },
-    "figure_caption": {
-      "block": "body",
-      "display_name": "图说明",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 10.5,
-      "bold": false,
-      "alignment": "center",
-      "line_spacing": 1.5,
-      "space_before_pt": 3,
-      "space_after_pt": 6,
-      "first_line_indent_chars": 0
-    },
-    "caption": {
-      "block": "body",
-      "display_name": "图表题注",
-      "legacy": true,
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 10.5,
-      "bold": false,
-      "alignment": "center",
-      "line_spacing": 1.5,
-      "first_line_indent_chars": 0
-    },
-    "conclusion_title": {
-      "block": "conclusion",
-      "display_name": "总结标题",
-      "fixed_text": "总  结",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 15,
-      "bold": true,
-      "alignment": "center",
-      "line_spacing": 1.5,
-      "space_before_pt": 0,
-      "space_after_pt": 18,
-      "first_line_indent_chars": 0,
-      "page_break_before": true
-    },
-    "conclusion_body": {
-      "block": "conclusion",
-      "display_name": "总结正文",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 12,
-      "bold": false,
-      "alignment": "justify",
-      "line_spacing": 1.5,
-      "first_line_indent_chars": 2
-    },
+
     "references_title": {
       "block": "references",
-      "display_name": "参考文献标题",
-      "fixed_text": "参考文献",
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
+      "label": "参考文献标题",
+      "fixed_content": "参考文献",
+      "use_fixed_content": true,
+      "font_cn": "宋体",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 14,
       "bold": true,
       "alignment": "center",
       "line_spacing": 1.5,
-      "space_before_pt": 0,
-      "space_after_pt": 12,
-      "first_line_indent_chars": 0,
-      "page_break_before": true
+      "snap_to_grid": false,
+      "note": "固定内容：参考文献，本块另起一页"
     },
     "reference_item": {
       "block": "references",
-      "display_name": "参考文献正文",
-      "chinese_font": "仿宋",
-      "ascii_font": "Times New Roman",
+      "label": "参考文献正文",
+      "font_cn": "仿宋",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "left",
-      "line_spacing": 1.5,
       "first_line_indent_chars": 0,
-      "hanging_indent_chars": 2
+      "snap_to_grid": false,
+      "note": "仿宋小四左对齐，英文数字用Times New Roman"
     },
     "ref": {
       "block": "references",
-      "display_name": "参考文献（兼容）",
-      "legacy": true,
-      "chinese_font": "仿宋",
-      "ascii_font": "Times New Roman",
+      "label": "参考文献",
+      "font_cn": "仿宋",
+      "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
       "alignment": "left",
-      "line_spacing": 1.5,
       "first_line_indent_chars": 0,
-      "hanging_indent_chars": 2
-    },
-    "cover": {
-      "block": "_legacy",
-      "display_name": "封面（旧版兼容）",
-      "legacy": true,
-      "hidden_in_ui": true,
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 14,
-      "bold": false,
-      "alignment": "center",
-      "line_spacing": 1.5,
-      "first_line_indent_chars": 0
-    },
-    "future_work": {
-      "block": "_legacy",
-      "display_name": "展望内容（旧版兼容）",
-      "legacy": true,
-      "hidden_in_ui": true,
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 12,
-      "bold": false,
-      "alignment": "justify",
-      "line_spacing": 1.5,
-      "first_line_indent_chars": 2
+      "snap_to_grid": false,
+      "note": "兼容旧类型，格式同reference_item"
     }
   },
-  "table_format": {
-    "cant_split": true,
-    "three_line": {
-      "enabled": true,
-      "top_border_pt": 1.5,
-      "bottom_border_pt": 1.5,
-      "header_bottom_border_pt": 1.0,
-      "inner_border_pt": 0
+
+  "compatibility": {
+    "cover": {
+      "backend_only": true,
+      "show_in_frontend": false,
+      "note": "后端兼容，前端所有下拉框禁止显示"
     },
-    "cell_alignment_horizontal": "center",
-    "cell_alignment_vertical": "center",
-    "font": {
-      "chinese_font": "宋体",
-      "ascii_font": "Times New Roman",
-      "font_size_pt": 10.5
+    "future_work": {
+      "backend_only": true,
+      "show_in_frontend": false,
+      "note": "后端兼容，前端所有下拉框禁止显示"
     }
   }
 }
