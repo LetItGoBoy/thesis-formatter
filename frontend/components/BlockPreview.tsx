@@ -167,6 +167,48 @@ function TablePreview({ p }: { p: Paragraph }) {
   );
 }
 
+// 目录条目：分离标题与页码（与后端 _split_toc_entry 的正则对齐）
+const TOC_ENTRY_RE = /^(.+?)[\s.·]+(\d{1,4})$/;
+
+function TocLine({ p }: { p: Paragraph }) {
+  const st = STYLES[p.type] || STYLES.body;
+  const fontFamily = `"Times New Roman", ${CN_FONT_CSS[st.chineseFont] || "serif"}`;
+  const lead = st.leadingFullWidthSpaces ? "　".repeat(st.leadingFullWidthSpaces) : "";
+  const m = p.text.trim().match(TOC_ENTRY_RE);
+
+  // 无页码（或匹配失败）退化为普通行，避免误吞内容
+  if (!m || !m[1].trim()) return <ParagraphLine p={p} />;
+
+  const title = m[1].trim();
+  const page = m[2];
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-end",
+        fontFamily,
+        fontSize: `${st.ptSize}pt`,
+        fontWeight: st.bold ? 700 : 400,
+        lineHeight: 1.7,
+      }}
+    >
+      <span style={{ whiteSpace: "pre", flexShrink: 0 }}>
+        {lead}
+        {title}
+      </span>
+      <span
+        style={{
+          flex: 1,
+          margin: "0 4px",
+          marginBottom: "0.32em",
+          borderBottom: "1px dotted #000",
+        }}
+      />
+      <span style={{ flexShrink: 0 }}>{page}</span>
+    </div>
+  );
+}
+
 function ParagraphLine({ p }: { p: Paragraph }) {
   const st = STYLES[p.type] || STYLES.body;
   const text = normalizeText(p.text, p.type);
@@ -227,6 +269,8 @@ export function BlockPreview({ block, paragraphs }: Props) {
                 )}
                 {p.type === "table" && p.cells ? (
                   <TablePreview p={p} />
+                ) : p.type === "toc_h1" || p.type === "toc_h2" || p.type === "toc_h3" ? (
+                  <TocLine p={p} />
                 ) : (
                   <ParagraphLine p={p} />
                 )}
