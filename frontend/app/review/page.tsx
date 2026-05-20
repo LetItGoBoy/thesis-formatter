@@ -275,13 +275,21 @@ function ParagraphRow({
         {movedFromOriginal && <Badge variant="warning">已移块</Badge>}
       </div>
 
-      <Textarea
-        value={p.text}
-        onChange={(e) => onUpdate(p.index, { text: e.target.value })}
-        disabled={p.confirmed}
-        rows={Math.min(6, Math.max(2, Math.ceil(p.text.length / 60) || 2))}
-        className="text-sm"
-      />
+      {p.type === "table" && p.cells ? (
+        <TableEditor
+          cells={p.cells}
+          disabled={p.confirmed}
+          onChange={(cells) => onUpdate(p.index, { cells })}
+        />
+      ) : (
+        <Textarea
+          value={p.text}
+          onChange={(e) => onUpdate(p.index, { text: e.target.value })}
+          disabled={p.confirmed}
+          rows={Math.min(6, Math.max(2, Math.ceil(p.text.length / 60) || 2))}
+          className="text-sm"
+        />
+      )}
 
       <div className="mt-2 flex justify-end gap-2">
         {p.confirmed ? (
@@ -294,6 +302,44 @@ function ParagraphRow({
           </Button>
         )}
       </div>
+    </div>
+  );
+}
+
+function TableEditor({
+  cells,
+  disabled,
+  onChange,
+}: {
+  cells: string[][];
+  disabled?: boolean;
+  onChange: (cells: string[][]) => void;
+}) {
+  function setCell(r: number, c: number, value: string) {
+    const next = cells.map((row) => row.slice());
+    next[r][c] = value;
+    onChange(next);
+  }
+  return (
+    <div className="overflow-x-auto rounded-md border border-slate-200">
+      <table className="w-full border-collapse text-sm">
+        <tbody>
+          {cells.map((row, r) => (
+            <tr key={r}>
+              {row.map((cell, c) => (
+                <td key={c} className="border border-slate-200 p-0">
+                  <input
+                    value={cell}
+                    disabled={disabled}
+                    onChange={(e) => setCell(r, c, e.target.value)}
+                    className="w-full min-w-[6rem] bg-transparent px-2 py-1 outline-none focus:bg-blue-50 disabled:text-slate-500"
+                  />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

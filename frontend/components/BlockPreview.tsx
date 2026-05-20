@@ -123,6 +123,50 @@ function normalizeText(text: string, type: string): string {
   return text;
 }
 
+function TablePreview({ p }: { p: Paragraph }) {
+  const cells = p.cells || [];
+  const fontFamily = `"Times New Roman", ${CN_FONT_CSS["宋体"]}`;
+  const thick = "2px solid #000";
+  const thin = "1px solid #000";
+  return (
+    <table
+      style={{
+        borderCollapse: "collapse",
+        margin: "0 auto",
+        fontFamily,
+        fontSize: "10.5pt",
+        lineHeight: 1.5,
+      }}
+    >
+      <tbody>
+        {cells.map((row, r) => {
+          // 三线表：首行上边线 + 表头下边线（1pt），末行下边线（1.5pt），无竖线/内线
+          const isFirst = r === 0;
+          const isLast = r === cells.length - 1;
+          return (
+            <tr key={r}>
+              {row.map((cell, c) => (
+                <td
+                  key={c}
+                  style={{
+                    borderTop: isFirst ? thick : undefined,
+                    borderBottom: isFirst ? thin : isLast ? thick : undefined,
+                    padding: "3px 10px",
+                    textAlign: "center",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 function ParagraphLine({ p }: { p: Paragraph }) {
   const st = STYLES[p.type] || STYLES.body;
   const text = normalizeText(p.text, p.type);
@@ -172,7 +216,6 @@ export function BlockPreview({ block, paragraphs }: Props) {
           <div className="text-center text-slate-400 text-sm">本块暂无段落</div>
         ) : (
           paragraphs.map((p) => {
-            const st = STYLES[p.type] || STYLES.body;
             // 正文大块内 h1 视觉提示"另起一页"
             const isH1Break = block === "body" && p.type === "h1";
             return (
@@ -182,8 +225,11 @@ export function BlockPreview({ block, paragraphs }: Props) {
                     ↳ 一级标题另起一页
                   </div>
                 )}
-                <ParagraphLine p={p} />
-                {st.fixed === "公式" || p.type === "formula" ? null : null}
+                {p.type === "table" && p.cells ? (
+                  <TablePreview p={p} />
+                ) : (
+                  <ParagraphLine p={p} />
+                )}
               </div>
             );
           })
