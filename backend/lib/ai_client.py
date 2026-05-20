@@ -10,12 +10,15 @@ import re
 import json
 import logging
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger("thesis.ai")
 
 AI_TIMEOUT = float(os.environ.get("AI_TIMEOUT", 30))
 BATCH_SIZE = int(os.environ.get("AI_BATCH_SIZE", 25))
 PARA_TEXT_TRUNC = int(os.environ.get("AI_PARA_TRUNC", 300))
+# 并发批数上限：所有批同时发会让总耗时≈单批耗时，但要限流避免触发模型 RPM 限制
+AI_BATCH_CONCURRENCY = int(os.environ.get("AI_BATCH_CONCURRENCY", 11))
 
 # 合法类型（与 config/formats/hulunbeier_univ.json 的 paragraph_styles 对应）
 VALID_TYPES = [
@@ -286,21 +289,33 @@ def classify_paragraphs_batch(paragraphs: list[dict], batch_size: int = None) ->
     client = get_ai_client()
     batch_size = batch_size or BATCH_SIZE
     total = len(paragraphs)
-    n_batches = (total + batch_size - 1) // batch_size
-    logger.info("批量识别：%d 段 -> %d 批（每批≤%d）", total, n_batches, batch_size)
+    chunks = [paragraphs[i:i + batch_size] for i in range(0, total, batch_size)]
+    n_batches = len(chunks)
+    workers = min(AI_BATCH_CONCURRENCY, n_batches)
+    logger.info("批量识别：%d 段 -> %d 批（每批≤%d，并发 %d）",
+                total, n_batches, batch_size, workers)
 
-    results: list[dict] = []
-    for bi in range(n_batches):
-        chunk = paragraphs[bi * batch_size:(bi + 1) * batch_size]
+    def _run(bi: int, chunk: list[dict]) -> list[dict]:
         logger.info("识别批 %d/%d（段 %d-%d）",
                     bi + 1, n_batches, chunk[0]["index"], chunk[-1]["index"])
-        try:
-            results.extend(_classify_batch(client, chunk))
-        except AIFatalError:
-            raise
-        except Exception as e:
-            logger.warning("批 %d/%d 失败，整批回退 body: %s", bi + 1, n_batches, e)
-            results.extend([{"index": it["index"], "type": "body",
-                             "confidence": 0.3, "reason": f"批识别失败: {e}"}
-                            for it in chunk])
+        return _classify_batch(client, chunk)
+
+    batch_results: list[list[dict] | None] = [None] * n_batches
+    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="ai-batch") as pool:
+        futures = {pool.submit(_run, bi, chunk): bi for bi, chunk in enumerate(chunks)}
+        for fut in as_completed(futures):
+            bi = futures[fut]
+            try:
+                batch_results[bi] = fut.result()
+            except AIFatalError:
+                raise
+            except Exception as e:
+                logger.warning("批 %d/%d 失败，整批回退 body: %s", bi + 1, n_batches, e)
+                batch_results[bi] = [{"index": it["index"], "type": "body",
+                                      "confidence": 0.3, "reason": f"批识别失败: {e}"}
+                                     for it in chunks[bi]]
+
+    results: list[dict] = []
+    for part in batch_results:
+        results.extend(part)
     return results
