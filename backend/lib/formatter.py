@@ -195,12 +195,17 @@ def _normalize_text(text, ptype, style):
     if style.get("normalize_numbered_prefix"):
         text = re.sub(r"^(\s*\d+)\s*[、,，]\s*", r"\1. ", text)
 
-    if style.get("chapter_two_space_normalize"):
+    # 支持 chapter_spacing（int）或旧字段 chapter_two_space_normalize（bool）
+    chapter_sp = int(style.get("chapter_spacing", 0)) or (
+        2 if style.get("chapter_two_space_normalize") else 0
+    )
+    if chapter_sp > 0:
         m = re.match(r"^(第[一二三四五六七八九十百零\d]+章)\s*(.*)$", text.strip())
         if m and m.group(2):
-            text = f"{m.group(1)}{FULL_WIDTH_SPACE}{FULL_WIDTH_SPACE}{m.group(2)}"
+            text = f"{m.group(1)}{FULL_WIDTH_SPACE * chapter_sp}{m.group(2)}"
 
-    fixed = style.get("fixed_text")
+    # 支持 fixed_content（新字段）或旧字段 fixed_text
+    fixed = style.get("fixed_content") or style.get("fixed_text")
     if fixed:
         bare = text.replace(" ", "").replace(FULL_WIDTH_SPACE, "")
         if bare == fixed.replace(" ", "").replace(FULL_WIDTH_SPACE, ""):
@@ -253,13 +258,33 @@ def _apply_paragraph_style(paragraph, ptype, style):
     if style.get("page_break_before"):
         pf.page_break_before = True
 
-    _apply_mixed_font(
-        paragraph,
-        style.get("chinese_font", "宋体"),
-        style.get("ascii_font", "Times New Roman"),
-        pt,
-        bool(style.get("bold", False)),
-    )
+    # 支持 font_cn（新字段）或旧字段 chinese_font；同理 font_en_num / ascii_font
+    cn_font = style.get("font_cn") or style.get("chinese_font", "宋体")
+    en_font = style.get("font_en_num") or style.get("ascii_font", "Times New Roman")
+    _apply_mixed_font(paragraph, cn_font, en_font, pt, bool(style.get("bold", False)))
+
+
+# ============================================================
+# ============================================================
+# 段落大纲级别（导航窗口 / 文档结构图）
+# ============================================================
+_OUTLINE_LEVEL: dict[str, int] = {
+    "toc_title": 0,
+    "h1": 0, "h2": 1, "h3": 2,
+    "conclusion_title": 0,
+    "references_title": 0,
+}
+
+
+def _set_outline_level(paragraph, level: int):
+    """设置 w:outlineLvl，让 WPS/Word 导航窗口识别标题层次。"""
+    pPr = paragraph._p.get_or_add_pPr()
+    old = pPr.find(qn("w:outlineLvl"))
+    if old is not None:
+        pPr.remove(old)
+    el = OxmlElement("w:outlineLvl")
+    el.set(qn("w:val"), str(level))
+    pPr.append(el)
 
 
 # ============================================================
@@ -461,6 +486,8 @@ def format_docx(paragraphs, format_config, source_bytes=None):
             para.add_run(text)
 
         _apply_paragraph_style(para, ptype, style)
+        if ptype in _OUTLINE_LEVEL:
+            _set_outline_level(para, _OUTLINE_LEVEL[ptype])
 
     _format_tables(doc, format_config.get("table_format", {}))
 
