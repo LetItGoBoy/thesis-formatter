@@ -7,6 +7,7 @@ backend/lib/ai_client.py
 """
 import os
 import re
+import time
 import json
 import logging
 from abc import ABC, abstractmethod
@@ -17,8 +18,12 @@ logger = logging.getLogger("thesis.ai")
 AI_TIMEOUT = float(os.environ.get("AI_TIMEOUT", 30))
 BATCH_SIZE = int(os.environ.get("AI_BATCH_SIZE", 25))
 PARA_TEXT_TRUNC = int(os.environ.get("AI_PARA_TRUNC", 300))
-# 并发批数上限：所有批同时发会让总耗时≈单批耗时，但要限流避免触发模型 RPM 限制
-AI_BATCH_CONCURRENCY = int(os.environ.get("AI_BATCH_CONCURRENCY", 11))
+# 并发批数上限：默认 3 以匹配 Moonshot 账号的组织并发上限，避免 429 限流。
+# 账号配额更高时可在 .env 调大 AI_BATCH_CONCURRENCY。
+AI_BATCH_CONCURRENCY = int(os.environ.get("AI_BATCH_CONCURRENCY", 3))
+# 限流(429)重试次数与初始退避秒数
+AI_RATE_LIMIT_RETRIES = int(os.environ.get("AI_RATE_LIMIT_RETRIES", 4))
+AI_RATE_LIMIT_BACKOFF = float(os.environ.get("AI_RATE_LIMIT_BACKOFF", 2))
 
 # 合法类型（与 config/formats/hulunbeier_univ.json 的 paragraph_styles 对应）
 VALID_TYPES = [
@@ -151,60 +156,98 @@ def _is_fatal_error(exc: Exception) -> bool:
     ))
 
 
+def _is_rate_limit(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return any(k in msg for k in (
+        "429", "too many requests", "rate limit", "rate_limit", "concurrency",
+    ))
+
+
 # ============================================================
-# 批量识别
+# 大块 -> 候选类型（与 config/formats/hulunbeier_univ.json 的 blocks 一致）
+# 预扫描已经确定每段所属大块，AI 只在该块的候选类型里选择，避免跨块误判。
 # ============================================================
-BATCH_SYSTEM_PROMPT = """你是学术论文段落格式分类助手。
+BLOCK_LABELS = {
+    "toc": "目录", "abstract": "摘要", "body": "正文",
+    "conclusion": "总结", "references": "参考文献",
+}
 
-收到段落列表后，对每段判断它属于哪种类型，输出JSON数组。
+BLOCK_TYPES = {
+    "toc": ["toc_title", "toc_h1", "toc_h2", "toc_h3"],
+    "abstract": ["paper_title", "author_line", "instructor",
+                 "abstract_title_cn", "abstract_body_cn", "keywords_cn",
+                 "abstract_title_en", "abstract_body_en", "keywords_en"],
+    "body": ["h1", "h2", "h3", "body", "numbered_item", "table_caption",
+             "table", "formula", "formula_number", "figure_caption", "caption"],
+    "conclusion": ["conclusion_title", "conclusion_body"],
+    "references": ["references_title", "reference_item", "ref"],
+}
 
-支持的段落类型：
+# 单批识别失败时，按所属大块回退到该块最常见的类型（而非一律 body）
+BLOCK_DEFAULT_TYPE = {
+    "toc": "toc_h1", "abstract": "abstract_body_cn", "body": "body",
+    "conclusion": "conclusion_body", "references": "reference_item",
+}
 
-【目录】
-- toc_title: 目录标题（"目录"）
-- toc_h1: 目录一级条目（含章号）
-- toc_h2: 目录二级条目（含1.1）
-- toc_h3: 目录三级条目（含1.1.1）
+TYPE_DESC = {
+    "toc_title": '目录标题（"目录"两字）',
+    "toc_h1": '目录一级条目（含章号，如"第1章 绪论 1"）',
+    "toc_h2": '目录二级条目（含"1.1"）',
+    "toc_h3": '目录三级条目（含"1.1.1"）',
+    "paper_title": "论文题目",
+    "author_line": "作者信息（姓名/学号/专业等）",
+    "instructor": "指导老师",
+    "abstract_title_cn": '中文摘要标题（"摘要"）',
+    "abstract_body_cn": "中文摘要正文",
+    "keywords_cn": '中文关键词（"关键词"开头）',
+    "abstract_title_en": "Abstract 标题",
+    "abstract_body_en": "英文摘要正文",
+    "keywords_en": '英文关键词（"Keywords"开头）',
+    "h1": '一级标题（"第X章 XXX"）',
+    "h2": '二级标题（"1.1 XXX"）',
+    "h3": '三级标题（"1.1.1 XXX"）',
+    "body": "正文段落",
+    "numbered_item": '数字编号条目（"1. xxx"/"1、xxx"）',
+    "table_caption": '表说明（"表X-X xxx"）',
+    "table": "表格内容",
+    "formula": "公式行",
+    "formula_number": '单独的公式编号"(2-1)"',
+    "figure_caption": '图说明（"图X-X xxx"）',
+    "caption": "通用图表题注（兼容）",
+    "conclusion_title": '总结标题（"总结"）',
+    "conclusion_body": "总结正文",
+    "references_title": '参考文献标题（"参考文献"/"REFERENCES"）',
+    "reference_item": "单条参考文献",
+    "ref": "参考文献（兼容，新数据用 reference_item）",
+}
 
-【摘要】
-- paper_title: 论文题目
-- author_line: 作者信息
-- instructor: 指导老师
-- abstract_title_cn: 中文摘要标题（"摘要"）
-- abstract_body_cn: 中文摘要正文
-- keywords_cn: 中文关键词（"关键词"开头）
-- abstract_title_en: Abstract 标题
-- abstract_body_en: 英文摘要正文
-- keywords_en: 英文关键词（"Keywords"开头）
 
-【正文】
-- h1: 一级标题（"第X章 XXX"）
-- h2: 二级标题（"1.1 XXX"）
-- h3: 三级标题（"1.1.1 XXX"）
-- body: 正文段落
-- numbered_item: 数字编号条目（"1. xxx"/"1、xxx"）
-- table_caption: 表说明（"表X-X xxx"）
-- table: 表格内容
-- formula: 公式行
-- formula_number: 单独的公式编号"(2-1)"
-- figure_caption: 图说明（"图X-X xxx"）
-- caption: 通用图表题注（兼容）
+def _allowed_types(block: str | None) -> list[str]:
+    return BLOCK_TYPES.get(block) or [t for t in VALID_TYPES if t != "cover"]
 
-【总结】
-- conclusion_title: 总结标题（"总结"）
-- conclusion_body: 总结正文
 
-【参考文献】
-- references_title: 参考文献标题（"参考文献"/"REFERENCES"）
-- reference_item: 单条参考文献
-- ref: 参考文献（兼容，新数据用 reference_item）
+def _default_type(block: str | None) -> str:
+    return BLOCK_DEFAULT_TYPE.get(block, "body")
 
-输出规则（极重要）：
-1. 只输出JSON数组，不要markdown标记、不要解释
-2. 元素数必须等于输入段落数，每段都分类
-3. 每元素格式：{"index": 数字, "type": "类型", "confidence": 0~1小数}
-4. index 必须精确等于输入方括号中的编号
-5. 不允许产出未列出的类型"""
+
+def _build_system_prompt(block: str | None) -> str:
+    types = _allowed_types(block)
+    label = BLOCK_LABELS.get(block, "论文")
+    head = (f"你是学术论文段落格式分类助手。下面这一批段落都来自论文的【{label}】部分，"
+            f"请只在【{label}】允许的类型里给每段分类，输出JSON数组。")
+    lines = [head, "", f"【{label}】允许的类型（只能从这些里选，不得使用其他类型）："]
+    for t in types:
+        lines.append(f"- {t}: {TYPE_DESC.get(t, t)}")
+    lines += [
+        "",
+        "输出规则（极重要）：",
+        "1. 只输出JSON数组，不要markdown标记、不要解释",
+        "2. 元素数必须等于输入段落数，每段都分类",
+        '3. 每元素格式：{"index": 数字, "type": "类型", "confidence": 0~1小数}',
+        "4. index 必须精确等于输入方括号中的编号",
+        "5. type 只能是上面列出的类型，绝不允许其他值",
+    ]
+    return "\n".join(lines)
 
 
 def _build_batch_user_message(items: list[dict]) -> str:
@@ -234,20 +277,37 @@ def _extract_json_array(text: str) -> list:
     return json.loads(text)
 
 
-def _classify_batch(client: BaseAIClient, items: list[dict]) -> list[dict]:
+def _chat_with_retry(client: BaseAIClient, system_prompt: str, user_msg: str) -> str:
+    """调用模型。致命错误立即抛出；限流(429)按退避重试，绝不静默降级。"""
+    delay = AI_RATE_LIMIT_BACKOFF
+    for attempt in range(AI_RATE_LIMIT_RETRIES + 1):
+        try:
+            return client.chat(system_prompt, user_msg)
+        except Exception as e:
+            if _is_fatal_error(e):
+                raise AIFatalError(f"AI服务不可用: {e}") from e
+            if _is_rate_limit(e) and attempt < AI_RATE_LIMIT_RETRIES:
+                logger.warning("限流(429)，%.0fs 后重试 (%d/%d)",
+                               delay, attempt + 1, AI_RATE_LIMIT_RETRIES)
+                time.sleep(delay)
+                delay *= 2
+                continue
+            raise
+
+
+def _classify_batch(client: BaseAIClient, items: list[dict], block: str | None) -> list[dict]:
     user_msg = _build_batch_user_message(items)
-    try:
-        response = client.chat(BATCH_SYSTEM_PROMPT, user_msg)
-    except Exception as e:
-        if _is_fatal_error(e):
-            raise AIFatalError(f"AI服务不可用: {e}") from e
-        raise
+    response = _chat_with_retry(client, _build_system_prompt(block), user_msg)
+
+    allowed = set(_allowed_types(block))
+    fallback = _default_type(block)
 
     try:
         arr = _extract_json_array(response)
     except Exception as e:
-        logger.warning("批响应解析失败，整批回退 body: %s | %s", e, (response or "")[:200])
-        return [{"index": it["index"], "type": "body", "confidence": 0.3,
+        logger.warning("批响应解析失败，整批回退 %s: %s | %s",
+                       fallback, e, (response or "")[:200])
+        return [{"index": it["index"], "type": fallback, "confidence": 0.3,
                  "reason": f"批响应解析失败: {e}"} for it in items]
 
     seen: dict[int, dict] = {}
@@ -257,9 +317,9 @@ def _classify_batch(client: BaseAIClient, items: list[dict]) -> list[dict]:
         idx = entry.get("index")
         if not isinstance(idx, int):
             continue
-        t = entry.get("type", "body")
-        if t not in VALID_TYPES:
-            t = "body"
+        t = entry.get("type", fallback)
+        if t not in allowed:
+            t = fallback
         try:
             conf = max(0.0, min(1.0, float(entry.get("confidence", 0.5))))
         except Exception:
@@ -272,15 +332,40 @@ def _classify_batch(client: BaseAIClient, items: list[dict]) -> list[dict]:
         if it["index"] in seen:
             out.append(seen[it["index"]])
         else:
-            out.append({"index": it["index"], "type": "body",
+            out.append({"index": it["index"], "type": fallback,
                         "confidence": 0.3, "reason": "AI未返回该段索引"})
     return out
 
 
+def _split_into_batches(paragraphs: list[dict], batch_size: int) -> list[tuple[str | None, list[dict]]]:
+    """按大块切成连续段，再按 batch_size 分批。每批同属一个大块。"""
+    segments: list[tuple[str | None, list[dict]]] = []
+    cur_block = _UNSET = object()
+    seg: list[dict] = []
+    for p in paragraphs:
+        b = p.get("block")
+        if b != cur_block:
+            if seg:
+                segments.append((cur_block, seg))
+            cur_block, seg = b, [p]
+        else:
+            seg.append(p)
+    if seg:
+        segments.append((cur_block, seg))
+
+    tasks: list[tuple[str | None, list[dict]]] = []
+    for block, items in segments:
+        for i in range(0, len(items), batch_size):
+            tasks.append((block, items[i:i + batch_size]))
+    return tasks
+
+
 def classify_paragraphs_batch(paragraphs: list[dict], batch_size: int = None) -> list[dict]:
     """
-    批量识别。
-    paragraphs: [{"index": int, "text": str}, ...]（仅非空段落）
+    分块批量识别。
+    paragraphs: [{"index": int, "text": str, "block"?: str}, ...]（仅非空段落）
+        block 由 parser 预扫描得出（toc/abstract/body/conclusion/references）；
+        缺省时不约束类型（退化为全类型识别）。
     返回: [{"index": int, "type": str, "confidence": float, "reason": str}, ...]
     """
     if not paragraphs:
@@ -288,32 +373,34 @@ def classify_paragraphs_batch(paragraphs: list[dict], batch_size: int = None) ->
 
     client = get_ai_client()
     batch_size = batch_size or BATCH_SIZE
-    total = len(paragraphs)
-    chunks = [paragraphs[i:i + batch_size] for i in range(0, total, batch_size)]
-    n_batches = len(chunks)
+    tasks = _split_into_batches(paragraphs, batch_size)
+    n_batches = len(tasks)
     workers = min(AI_BATCH_CONCURRENCY, n_batches)
-    logger.info("批量识别：%d 段 -> %d 批（每批≤%d，并发 %d）",
-                total, n_batches, batch_size, workers)
+    logger.info("批量识别：%d 段 -> %d 批（每批≤%d，并发 %d，按大块约束类型）",
+                len(paragraphs), n_batches, batch_size, workers)
 
-    def _run(bi: int, chunk: list[dict]) -> list[dict]:
-        logger.info("识别批 %d/%d（段 %d-%d）",
-                    bi + 1, n_batches, chunk[0]["index"], chunk[-1]["index"])
-        return _classify_batch(client, chunk)
+    def _run(bi: int, block: str | None, chunk: list[dict]) -> list[dict]:
+        logger.info("识别批 %d/%d [%s]（段 %d-%d）", bi + 1, n_batches,
+                    BLOCK_LABELS.get(block, "?"), chunk[0]["index"], chunk[-1]["index"])
+        return _classify_batch(client, chunk, block)
 
     batch_results: list[list[dict] | None] = [None] * n_batches
     with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="ai-batch") as pool:
-        futures = {pool.submit(_run, bi, chunk): bi for bi, chunk in enumerate(chunks)}
+        futures = {pool.submit(_run, bi, block, chunk): bi
+                   for bi, (block, chunk) in enumerate(tasks)}
         for fut in as_completed(futures):
             bi = futures[fut]
+            block, chunk = tasks[bi]
             try:
                 batch_results[bi] = fut.result()
             except AIFatalError:
                 raise
             except Exception as e:
-                logger.warning("批 %d/%d 失败，整批回退 body: %s", bi + 1, n_batches, e)
-                batch_results[bi] = [{"index": it["index"], "type": "body",
+                fb = _default_type(block)
+                logger.warning("批 %d/%d 失败，整批回退 %s: %s", bi + 1, n_batches, fb, e)
+                batch_results[bi] = [{"index": it["index"], "type": fb,
                                       "confidence": 0.3, "reason": f"批识别失败: {e}"}
-                                     for it in chunks[bi]]
+                                     for it in chunk]
 
     results: list[dict] = []
     for part in batch_results:
