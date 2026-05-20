@@ -11,11 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装Python依赖
+# 构建上下文应为仓库根目录
 COPY backend/requirements.txt /app/backend/requirements.txt
 RUN pip install -r /app/backend/requirements.txt
 
-# 复制代码（构建上下文应为仓库根目录）
 COPY backend /app/backend
 COPY config /app/config
 

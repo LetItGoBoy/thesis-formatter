@@ -24,18 +24,16 @@ export default function UploadPage() {
     setLoading(true);
     setProgressText("正在上传并解析文档...");
     try {
-      // 读取base64留存原始docx，格式化时回传
       const buf = await file.arrayBuffer();
       const base64 = btoa(
         new Uint8Array(buf).reduce((acc, b) => acc + String.fromCharCode(b), "")
       );
-      setProgressText("AI正在识别段落类型...");
+      setProgressText("AI正在批量识别段落类型...");
       const data = await parseDocx(file);
       setSource(file.name, base64, data.paragraphs);
       router.push("/review");
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(msg);
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
       setProgressText("");
@@ -86,11 +84,9 @@ export default function UploadPage() {
             onChange={onChange}
           />
           <div className="text-5xl mb-4">📄</div>
-          <p className="text-lg font-medium mb-2">
-            点击或拖拽上传 .docx 论文文件
-          </p>
+          <p className="text-lg font-medium mb-2">点击或拖拽上传 .docx 论文文件</p>
           <p className="text-sm text-slate-500">
-            上传后AI将识别每段类型，您逐段确认后即可一键格式化
+            上传后AI批量识别每段类型，分块确认后即可一键格式化
           </p>
         </div>
 
@@ -108,17 +104,13 @@ export default function UploadPage() {
         )}
 
         <div className="mt-8 text-center">
-          <Button
-            variant="outline"
-            onClick={() => inputRef.current?.click()}
-            disabled={loading}
-          >
+          <Button variant="outline" onClick={() => inputRef.current?.click()} disabled={loading}>
             选择文件
           </Button>
         </div>
 
         <footer className="mt-12 text-center text-xs text-slate-400">
-          支持中英文混排 · 自动三线表 · 表格不跨页
+          中英文混排 Times New Roman · 三线表 · 五大块分页
         </footer>
       </div>
     </main>

@@ -36,21 +36,18 @@ export default function ReviewPage() {
 
   const [formatting, setFormatting] = useState(false);
   const [error, setError] = useState("");
-  const [previewBlocks, setPreviewBlocks] = useState<Record<BlockKey, boolean>>(
-    {
-      toc: true,
-      abstract: true,
-      body: true,
-      conclusion: true,
-      references: true,
-    }
-  );
+  const [previewBlocks, setPreviewBlocks] = useState<Record<BlockKey, boolean>>({
+    toc: true,
+    abstract: true,
+    body: true,
+    conclusion: true,
+    references: true,
+  });
 
   useEffect(() => {
     if (paragraphs.length === 0) router.replace("/");
   }, [paragraphs.length, router]);
 
-  // 按 block 分组
   const grouped = useMemo(() => {
     const g: Record<BlockKey, Paragraph[]> = {
       toc: [],
@@ -61,8 +58,7 @@ export default function ReviewPage() {
     };
     for (const p of paragraphs) {
       const blk = (p.block as BlockKey) || blockOf(p.type);
-      if (g[blk]) g[blk].push(p);
-      else g.body.push(p);
+      (g[blk] || g.body).push(p);
     }
     for (const k of Object.keys(g) as BlockKey[]) {
       g[k].sort((a, b) => a.index - b.index);
@@ -92,7 +88,6 @@ export default function ReviewPage() {
   return (
     <main className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* 顶部 */}
         <header className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur py-4 mb-4 border-b">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <div>
@@ -103,18 +98,10 @@ export default function ReviewPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/")}
-              >
+              <Button variant="outline" size="sm" onClick={() => router.push("/")}>
                 重新上传
               </Button>
-              <Button
-                size="md"
-                disabled={!allConfirmed || formatting}
-                onClick={handleFormat}
-              >
+              <Button size="md" disabled={!allConfirmed || formatting} onClick={handleFormat}>
                 {formatting
                   ? "格式化中..."
                   : allConfirmed
@@ -132,18 +119,13 @@ export default function ReviewPage() {
           </div>
         )}
 
-        {/* 五个大块 */}
         <div className="space-y-8">
           {BLOCKS.map((blk) => {
             const items = grouped[blk.key];
             const itemConfirmed = items.filter((p) => p.confirmed).length;
-            const allBlockConfirmed =
-              items.length > 0 && itemConfirmed === items.length;
+            const allBlockConfirmed = items.length > 0 && itemConfirmed === items.length;
             return (
-              <section
-                key={blk.key}
-                className="rounded-2xl bg-white border border-slate-200 shadow-sm"
-              >
+              <section key={blk.key} className="rounded-2xl bg-white border border-slate-200 shadow-sm">
                 <header className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
                   <div>
                     <h2 className="text-lg font-bold">
@@ -157,9 +139,7 @@ export default function ReviewPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() =>
-                        setPreviewBlocks((s) => ({ ...s, [blk.key]: !s[blk.key] }))
-                      }
+                      onClick={() => setPreviewBlocks((s) => ({ ...s, [blk.key]: !s[blk.key] }))}
                     >
                       {previewBlocks[blk.key] ? "隐藏预览" : "显示预览"}
                     </Button>
@@ -174,7 +154,6 @@ export default function ReviewPage() {
                 </header>
 
                 <div className="grid lg:grid-cols-2 gap-6 p-4">
-                  {/* 左：段落编辑 */}
                   <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
                     {items.length === 0 ? (
                       <div className="text-center text-slate-400 text-sm py-8">
@@ -194,10 +173,7 @@ export default function ReviewPage() {
                     )}
                   </div>
 
-                  {/* 右：重构预览 */}
-                  {previewBlocks[blk.key] && (
-                    <BlockPreview block={blk.key} paragraphs={items} />
-                  )}
+                  {previewBlocks[blk.key] && <BlockPreview block={blk.key} paragraphs={items} />}
                 </div>
               </section>
             );
@@ -205,11 +181,7 @@ export default function ReviewPage() {
         </div>
 
         <div className="mt-8 pb-12 flex justify-end">
-          <Button
-            size="lg"
-            disabled={!allConfirmed || formatting}
-            onClick={handleFormat}
-          >
+          <Button size="lg" disabled={!allConfirmed || formatting} onClick={handleFormat}>
             {formatting
               ? "格式化中..."
               : allConfirmed
@@ -222,9 +194,6 @@ export default function ReviewPage() {
   );
 }
 
-// ============================================================
-// 单段编辑行
-// ============================================================
 function ParagraphRow({
   p,
   blockKey,
@@ -250,16 +219,11 @@ function ParagraphRow({
         ${isLow ? "border-l-4 border-l-orange-400" : ""}
       `}
     >
-      {isLow && (
-        <div className="mb-2 text-xs text-orange-600">
-          ⚠️ 置信度低，请仔细核对
-        </div>
-      )}
+      {isLow && <div className="mb-2 text-xs text-orange-600">⚠️ 置信度低，请仔细核对</div>}
 
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <Badge variant="muted">#{p.index + 1}</Badge>
 
-        {/* 主下拉：当前 block 的类型 */}
         <Select
           value={p.type}
           onChange={(e) => onUpdate(p.index, { type: e.target.value })}
@@ -272,7 +236,6 @@ function ParagraphRow({
               </option>
             ))}
           </optgroup>
-          {/* 允许跨块改类型；选中后该段会自动转到另一块 */}
           <optgroup label="── 移到其他大块 ──">
             {(Object.keys(TYPES_BY_BLOCK) as BlockKey[])
               .filter((k) => k !== blockKey)
@@ -306,14 +269,10 @@ function ParagraphRow({
         {p.confirmed ? (
           <Badge variant="success">已确认</Badge>
         ) : (
-          <Badge variant={isLow ? "warning" : "default"}>
-            {TYPE_LABEL[p.type] || p.type}
-          </Badge>
+          <Badge variant={isLow ? "warning" : "default"}>{TYPE_LABEL[p.type] || p.type}</Badge>
         )}
 
-        {movedFromOriginal && (
-          <Badge variant="warning">已移块</Badge>
-        )}
+        {movedFromOriginal && <Badge variant="warning">已移块</Badge>}
       </div>
 
       <Textarea

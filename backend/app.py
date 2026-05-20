@@ -1,11 +1,17 @@
 """
 论文格式化工具 - Flask主应用
 backend/app.py
+
+接口：
+  POST /api/parse   multipart/form-data, 字段 file(.docx)
+                    -> {paragraphs:[{index, type, text, confidence, block}]}
+  POST /api/format  {paragraphs:[{index, type, text}], template, docx_base64?}
+                    -> .docx 文件流
 """
 import os
-import io
 import sys
 import json
+import base64
 import logging
 import traceback
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
@@ -19,9 +25,6 @@ from lib.formatter import format_docx
 
 load_dotenv()
 
-# ============================================================
-# 日志配置：stdout即时刷新，便于在容器中实时查看
-# ============================================================
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -34,14 +37,21 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 FLASK_PORT = int(os.environ.get("FLASK_PORT", 5000))
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", 20))
-# 整个 /api/parse 接口的最长等待时间（秒）。超过此时长直接返回错误，避免前端无限转圈。
-PARSE_TIMEOUT_SEC = float(os.environ.get("PARSE_TIMEOUT", 30))
+PARSE_TIMEOUT_SEC = float(os.environ.get("PARSE_TIMEOUT", 60))
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
+# 格式规则只从 config/formats/ 下的 JSON 读取，不硬编码
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "config", "formats")
 
-# 用于带超时执行parse_docx
 _parse_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="parse")
+
+
+def _load_template(template: str) -> dict | None:
+    path = os.path.join(CONFIG_DIR, f"{template}.json")
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 @app.route("/api/health", methods=["GET"])
@@ -57,7 +67,6 @@ def health():
 def api_parse():
     if "file" not in request.files:
         return jsonify({"error": "缺少file字段"}), 400
-
     file = request.files["file"]
     if not file.filename:
         return jsonify({"error": "文件名为空"}), 400
@@ -65,28 +74,23 @@ def api_parse():
         return jsonify({"error": "仅支持.docx文件"}), 400
 
     file_bytes = file.read()
-    logger.info("收到/api/parse请求: file=%s size=%dB timeout=%.0fs",
-                file.filename, len(file_bytes), PARSE_TIMEOUT_SEC)
+    logger.info("收到 /api/parse: file=%s size=%dB", file.filename, len(file_bytes))
 
     future = _parse_executor.submit(parse_docx, file_bytes)
     try:
         paragraphs = future.result(timeout=PARSE_TIMEOUT_SEC)
-        logger.info("解析成功: %d段", len(paragraphs))
+        logger.info("解析成功: %d 段", len(paragraphs))
         return jsonify({"paragraphs": paragraphs})
     except FutureTimeout:
-        # 注意：线程不能强制中断，但response立即返回，避免前端挂死
         future.cancel()
-        logger.error("解析超时（>%.0fs）", PARSE_TIMEOUT_SEC)
+        logger.error("解析超时 (>%.0fs)", PARSE_TIMEOUT_SEC)
         return jsonify({
             "error": (
-                f"AI识别超时（{int(PARSE_TIMEOUT_SEC)}秒未完成）。"
-                "请检查：(1) AI_PROVIDER 和对应 API_KEY 是否正确 "
-                "(2) 后端容器是否能访问AI服务 "
-                "(3) 论文段落数是否过多（可调大 PARSE_TIMEOUT 环境变量）"
+                f"AI识别超时（{int(PARSE_TIMEOUT_SEC)}秒）。请检查 AI_PROVIDER / API_KEY "
+                "是否正确，后端是否能访问AI服务，或调大 PARSE_TIMEOUT。"
             )
         }), 504
     except ParseError as e:
-        # parser内部抛出的用户可读错误
         logger.error("解析失败: %s", e)
         return jsonify({"error": str(e)}), 500
     except Exception as e:
@@ -107,19 +111,12 @@ def api_format():
     if not paragraphs:
         return jsonify({"error": "缺少paragraphs字段"}), 400
 
-    template_path = os.path.join(CONFIG_DIR, f"{template}.json")
-    if not os.path.exists(template_path):
+    format_config = _load_template(template)
+    if format_config is None:
         return jsonify({"error": f"未找到模板: {template}"}), 400
 
-    with open(template_path, "r", encoding="utf-8") as f:
-        format_config = json.load(f)
-
     try:
-        source_bytes = None
-        if docx_b64:
-            import base64
-            source_bytes = base64.b64decode(docx_b64)
-
+        source_bytes = base64.b64decode(docx_b64) if docx_b64 else None
         output_stream = format_docx(
             paragraphs=paragraphs,
             format_config=format_config,

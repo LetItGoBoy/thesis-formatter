@@ -1,6 +1,7 @@
 /**
  * 后端API封装
  * frontend/lib/api.ts
+ * 后端地址从环境变量 NEXT_PUBLIC_API_URL 读取。
  */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -22,10 +23,7 @@ export interface ParseResponse {
 export async function parseDocx(file: File): Promise<ParseResponse> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_BASE}/api/parse`, {
-    method: "POST",
-    body: form,
-  });
+  const res = await fetch(`${API_BASE}/api/parse`, { method: "POST", body: form });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || `解析失败 (HTTP ${res.status})`);

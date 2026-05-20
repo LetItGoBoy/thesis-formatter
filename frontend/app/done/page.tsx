@@ -8,7 +8,7 @@ import { useThesisStore } from "@/lib/store";
 export default function DonePage() {
   const router = useRouter();
   const { outputBlob, fileName, reset } = useThesisStore();
-  const [downloadUrl, setDownloadUrl] = useState<string>("");
+  const [downloadUrl, setDownloadUrl] = useState("");
 
   useEffect(() => {
     if (!outputBlob) {
@@ -36,9 +36,7 @@ export default function DonePage() {
       <div className="w-full max-w-xl text-center">
         <div className="text-6xl mb-6">🎉</div>
         <h1 className="text-2xl font-bold mb-2">格式化完成</h1>
-        <p className="text-slate-600 mb-8">
-          您的论文已按呼伦贝尔学院标准格式重新排版
-        </p>
+        <p className="text-slate-600 mb-8">您的论文已按呼伦贝尔学院标准格式重新排版</p>
 
         <div className="rounded-2xl bg-white border p-8 mb-6">
           <div className="text-4xl mb-3">📥</div>
