@@ -230,22 +230,25 @@ def _apply_paragraph_style(paragraph, ptype, style):
         pf.line_spacing = float(ls)
         pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
 
-    if style.get("space_before_pt") is not None:
-        pf.space_before = Pt(float(style["space_before_pt"]))
-    if style.get("space_after_pt") is not None:
-        pf.space_after = Pt(float(style["space_after_pt"]))
+    pf.space_before = Pt(float(style.get("space_before_pt", 0)))
+    pf.space_after  = Pt(float(style.get("space_after_pt",  0)))
 
     pt = float(style.get("font_size_pt", 12))
-    indent_chars = style.get("first_line_indent_chars", 0)
-    hanging = style.get("hanging_indent_chars", 0)
+    first_chars = style.get("first_line_indent_chars", 0)
+    hanging     = style.get("hanging_indent_chars", 0)
+    left_chars  = style.get("indent_chars", 0)          # 整段左缩进（目录二/三级）
     if hanging and hanging > 0:
-        pf.left_indent = Pt(hanging * pt)
+        pf.left_indent       = Pt(hanging * pt)
         pf.first_line_indent = Pt(-hanging * pt)
-    elif indent_chars and indent_chars > 0:
-        pf.first_line_indent = Pt(indent_chars * pt)
+    elif left_chars and int(left_chars) > 0:
+        pf.left_indent       = Pt(int(left_chars) * pt)
+        pf.first_line_indent = Pt(0)                    # 显式清零，防继承
+    elif first_chars and first_chars > 0:
+        pf.first_line_indent = Pt(first_chars * pt)
+        pf.left_indent       = None
     else:
         pf.first_line_indent = None
-        pf.left_indent = None
+        pf.left_indent       = None
 
     if style.get("page_break_before"):
         pf.page_break_before = True
@@ -352,6 +355,35 @@ def _block_of(ptype, styles):
 
 
 # ============================================================
+# 目录点状前导线
+# ============================================================
+_TOC_ENTRY_RE = re.compile(r'^(.+?)[\s.·]+(\d{1,4})\s*$')
+
+
+def _split_toc_entry(text: str):
+    """分离目录条目的标题与页码。无页码时返回 (text, None)。"""
+    m = _TOC_ENTRY_RE.match(text.strip())
+    if m and m.group(1).strip():
+        return m.group(1).strip(), m.group(2)
+    return text, None
+
+
+def _add_dot_leader_tab(paragraph, text_width_twips: int):
+    """在段落上设置右对齐+点状前导符制表位（位置=正文宽度，单位：twip）。"""
+    pPr = paragraph._p.get_or_add_pPr()
+    old = pPr.find(qn("w:tabs"))
+    if old is not None:
+        pPr.remove(old)
+    tabs_el = OxmlElement("w:tabs")
+    tab = OxmlElement("w:tab")
+    tab.set(qn("w:val"), "right")
+    tab.set(qn("w:leader"), "dot")
+    tab.set(qn("w:pos"), str(text_width_twips))
+    tabs_el.append(tab)
+    pPr.append(tabs_el)
+
+
+# ============================================================
 # 主入口：重建 .docx
 # ============================================================
 def format_docx(paragraphs, format_config, source_bytes=None):
@@ -366,6 +398,14 @@ def format_docx(paragraphs, format_config, source_bytes=None):
     _apply_page_settings(doc, format_config.get("page", {}))
     disable_doc_grid(doc)
 
+    # 正文宽度（twip）= (A4宽 - 左边距 - 右边距) × 567 twip/cm
+    _page = format_config.get("page", {})
+    _text_w_twips = int((
+        21.0
+        - float(_page.get("margin_left_cm",  3.0))
+        - float(_page.get("margin_right_cm", 2.0))
+    ) * 567)
+
     ordered = sorted(paragraphs, key=lambda p: p.get("index", 0))
 
     last_block = None
@@ -375,13 +415,27 @@ def format_docx(paragraphs, format_config, source_bytes=None):
         text = _normalize_text(p.get("text", ""), ptype, style)
 
         para = doc.add_paragraph()
-        para.add_run(text)
 
         # 大块切换 -> 另起一页
         cur_block = _block_of(ptype, styles)
         if last_block is not None and cur_block != last_block:
             para.paragraph_format.page_break_before = True
         last_block = cur_block
+
+        # 目录条目：右对齐点状前导制表位 + 分离页码
+        if ptype in ("toc_h1", "toc_h2", "toc_h3"):
+            title, pagenum = _split_toc_entry(text)
+            if pagenum:
+                _add_dot_leader_tab(para, _text_w_twips)
+                para.add_run(title)
+                tab_r = OxmlElement("w:r")
+                tab_r.append(OxmlElement("w:tab"))
+                para._p.append(tab_r)
+                para.add_run(pagenum)
+            else:
+                para.add_run(text)
+        else:
+            para.add_run(text)
 
         _apply_paragraph_style(para, ptype, style)
 
