@@ -15,8 +15,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger("thesis.ai")
 
-AI_TIMEOUT = float(os.environ.get("AI_TIMEOUT", 30))
-BATCH_SIZE = int(os.environ.get("AI_BATCH_SIZE", 25))
+AI_TIMEOUT = float(os.environ.get("AI_TIMEOUT", 120))
+# 默认批大小放大到可容纳整篇论文 -> 等效"整片识别"，让 AI 通读全文语义定边界。
+# 需配合大上下文模型（deepseek-chat 64k / moonshot-v1-128k 等）；
+# 文档超大时仍会自动切成多批兜底。
+BATCH_SIZE = int(os.environ.get("AI_BATCH_SIZE", 400))
 PARA_TEXT_TRUNC = int(os.environ.get("AI_PARA_TRUNC", 300))
 # 并发批数上限：默认 3 以匹配 Moonshot 账号的组织并发上限，避免 429 限流。
 # 账号配额更高时可在 .env 调大 AI_BATCH_CONCURRENCY。
@@ -230,7 +233,47 @@ def _default_type(block: str | None) -> str:
     return BLOCK_DEFAULT_TYPE.get(block, "body")
 
 
+def _build_whole_doc_prompt() -> str:
+    """整片识别提示词：AI 通读全文，按语义+上下文判断边界与类型。"""
+    lines = [
+        "你是学术论文段落格式分类助手。下面是一篇本科毕业论文从「目录」开始的全部段落"
+        "（封面和原创性声明已被去除）。请先通读全文、理解整体结构，再逐段分类，输出JSON数组。",
+        "",
+        "论文结构顺序通常为：目录 → 摘要(中文/英文) → 正文(若干章) → 总结 → 参考文献(可能含致谢)。",
+        "请结合段落的语义和上下文判断它属于哪一部分、是什么类型，不要只凭是否含某个关键词。",
+        "",
+        "重要判断要点：",
+        "- 章标题不一定有「第X章」前缀，可能直接写「绪论」「结论」等；若其后跟着 1.1 / 1.2 这类小节，它就是一级标题 h1。",
+        "- 「摘要」之前可能重复出现论文题目页（题目 / 作者 / 学号 / 专业 / 指导教师），这些属于摘要部分"
+        "（paper_title / author_line / instructor），不是目录。",
+        "- 只有带页码的目录条目才是 toc_*；正文里的标题是 h1 / h2 / h3。",
+        "",
+        "全部可用类型（按所在部分分组）：",
+    ]
+    for blk in ("toc", "abstract", "body", "conclusion", "references"):
+        lines.append(f"【{BLOCK_LABELS[blk]}】")
+        for t in BLOCK_TYPES[blk]:
+            lines.append(f"- {t}: {TYPE_DESC.get(t, t)}")
+    lines += [
+        "",
+        "输出规则（极重要）：",
+        "1. 只输出JSON数组，不要markdown标记、不要解释",
+        "2. 元素数必须等于输入段落数，每段都分类，一段都不能漏",
+        '3. 每元素格式：{"index": 数字, "type": "类型", "confidence": 0~1小数}',
+        "4. index 必须精确等于输入方括号中的编号",
+        "5. type 只能用上面列出的类型",
+    ]
+    return "\n".join(lines)
+
+
+_WHOLE_DOC_SYSTEM_PROMPT = _build_whole_doc_prompt()
+
+
 def _build_system_prompt(block: str | None) -> str:
+    # 无 block 约束 -> 整片语义识别（parser 跳过封面/声明后默认走这条）
+    if block is None:
+        return _WHOLE_DOC_SYSTEM_PROMPT
+
     types = _allowed_types(block)
     label = BLOCK_LABELS.get(block, "论文")
     head = (f"你是学术论文段落格式分类助手。下面这一批段落都来自论文的【{label}】部分，"
