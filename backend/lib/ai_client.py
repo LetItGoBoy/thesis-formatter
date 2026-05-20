@@ -16,10 +16,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 logger = logging.getLogger("thesis.ai")
 
 AI_TIMEOUT = float(os.environ.get("AI_TIMEOUT", 120))
-# 默认批大小放大到可容纳整篇论文 -> 等效"整片识别"，让 AI 通读全文语义定边界。
-# 需配合大上下文模型（deepseek-chat 64k / moonshot-v1-128k 等）；
-# 文档超大时仍会自动切成多批兜底。
-BATCH_SIZE = int(os.environ.get("AI_BATCH_SIZE", 400))
+# 模型单次输出 token 上限。整片识别要为每段回写一条 JSON，输出量大；
+# 不显式设置时各家默认很小（DeepSeek 4096 / Moonshot 类似），会把 JSON 数组截断，
+# 导致解析失败 -> 整批回退成 body/0.3（页面全是"正文 30%"即此症状）。
+AI_MAX_TOKENS = int(os.environ.get("AI_MAX_TOKENS", 8192))
+# 批大小：一批的输出（每段约 50~60 token）须能放进 AI_MAX_TOKENS，否则会被截断。
+# 8192 输出 ≈ 容纳 ~130 段；取 120 留余量。仍走整片语义 prompt（block=None），
+# 批边界不强制类型，且解析不全时会自动二分重试，故不影响边界识别。
+BATCH_SIZE = int(os.environ.get("AI_BATCH_SIZE", 120))
 PARA_TEXT_TRUNC = int(os.environ.get("AI_PARA_TRUNC", 300))
 # 并发批数上限：默认 3 以匹配 Moonshot 账号的组织并发上限，避免 429 限流。
 # 账号配额更高时可在 .env 调大 AI_BATCH_CONCURRENCY。
@@ -73,6 +77,7 @@ class _OpenAICompatClient(BaseAIClient):
             messages=[{"role": "system", "content": system_prompt},
                       {"role": "user", "content": user_message}],
             temperature=0.1,
+            max_tokens=AI_MAX_TOKENS,
             timeout=AI_TIMEOUT,
         )
         return r.choices[0].message.content
@@ -123,7 +128,7 @@ class ClaudeClient(BaseAIClient):
 
     def chat(self, system_prompt, user_message):
         m = self.client.messages.create(
-            model=self.model, max_tokens=4096,
+            model=self.model, max_tokens=AI_MAX_TOKENS,
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
             timeout=AI_TIMEOUT,
@@ -338,20 +343,46 @@ def _chat_with_retry(client: BaseAIClient, system_prompt: str, user_msg: str) ->
             raise
 
 
-def _classify_batch(client: BaseAIClient, items: list[dict], block: str | None) -> list[dict]:
+def _coverage(arr: list, items: list[dict]) -> int:
+    """arr 中命中本批 index 的条目数（衡量响应是否被截断/遗漏）。"""
+    if not arr:
+        return 0
+    want = {it["index"] for it in items}
+    got = {e.get("index") for e in arr if isinstance(e, dict)}
+    return len(want & got)
+
+
+def _classify_batch(client: BaseAIClient, items: list[dict], block: str | None,
+                    depth: int = 0) -> list[dict]:
     user_msg = _build_batch_user_message(items)
     response = _chat_with_retry(client, _build_system_prompt(block), user_msg)
 
     allowed = set(_allowed_types(block))
     fallback = _default_type(block)
 
+    arr = None
+    parse_err = None
     try:
         arr = _extract_json_array(response)
     except Exception as e:
+        parse_err = e
+
+    # 解析失败、或覆盖率过低（多半是输出被 max_tokens 截断）：二分重试，
+    # 而不是整批回退成 body/0.3。每个子批输出更短，能完整放进 AI_MAX_TOKENS。
+    covered = _coverage(arr, items) if arr else 0
+    if (arr is None or covered < len(items) * 0.8) and len(items) > 1 and depth < 5:
+        mid = len(items) // 2
+        logger.warning("批输出疑似截断/不全（命中 %d/%d），二分重试 depth=%d",
+                       covered, len(items), depth)
+        left = _classify_batch(client, items[:mid], block, depth + 1)
+        right = _classify_batch(client, items[mid:], block, depth + 1)
+        return left + right
+
+    if arr is None:
         logger.warning("批响应解析失败，整批回退 %s: %s | %s",
-                       fallback, e, (response or "")[:200])
+                       fallback, parse_err, (response or "")[:200])
         return [{"index": it["index"], "type": fallback, "confidence": 0.3,
-                 "reason": f"批响应解析失败: {e}"} for it in items]
+                 "reason": f"批响应解析失败: {parse_err}"} for it in items]
 
     seen: dict[int, dict] = {}
     for entry in arr:
