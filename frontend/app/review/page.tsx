@@ -243,15 +243,16 @@ export default function ReviewPage() {
 
 function InsertDivider({ onClick }: { onClick: () => void }) {
   return (
-    <div className="group relative h-3 my-0.5 flex items-center justify-center">
+    <div className="group relative h-6 flex items-center justify-center">
+      <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-indigo-200 group-hover:border-indigo-400 transition" />
       <button
         type="button"
         onClick={onClick}
-        className="opacity-0 group-hover:opacity-100 transition flex items-center gap-1 rounded-full border border-dashed border-indigo-300 bg-white px-2 py-0.5 text-xs text-indigo-600 hover:bg-indigo-50"
+        className="relative z-10 flex items-center gap-1 rounded-full border border-dashed border-indigo-300 bg-white px-2.5 py-0.5 text-xs text-indigo-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition shadow-sm"
+        title="在此处插入一个新段落"
       >
         ＋ 在此插入段落
       </button>
-      <div className="absolute inset-x-0 top-1/2 -z-0 border-t border-dashed border-transparent group-hover:border-indigo-200" />
     </div>
   );
 }

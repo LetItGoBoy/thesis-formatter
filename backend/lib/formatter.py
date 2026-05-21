@@ -177,20 +177,36 @@ def _apply_mixed_font(paragraph, chinese_font, ascii_font, pt, bold):
 # ============================================================
 # 文本归一化
 # ============================================================
+# 关键词类型 → 前缀与是否首字母大写（config 未显式标记 is_keywords，按类型识别）
+_KEYWORDS_META = {
+    "keywords_cn": {"prefix": "关键词：", "capitalize": False},
+    "keywords_en": {"prefix": "Keywords:", "capitalize": True},
+}
+
+
 def _normalize_text(text, ptype, style):
     if text is None:
         return ""
 
-    if style.get("is_keywords"):
-        prefix = style.get("keywords_prefix", "")
+    kw = _KEYWORDS_META.get(ptype)
+    if kw or style.get("is_keywords"):
+        prefix = kw["prefix"] if kw else style.get("keywords_prefix", "")
+        capitalize = kw["capitalize"] if kw else False
         body = text
         for p in [prefix, prefix.rstrip(":：") + ":", prefix.rstrip(":：") + "："]:
             if p and body.startswith(p):
                 body = body[len(p):]
                 break
-        # 关键词分隔符统一换为全角空格
-        body = re.sub(r"[;；,，、\s]+", FULL_WIDTH_SPACE, body).strip(FULL_WIDTH_SPACE)
-        return f"{prefix}{FULL_WIDTH_SPACE}{body}" if prefix else body
+        body = body.strip().rstrip("。.")
+        if capitalize:
+            # 英文：仅按标点切分（保留词内空格如"smart cane"），每个关键词首字母大写
+            parts = [w.strip() for w in re.split(r"[;；,，、]+", body) if w.strip()]
+            parts = [w[0].upper() + w[1:] if w else w for w in parts]
+        else:
+            # 中文：按标点和空白切分
+            parts = [w for w in re.split(r"[;；,，、\s]+", body) if w]
+        joined = FULL_WIDTH_SPACE.join(parts)
+        return f"{prefix}{FULL_WIDTH_SPACE}{joined}" if prefix else joined
 
     # 作者行：将"作者"补全角空格，使其与"指导教师"等宽，居中时视觉对齐
     if ptype == "author_line":

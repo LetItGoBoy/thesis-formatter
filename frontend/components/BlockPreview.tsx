@@ -31,6 +31,7 @@ interface RenderStyle {
   fixed?: string;
   isKeywords?: boolean;
   keywordPrefix?: string;
+  capitalizeWords?: boolean;
   isChapterTitle?: boolean;
   pageBreakBefore?: boolean;
 }
@@ -51,7 +52,7 @@ const STYLES: Record<string, RenderStyle> = {
   keywords_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "关键词：" },
   abstract_title_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", fixed: "Abstract", pageBreakBefore: true },
   abstract_body_en: { chineseFont: "Times New Roman", ptSize: 12, align: "justify", indent: 2 },
-  keywords_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "Keywords:" },
+  keywords_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "Keywords:", capitalizeWords: true },
 
   // body
   h1: { chineseFont: "宋体", ptSize: 15, bold: true, align: "center", isChapterTitle: true },
@@ -91,7 +92,7 @@ function normalizeText(text: string, type: string): string {
     if (bare === st.fixed.replace(/\s+/g, "")) return st.fixed;
   }
 
-  // 关键词清理：所有分隔符 → 全角空格
+  // 关键词清理：所有分隔符 → 全角空格；英文关键词首字母大写
   if (st.isKeywords) {
     let body = text;
     const prefixes = [st.keywordPrefix, st.keywordPrefix?.replace(/[:：]/, ":"), st.keywordPrefix?.replace(/[:：]/, "：")];
@@ -101,8 +102,17 @@ function normalizeText(text: string, type: string): string {
         break;
       }
     }
-    body = body.replace(/[;；,，、\s]+/g, "　").replace(/^　|　$/g, "");
-    return st.keywordPrefix ? `${st.keywordPrefix}　${body}` : body;
+    body = body.trim().replace(/[。.]+$/, "");
+    let parts: string[];
+    if (st.capitalizeWords) {
+      // 英文：仅按标点切分（保留词内空格），每词首字母大写
+      parts = body.split(/[;；,，、]+/).map((w) => w.trim()).filter(Boolean);
+      parts = parts.map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w));
+    } else {
+      parts = body.split(/[;；,，、\s]+/).filter(Boolean);
+    }
+    const joined = parts.join("　");
+    return st.keywordPrefix ? `${st.keywordPrefix}　${joined}` : joined;
   }
 
   // 作者行：补全角空格使"作　　者"与"指导教师"等宽，居中时视觉对齐
