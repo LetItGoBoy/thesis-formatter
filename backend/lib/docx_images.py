@@ -16,6 +16,13 @@ from docx.oxml.ns import qn
 from docx.oxml.text.paragraph import CT_P
 from docx.text.paragraph import Paragraph as DocxParagraph
 
+# VML 命名空间未注册进 python-docx 的 nsmap，qn("v:...") 会抛 KeyError('v')，
+# 故对 VML 元素直接用完整 URI 构造 Clark notation 限定名。
+_VML_NS = "urn:schemas-microsoft-com:vml"
+_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+_VML_IMAGEDATA = f"{{{_VML_NS}}}imagedata"
+_REL_ID = f"{{{_REL_NS}}}id"
+
 
 def paragraph_image_refs(paragraph: DocxParagraph) -> list[tuple[str, int | None, int | None]]:
     """返回段落内图片引用 [(rId, cx_emu, cy_emu), ...]，按出现顺序（含 DrawingML 与 VML）。"""
@@ -39,8 +46,8 @@ def paragraph_image_refs(paragraph: DocxParagraph) -> list[tuple[str, int | None
                 cx = cy = None
         refs.append((rid, cx, cy))
     # VML（老式）：<w:pict> → <v:imagedata r:id>
-    for imagedata in el.findall(".//" + qn("v:imagedata")):
-        rid = imagedata.get(qn("r:id"))
+    for imagedata in el.findall(".//" + _VML_IMAGEDATA):
+        rid = imagedata.get(_REL_ID)
         if rid:
             refs.append((rid, None, None))
     return refs
