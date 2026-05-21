@@ -22,8 +22,23 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+from docx.oxml.shape import CT_Inline
+from docx.opc.part import Part
+from docx.opc.packuri import PackURI
+from docx.image.exceptions import UnrecognizedImageError
 
 from .docx_images import extract_ordered_images
+
+# 图片关系类型 URI（OPC 规范）
+_IMG_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
+# 不被 add_picture 支持的格式的扩展名映射
+_EXT_BY_CT = {
+    "image/x-emf": "emf", "image/emf": "emf",
+    "image/x-wmf": "wmf", "image/wmf": "wmf",
+    "image/png": "png",   "image/jpeg": "jpg",
+    "image/gif": "gif",   "image/bmp": "bmp",
+    "image/tiff": "tif",
+}
 
 # 中文 + 中文标点
 CHINESE_RE = re.compile(r"[　-〿一-鿿＀-￯]")
@@ -363,6 +378,29 @@ def _set_cell_borders(cell, borders):
     tcPr.append(tcb)
 
 
+def _embed_image_raw(doc, run_el, blob, content_type, cx_emu, cy_emu, max_width_emu):
+    """直接把 blob 注册进文档包，绕过 add_picture 的格式校验（用于 EMF/WMF 等矢量图）。"""
+    if not cx_emu or cx_emu <= 0:
+        cx_emu = max_width_emu
+    if not cy_emu or cy_emu <= 0:
+        cy_emu = int(cx_emu * 3 / 4)
+    cx_emu = min(int(cx_emu), max_width_emu)
+
+    ext = _EXT_BY_CT.get(content_type, "bin")
+    # 用当前包内部件数量做唯一编号，避免 partname 冲突
+    n = sum(1 for _ in doc.part.package.iter_parts())
+    partname = PackURI(f"/word/media/img_{n}.{ext}")
+
+    img_part = Part(partname, content_type, blob, doc.part.package)
+    rId = doc.part.relate_to(img_part, _IMG_REL)
+
+    shape_id = doc.part.next_id
+    inline = CT_Inline.new_pic_inline(shape_id, rId, f"image{shape_id}.{ext}", cx_emu, cy_emu)
+    drawing = OxmlElement("w:drawing")
+    drawing.append(inline)
+    run_el.append(drawing)
+
+
 def _add_image_paragraph(doc, p, images, max_width_emu, need_page_break):
     """居中插入一张图片段落。优先用原文 image_index 取图，缺失时回退前端 image_b64。"""
     para = doc.add_paragraph()
@@ -372,10 +410,11 @@ def _add_image_paragraph(doc, p, images, max_width_emu, need_page_break):
     para.alignment = ALIGNMENT_MAP["center"]
     pf = para.paragraph_format
     pf.space_before = Pt(0)
-    pf.space_after = Pt(6)  # 图与下方题注之间留少量间距
+    pf.space_after = Pt(6)
 
     blob = None
-    cx = None
+    content_type = "image/png"
+    cx = cy = None
     img = None
     ii = p.get("image_index")
     if isinstance(ii, int) and 0 <= ii < len(images):
@@ -383,11 +422,17 @@ def _add_image_paragraph(doc, p, images, max_width_emu, need_page_break):
     if img:
         blob = img.get("blob")
         cx = img.get("cx")
+        cy = img.get("cy")
+        content_type = img.get("content_type") or content_type
     if blob is None:  # 源文件取图失败，回退前端回传的 base64（若有）
         b64 = p.get("image_b64") or ""
         if "," in b64:
             try:
-                blob = base64.b64decode(b64.split(",", 1)[1])
+                # 从 data URI 解析 content_type
+                header, data = b64.split(",", 1)
+                if ";" in header:
+                    content_type = header.split(":")[1].split(";")[0]
+                blob = base64.b64decode(data)
             except Exception:
                 blob = None
 
@@ -395,13 +440,13 @@ def _add_image_paragraph(doc, p, images, max_width_emu, need_page_break):
         para.add_run("[图片缺失]")
         return para
 
-    if cx and cx > 0:
-        width = Emu(min(int(cx), max_width_emu))
-    else:
-        width = Emu(max_width_emu)
+    width_emu = Emu(min(int(cx), max_width_emu)) if cx and cx > 0 else Emu(max_width_emu)
     run = para.add_run()
     try:
-        run.add_picture(io.BytesIO(blob), width=width)
+        run.add_picture(io.BytesIO(blob), width=width_emu)
+    except UnrecognizedImageError:
+        # EMF/WMF 等矢量图：绕过格式校验直接嵌入，Word/WPS 可原生渲染
+        _embed_image_raw(doc, run._r, blob, content_type, cx, cy, max_width_emu)
     except Exception:
         para.add_run("[图片无法载入]")
     return para
