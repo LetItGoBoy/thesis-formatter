@@ -87,6 +87,8 @@ export function CompareView({ paragraphs, onClose }: Props) {
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const syncing = useRef(false);
+  // 右侧各段 DOM 引用：用于「点击左侧段落 → 右侧滚动到对应内容」
+  const rightItemRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   // 按比例联动：源侧滚动比例 → 目标侧 scrollTop（两侧高度不同也能对齐）
   function sync(from: "l" | "r") {
@@ -100,6 +102,22 @@ export function CompareView({ paragraphs, onClose }: Props) {
     requestAnimationFrame(() => {
       syncing.current = false;
     });
+  }
+
+  // 点击左侧某段，右侧平滑滚动到对应段并高亮
+  function jumpRight(index: number) {
+    const dst = rightRef.current;
+    const el = rightItemRefs.current[index];
+    if (!dst || !el) return;
+    syncing.current = true; // 暂停联动，避免右滚又把左拉回去
+    const delta = el.getBoundingClientRect().top - dst.getBoundingClientRect().top;
+    dst.scrollTo({ top: dst.scrollTop + delta - dst.clientHeight / 3, behavior: "smooth" });
+    el.style.transition = "background-color 0.3s";
+    el.style.backgroundColor = "#fef08a";
+    setTimeout(() => {
+      el.style.backgroundColor = "";
+      syncing.current = false;
+    }, 700);
   }
 
   // 渲染时插入大块分隔（右侧体现「另起一页」）
@@ -136,7 +154,14 @@ export function CompareView({ paragraphs, onClose }: Props) {
             <div style={{ ...A4_PADDING, background: "white", minHeight: "100%" }}>
               <div className="space-y-2">
                 {paragraphs.map((p) => (
-                  <PlainParagraph key={p.index} p={p} />
+                  <div
+                    key={p.index}
+                    onClick={() => jumpRight(p.index)}
+                    className="cursor-pointer rounded hover:bg-blue-50/70 transition-colors"
+                    title="点击定位到右侧格式化结果"
+                  >
+                    <PlainParagraph p={p} />
+                  </div>
                 ))}
               </div>
             </div>
@@ -160,7 +185,12 @@ export function CompareView({ paragraphs, onClose }: Props) {
                   const isNewBlock = prevBlock !== null && blk !== prevBlock;
                   prevBlock = blk;
                   return (
-                    <div key={p.index}>
+                    <div
+                      key={p.index}
+                      ref={(el) => {
+                        rightItemRefs.current[p.index] = el;
+                      }}
+                    >
                       {isNewBlock && (
                         <div className="my-3 border-t border-dashed border-orange-300 text-xs text-orange-600 text-center bg-orange-50 py-1">
                           ↳ 另起一页（{BLOCK_LABEL[blk]}）

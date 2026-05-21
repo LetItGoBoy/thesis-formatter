@@ -249,6 +249,9 @@ _RE_H3 = re.compile(r"^\d+\.\d+\.\d+\s*\S")           # 1.1.1
 _RE_FIG = re.compile(rf"^图\s*[\d{_CH_NUM}]")
 _RE_TAB = re.compile(rf"^表\s*[\d{_CH_NUM}]")
 _RE_FIGTAB = re.compile(rf"^[图表]\s*[\d{_CH_NUM}]")
+# 题注强模式：图/表 + 编号 + 空格 + 说明文字（「图3.1所示」这种无空格的正文引用不算）
+_RE_FIG_CAP = re.compile(rf"^图\s*[\d{_CH_NUM}]+([-—.．][\d{_CH_NUM}]+)?[\s　]+\S")
+_RE_TAB_CAP = re.compile(rf"^表\s*[\d{_CH_NUM}]+([-—.．][\d{_CH_NUM}]+)?[\s　]+\S")
 _RE_KW_CN = re.compile(r"^关键词\s*[:：]")
 _RE_KW_EN = re.compile(r"^key\s*words?\s*[:：]?", re.IGNORECASE)
 _RE_NUMBERED = re.compile(r"^\d+\s*[.、]\s*\S")
@@ -370,6 +373,25 @@ def compute_rule_confidence(text: str, ptype: str) -> float:
     return max(0.10, min(0.98, score))
 
 
+# 强模式纠错：AI 常把图/表题注误判为标题/正文；这些模式极可靠，直接覆盖。
+_OVERRIDE_FROM = {"h1", "h2", "h3", "body", "numbered_item", "caption",
+                  "abstract_body_cn", "conclusion_body"}
+
+
+def apply_pattern_override(text: str, ptype: str) -> str:
+    """对极可靠的文本模式强制纠正 AI 误判，返回纠正后的类型。"""
+    t = (text or "").strip()
+    if len(t) > 50:
+        return ptype  # 长段落不是题注
+    if ptype in _OVERRIDE_FROM or ptype == "table_caption":
+        if _RE_FIG_CAP.match(t):
+            return "figure_caption"
+    if ptype in _OVERRIDE_FROM or ptype == "figure_caption":
+        if _RE_TAB_CAP.match(t):
+            return "table_caption"
+    return ptype
+
+
 def _build_whole_doc_prompt() -> str:
     """整片识别提示词：AI 通读全文，按语义+上下文判断边界与类型。"""
     lines = [
@@ -391,6 +413,8 @@ def _build_whole_doc_prompt() -> str:
         "- 关键词（keywords_cn / keywords_en）只是若干个短词，总长度极短（一般不超过 60 字，绝对不超过 80 字）。"
         "  凡是成段的长句叙述，哪怕出现在摘要部分，都绝对不要识别为 keywords_cn 或 keywords_en；"
         "  应按其所在部分识别为 abstract_body_cn 或 abstract_body_en。",
+        "- 以「图X-X」「图X.X」开头、后跟简短说明的独立短行是图说明 figure_caption；"
+        "  以「表X-X」「表X.X」开头的是表说明 table_caption。它们绝不是标题（h1/h2/h3），也不是正文。",
         "",
         "全部可用类型（按所在部分分组）：",
     ]
@@ -534,8 +558,13 @@ def _classify_batch(client: BaseAIClient, items: list[dict], block: str | None,
         t = entry.get("type", fallback)
         if t not in allowed:
             t = fallback
+        # 强模式纠错：图/表题注被误判为标题/正文时直接覆盖
+        txt = text_by_idx.get(idx, "")
+        t2 = apply_pattern_override(txt, t)
+        if t2 != t and t2 in allowed:
+            t = t2
         # 用规则置信度替代模型自报值（后者常照抄示例 0.95，无信号）
-        conf = compute_rule_confidence(text_by_idx.get(idx, ""), t)
+        conf = compute_rule_confidence(txt, t)
         seen[idx] = {"index": idx, "type": t, "confidence": conf,
                      "reason": entry.get("reason", "")}
 
