@@ -50,10 +50,11 @@ export const BLOCKS: BlockDef[] = [
     label: "正文 · Body",
     order: 3,
     commonMistakes: [
-      "图、表都要有题注，且正文中要有引用（如「如图2-1所示」）",
-      "图、表、公式编号要与所在章号对应（第2章用 图2-1、表2-1）",
+      "图、表题注编号必须用短横线，格式为 图2-1、表3-2，不能写成 图2.1、表3.2",
+      "图、表、公式都要有题注，且正文中要有引用（如「如图2-1所示」）",
+      "图片必须清晰，不能模糊；图中文字标注不得有错误或缺失",
       "章节层级要完整，出现 1.1 就应有 1.2，不要只有单个子节",
-      "不要遗漏对图表的文字说明，图表不能孤立出现",
+      "图表不能孤立出现，前后必须有正文说明",
     ],
   },
   {
@@ -109,12 +110,11 @@ export const TYPES_BY_BLOCK: Record<BlockKey, TypeOption[]> = {
     { value: "h3", label: "三级标题" },
     { value: "body", label: "正文" },
     { value: "numbered_item", label: "数字序号" },
-    { value: "table_caption", label: "表说明" },
+    { value: "table_caption", label: "表题注" },
     { value: "table", label: "表" },
     { value: "formula", label: "公式" },
     { value: "formula_number", label: "公式序号" },
-    { value: "figure_caption", label: "图说明" },
-    { value: "caption", label: "图表题注", legacy: true },
+    { value: "caption", label: "图题注" },
   ],
   conclusion: [
     { value: "conclusion_title", label: "总结标题" },
@@ -136,6 +136,7 @@ export const TYPE_TO_BLOCK: Record<string, BlockKey> = (() => {
   // 旧版兼容（不显示但需要可识别）
   m["cover"] = "abstract";
   m["future_work"] = "conclusion";
+  m["figure_caption"] = "body";  // 已从下拉框移除，但AI识别结果仍需正确归块
   return m;
 })();
 
@@ -146,6 +147,7 @@ export const TYPE_LABEL: Record<string, string> = (() => {
   );
   m["cover"] = "封面（旧版兼容）";
   m["future_work"] = "展望内容（旧版兼容）";
+  m["figure_caption"] = "图题注";
   return m;
 })();
 

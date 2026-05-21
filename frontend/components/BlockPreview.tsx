@@ -58,7 +58,7 @@ const STYLES: Record<string, RenderStyle> = {
   keywords_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "Keywords:", capitalizeWords: true },
 
   // body
-  h1: { chineseFont: "宋体", ptSize: 15, bold: true, align: "center", isChapterTitle: true },
+  h1: { chineseFont: "宋体", ptSize: 15, bold: true, align: "center", isChapterTitle: true, spaceAfterPt: 18 },
   h2: { chineseFont: "宋体", ptSize: 14, bold: true, align: "left" },
   h3: { chineseFont: "宋体", ptSize: 12, bold: true, align: "left" },
   body: { chineseFont: "宋体", ptSize: 12, align: "justify", indent: 2 },
