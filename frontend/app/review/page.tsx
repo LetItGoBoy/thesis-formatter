@@ -34,11 +34,13 @@ export default function ReviewPage() {
     confirmBlock,
     deleteParagraph,
     addParagraph,
+    addParagraphAfter,
     setOutput,
   } = useThesisStore();
 
   const [formatting, setFormatting] = useState(false);
   const [error, setError] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [previewBlocks, setPreviewBlocks] = useState<Record<BlockKey, boolean>>({
     toc: true,
     abstract: true,
@@ -46,6 +48,13 @@ export default function ReviewPage() {
     conclusion: true,
     references: true,
   });
+
+  // 预览点击 → 高亮并滚动到左侧对应的确认卡片
+  function focusParagraph(index: number) {
+    setSelectedIndex(index);
+    const el = document.getElementById(`para-row-${index}`);
+    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
 
   useEffect(() => {
     if (paragraphs.length === 0) router.replace("/");
@@ -135,7 +144,7 @@ export default function ReviewPage() {
                     <h2 className="text-lg font-bold">
                       {blk.order}. {blk.label}
                     </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm text-slate-500 mt-0.5">
                       共 {items.length} 段，已确认 {itemConfirmed} 段 · 将另起一页
                     </p>
                   </div>
@@ -162,7 +171,7 @@ export default function ReviewPage() {
                       <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-800">
                         ⚠️ 本块常犯内容错误（请逐条核对，格式已由系统自动对齐）
                       </div>
-                      <ul className="mt-1.5 text-xs text-amber-800 space-y-1 list-disc pl-5">
+                      <ul className="mt-1.5 text-sm text-amber-800 space-y-1 list-disc pl-5">
                         {blk.commonMistakes.map((m, i) => (
                           <li key={i}>{m}</li>
                         ))}
@@ -179,15 +188,19 @@ export default function ReviewPage() {
                       </div>
                     ) : (
                       items.map((p) => (
-                        <ParagraphRow
-                          key={p.index}
-                          p={p}
-                          blockKey={blk.key}
-                          onUpdate={updateParagraph}
-                          onConfirm={confirmParagraph}
-                          onUnconfirm={unconfirmParagraph}
-                          onDelete={deleteParagraph}
-                        />
+                        <div key={p.index}>
+                          <ParagraphRow
+                            p={p}
+                            blockKey={blk.key}
+                            selected={selectedIndex === p.index}
+                            onSelect={setSelectedIndex}
+                            onUpdate={updateParagraph}
+                            onConfirm={confirmParagraph}
+                            onUnconfirm={unconfirmParagraph}
+                            onDelete={deleteParagraph}
+                          />
+                          <InsertDivider onClick={() => addParagraphAfter(p.index)} />
+                        </div>
                       ))
                     )}
                     <Button
@@ -196,11 +209,18 @@ export default function ReviewPage() {
                       className="w-full border-dashed"
                       onClick={() => addParagraph(blk.key)}
                     >
-                      ＋ 在本块添加段落
+                      ＋ 在本块末尾添加段落
                     </Button>
                   </div>
 
-                  {previewBlocks[blk.key] && <BlockPreview block={blk.key} paragraphs={items} />}
+                  {previewBlocks[blk.key] && (
+                    <BlockPreview
+                      block={blk.key}
+                      paragraphs={items}
+                      selectedIndex={selectedIndex}
+                      onSelect={focusParagraph}
+                    />
+                  )}
                 </div>
               </section>
             );
@@ -221,9 +241,26 @@ export default function ReviewPage() {
   );
 }
 
+function InsertDivider({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="group relative h-3 my-0.5 flex items-center justify-center">
+      <button
+        type="button"
+        onClick={onClick}
+        className="opacity-0 group-hover:opacity-100 transition flex items-center gap-1 rounded-full border border-dashed border-indigo-300 bg-white px-2 py-0.5 text-xs text-indigo-600 hover:bg-indigo-50"
+      >
+        ＋ 在此插入段落
+      </button>
+      <div className="absolute inset-x-0 top-1/2 -z-0 border-t border-dashed border-transparent group-hover:border-indigo-200" />
+    </div>
+  );
+}
+
 function ParagraphRow({
   p,
   blockKey,
+  selected,
+  onSelect,
   onUpdate,
   onConfirm,
   onUnconfirm,
@@ -231,6 +268,8 @@ function ParagraphRow({
 }: {
   p: Paragraph;
   blockKey: BlockKey;
+  selected: boolean;
+  onSelect: (i: number) => void;
   onUpdate: (i: number, patch: Partial<Paragraph>) => void;
   onConfirm: (i: number) => void;
   onUnconfirm: (i: number) => void;
@@ -243,13 +282,16 @@ function ParagraphRow({
 
   return (
     <div
+      id={`para-row-${p.index}`}
+      onMouseDown={() => onSelect(p.index)}
       className={`
-        rounded-lg border p-3
+        rounded-lg border p-3 scroll-mt-4
         ${p.confirmed ? "border-green-200 bg-green-50/30" : "border-slate-200 bg-white"}
         ${isLow ? "border-l-4 border-l-orange-400" : ""}
+        ${selected ? "ring-2 ring-indigo-400 border-indigo-300" : ""}
       `}
     >
-      {isLow && <div className="mb-2 text-xs text-orange-600">⚠️ 置信度低，请仔细核对</div>}
+      {isLow && <div className="mb-2 text-sm text-orange-600">⚠️ 置信度低，请仔细核对</div>}
 
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <Badge variant="muted">#{p.index + 1}</Badge>
@@ -291,7 +333,7 @@ function ParagraphRow({
                 : "bg-orange-500"
             }
           />
-          <span className="text-xs text-slate-500 tabular-nums">
+          <span className="text-sm text-slate-500 tabular-nums">
             {(p.confidence * 100).toFixed(0)}%
           </span>
         </div>
@@ -317,7 +359,7 @@ function ParagraphRow({
           onChange={(e) => onUpdate(p.index, { text: e.target.value })}
           disabled={p.confirmed}
           rows={Math.min(6, Math.max(2, Math.ceil(p.text.length / 60) || 2))}
-          className="text-sm"
+          className="text-base leading-relaxed"
         />
       )}
 

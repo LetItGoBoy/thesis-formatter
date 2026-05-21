@@ -198,6 +198,7 @@ interface ThesisState {
   setTypeMany: (indices: number[], type: string) => void;
   deleteParagraph: (index: number) => void;
   addParagraph: (block: BlockKey) => void;
+  addParagraphAfter: (afterIndex: number) => void;
   setOutput: (blob: Blob) => void;
   reset: () => void;
 }
@@ -278,6 +279,28 @@ export const useThesisStore = create<ThesisState>((set) => ({
       const type = TYPES_BY_BLOCK[block][0].value; // 默认本块第一个类型，用户可改
       const newPara: Paragraph = {
         index: nextIndexForBlock(s.paragraphs, block),
+        text: "",
+        type,
+        confidence: 1,
+        confirmed: false,
+        block,
+      };
+      return { paragraphs: [...s.paragraphs, newPara] };
+    }),
+
+  addParagraphAfter: (afterIndex) =>
+    set((s) => {
+      const sorted = [...s.paragraphs].sort((a, b) => a.index - b.index);
+      const pos = sorted.findIndex((p) => p.index === afterIndex);
+      if (pos === -1) return {};
+      const cur = sorted[pos];
+      const block = (cur.block as BlockKey) || blockOf(cur.type);
+      const next = sorted[pos + 1];
+      // 与「下一段」取中点，保持全局顺序；若已是最后一段则 +1
+      const newIndex = next ? (cur.index + next.index) / 2 : cur.index + 1;
+      const type = TYPES_BY_BLOCK[block][0].value;
+      const newPara: Paragraph = {
+        index: newIndex,
         text: "",
         type,
         confidence: 1,

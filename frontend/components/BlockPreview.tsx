@@ -235,6 +235,8 @@ function ParagraphLine({ p }: { p: Paragraph }) {
 interface Props {
   block: BlockKey;
   paragraphs: Paragraph[]; // 该大块的段落（已按 index 升序）
+  selectedIndex?: number | null;
+  onSelect?: (index: number) => void;
 }
 
 const BLOCK_TITLES: Record<BlockKey, string> = {
@@ -266,11 +268,11 @@ const A4_PAGE: CSSProperties = {
   overflow: "hidden",
 };
 
-export function BlockPreview({ block, paragraphs }: Props) {
+export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Props) {
   return (
     <div className="rounded-lg border border-slate-300 bg-white shadow-sm">
       <div className="border-b border-dashed border-orange-300 bg-orange-50 px-4 py-2 text-xs text-orange-700 flex items-center justify-between">
-        <span>↳ 新一页（{BLOCK_TITLES[block]}）· A4 比例</span>
+        <span>↳ 新一页（{BLOCK_TITLES[block]}）· A4 比例 · 点击任意段落可跳到左侧确认区</span>
         <span className="text-slate-400">
           ASCII / 数字 → Times New Roman · 中文按段落类型字体
         </span>
@@ -285,6 +287,7 @@ export function BlockPreview({ block, paragraphs }: Props) {
                 {paragraphs.map((p) => {
                   // 正文大块内 h1 视觉提示"另起一页"
                   const isH1Break = block === "body" && p.type === "h1";
+                  const isSelected = selectedIndex === p.index;
                   return (
                     <div key={p.index}>
                       {isH1Break && (
@@ -292,13 +295,22 @@ export function BlockPreview({ block, paragraphs }: Props) {
                           ↳ 一级标题另起一页
                         </div>
                       )}
-                      {p.type === "table" && p.cells ? (
-                        <TablePreview p={p} />
-                      ) : p.type === "toc_h1" || p.type === "toc_h2" || p.type === "toc_h3" ? (
-                        <TocLine p={p} />
-                      ) : (
-                        <ParagraphLine p={p} />
-                      )}
+                      <div
+                        onClick={() => onSelect?.(p.index)}
+                        className={`cursor-pointer rounded transition ${
+                          isSelected
+                            ? "ring-2 ring-indigo-400 bg-indigo-50/60"
+                            : "hover:bg-indigo-50/40"
+                        }`}
+                      >
+                        {p.type === "table" && p.cells ? (
+                          <TablePreview p={p} />
+                        ) : p.type === "toc_h1" || p.type === "toc_h2" || p.type === "toc_h3" ? (
+                          <TocLine p={p} />
+                        ) : (
+                          <ParagraphLine p={p} />
+                        )}
+                      </div>
                     </div>
                   );
                 })}
