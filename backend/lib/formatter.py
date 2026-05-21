@@ -13,14 +13,17 @@ backend/lib/formatter.py
 """
 import io
 import re
+import base64
 from copy import deepcopy
 
 from docx import Document
-from docx.shared import Pt, Cm
+from docx.shared import Pt, Cm, Emu
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+
+from .docx_images import extract_ordered_images
 
 # 中文 + 中文标点
 CHINESE_RE = re.compile(r"[　-〿一-鿿＀-￯]")
@@ -360,6 +363,50 @@ def _set_cell_borders(cell, borders):
     tcPr.append(tcb)
 
 
+def _add_image_paragraph(doc, p, images, max_width_emu, need_page_break):
+    """居中插入一张图片段落。优先用原文 image_index 取图，缺失时回退前端 image_b64。"""
+    para = doc.add_paragraph()
+    if need_page_break:
+        para.paragraph_format.page_break_before = True
+    disable_snap_to_grid(para)
+    para.alignment = ALIGNMENT_MAP["center"]
+    pf = para.paragraph_format
+    pf.space_before = Pt(0)
+    pf.space_after = Pt(6)  # 图与下方题注之间留少量间距
+
+    blob = None
+    cx = None
+    img = None
+    ii = p.get("image_index")
+    if isinstance(ii, int) and 0 <= ii < len(images):
+        img = images[ii]
+    if img:
+        blob = img.get("blob")
+        cx = img.get("cx")
+    if blob is None:  # 源文件取图失败，回退前端回传的 base64（若有）
+        b64 = p.get("image_b64") or ""
+        if "," in b64:
+            try:
+                blob = base64.b64decode(b64.split(",", 1)[1])
+            except Exception:
+                blob = None
+
+    if not blob:
+        para.add_run("[图片缺失]")
+        return para
+
+    if cx and cx > 0:
+        width = Emu(min(int(cx), max_width_emu))
+    else:
+        width = Emu(max_width_emu)
+    run = para.add_run()
+    try:
+        run.add_picture(io.BytesIO(blob), width=width)
+    except Exception:
+        para.add_run("[图片无法载入]")
+    return para
+
+
 def _add_table(doc, cells):
     """按二维文本网格新建表格。样式（三线/字体/居中）由 _format_tables 之后统一施加。"""
     rows = len(cells)
@@ -488,11 +535,19 @@ def format_docx(paragraphs, format_config, source_bytes=None):
 
     # 正文宽度（twip）= (A4宽 - 左边距 - 右边距) × 567 twip/cm
     _page = format_config.get("page", {})
-    _text_w_twips = int((
+    _text_w_cm = (
         21.0
         - float(_page.get("margin_left_cm",  3.0))
         - float(_page.get("margin_right_cm", 2.0))
-    ) * 567)
+    )
+    _text_w_twips = int(_text_w_cm * 567)
+    _max_img_emu = int(_text_w_cm * 360000)  # 图片最大宽度 = 正文宽度（1cm=360000EMU）
+
+    # 原文图片按文档顺序列表，下标 = 解析端分配的 image_index
+    try:
+        _images = extract_ordered_images(source_bytes) if source_bytes else []
+    except Exception:
+        _images = []
 
     ordered = sorted(paragraphs, key=lambda p: p.get("index", 0))
 
@@ -512,6 +567,11 @@ def format_docx(paragraphs, format_config, source_bytes=None):
                 brk = doc.add_paragraph()
                 brk.paragraph_format.page_break_before = True
             _add_table(doc, p["cells"])
+            continue
+
+        # 图片：从原文按 image_index 取出原图，居中插回（题注按文档顺序自然位于其下方）
+        if ptype == "figure":
+            _add_image_paragraph(doc, p, _images, _max_img_emu, need_page_break)
             continue
 
         text = _normalize_text(p.get("text", ""), ptype, style)

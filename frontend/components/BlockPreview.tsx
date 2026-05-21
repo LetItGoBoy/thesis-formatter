@@ -331,7 +331,16 @@ export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Pro
                             : "hover:bg-indigo-50/40"
                         }`}
                       >
-                        {p.type === "table" && p.cells ? (
+                        {p.type === "figure" && p.image_b64 ? (
+                          <div style={{ textAlign: "center", padding: "4px 0" }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={p.image_b64}
+                              alt="图片"
+                              style={{ maxWidth: "100%", maxHeight: "200px", display: "inline-block", objectFit: "contain" }}
+                            />
+                          </div>
+                        ) : p.type === "table" && p.cells ? (
                           <TablePreview p={p} />
                         ) : p.type === "toc_h1" || p.type === "toc_h2" || p.type === "toc_h3" ? (
                           <TocLine p={p} />

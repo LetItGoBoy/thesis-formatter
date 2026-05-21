@@ -15,6 +15,8 @@ export interface Paragraph {
   confirmed?: boolean;
   block?: string;
   cells?: string[][]; // 仅当 type==="table" 时存在：表格单元格网格（行 × 列）
+  image_b64?: string; // 仅当 type==="figure" 时存在：base64 data URI，用于预览
+  image_index?: number; // 仅当 type==="figure" 时存在：对应 source_bytes 中的图片序号
 }
 
 export interface ParseResponse {
@@ -46,6 +48,7 @@ export async function formatDocx(
         type: p.type,
         text: p.text,
         ...(p.cells ? { cells: p.cells } : {}),
+        ...(p.image_index !== undefined ? { image_index: p.image_index } : {}),
       })),
       template,
       docx_base64: docxBase64,

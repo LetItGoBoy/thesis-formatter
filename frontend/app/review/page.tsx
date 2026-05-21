@@ -297,47 +297,53 @@ function ParagraphRow({
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <Badge variant="muted">#{p.index + 1}</Badge>
 
-        <Select
-          value={p.type}
-          onChange={(e) => onUpdate(p.index, { type: e.target.value })}
-          disabled={p.confirmed}
-        >
-          <optgroup label={`${blockKey} · 本块类型`}>
-            {TYPES_BY_BLOCK[blockKey].map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="── 移到其他大块 ──">
-            {(Object.keys(TYPES_BY_BLOCK) as BlockKey[])
-              .filter((k) => k !== blockKey)
-              .flatMap((k) =>
-                TYPES_BY_BLOCK[k].map((t) => (
-                  <option key={`${k}_${t.value}`} value={t.value}>
-                    [{k}] {t.label}
-                  </option>
-                ))
-              )}
-          </optgroup>
-        </Select>
+        {p.type === "figure" ? (
+          <Badge variant="muted">图片（自动识别）</Badge>
+        ) : (
+          <Select
+            value={p.type}
+            onChange={(e) => onUpdate(p.index, { type: e.target.value })}
+            disabled={p.confirmed}
+          >
+            <optgroup label={`${blockKey} · 本块类型`}>
+              {TYPES_BY_BLOCK[blockKey].map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="── 移到其他大块 ──">
+              {(Object.keys(TYPES_BY_BLOCK) as BlockKey[])
+                .filter((k) => k !== blockKey)
+                .flatMap((k) =>
+                  TYPES_BY_BLOCK[k].map((t) => (
+                    <option key={`${k}_${t.value}`} value={t.value}>
+                      [{k}] {t.label}
+                    </option>
+                  ))
+                )}
+            </optgroup>
+          </Select>
+        )}
 
-        <div className="flex items-center gap-1 min-w-[110px]">
-          <Progress
-            value={p.confidence * 100}
-            className="w-16"
-            barClassName={
-              p.confidence >= 0.85
-                ? "bg-green-500"
-                : p.confidence >= LOW_CONFIDENCE
-                ? "bg-blue-500"
-                : "bg-orange-500"
-            }
-          />
-          <span className="text-sm text-slate-500 tabular-nums">
-            {(p.confidence * 100).toFixed(0)}%
-          </span>
-        </div>
+        {p.type !== "figure" && (
+          <div className="flex items-center gap-1 min-w-[110px]">
+            <Progress
+              value={p.confidence * 100}
+              className="w-16"
+              barClassName={
+                p.confidence >= 0.85
+                  ? "bg-green-500"
+                  : p.confidence >= LOW_CONFIDENCE
+                  ? "bg-blue-500"
+                  : "bg-orange-500"
+              }
+            />
+            <span className="text-sm text-slate-500 tabular-nums">
+              {(p.confidence * 100).toFixed(0)}%
+            </span>
+          </div>
+        )}
 
         {p.confirmed ? (
           <Badge variant="success">已确认</Badge>
@@ -348,7 +354,16 @@ function ParagraphRow({
         {movedFromOriginal && <Badge variant="warning">已移块</Badge>}
       </div>
 
-      {p.type === "table" && p.cells ? (
+      {p.type === "figure" && p.image_b64 ? (
+        <div className="flex justify-center rounded-md border border-slate-200 bg-slate-50 p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={p.image_b64}
+            alt="图片"
+            className="max-h-48 max-w-full object-contain"
+          />
+        </div>
+      ) : p.type === "table" && p.cells ? (
         <TableEditor
           cells={p.cells}
           disabled={p.confirmed}

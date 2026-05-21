@@ -9,6 +9,7 @@ backend/lib/parser.py
 """
 import io
 import re
+import base64
 import logging
 import time
 
@@ -19,6 +20,7 @@ from docx.oxml.table import CT_Tbl
 from docx.oxml.text.paragraph import CT_P
 
 from .ai_client import AIFatalError, classify_paragraphs_batch
+from .docx_images import paragraph_image_refs
 
 logger = logging.getLogger("thesis.parser")
 
@@ -37,7 +39,7 @@ _TYPE_BLOCK_MAP = {
     "h1": "body", "h2": "body", "h3": "body", "body": "body",
     "numbered_item": "body", "table_caption": "body", "table": "body",
     "formula": "body", "formula_number": "body",
-    "figure_caption": "body", "caption": "body",
+    "figure_caption": "body", "caption": "body", "figure": "body",
     "conclusion_title": "conclusion", "conclusion_body": "conclusion",
     "references_title": "references", "reference_item": "references", "ref": "references",
     "cover": "abstract",
@@ -110,6 +112,7 @@ def extract_blocks(file_bytes: bytes) -> list[dict]:
     doc = DocxDocument(io.BytesIO(file_bytes))
     items = []
     idx = 0
+    img_counter = 0  # 顶层段落图片计数，与 docx_images.extract_ordered_images 下标对齐
     for blk in _iter_block_items(doc):
         if isinstance(blk, DocxTable):
             cells = _table_to_cells(blk)
@@ -119,6 +122,23 @@ def extract_blocks(file_bytes: bytes) -> list[dict]:
             items.append({"index": idx, "text": preview, "kind": "table", "cells": cells})
             idx += 1
         else:
+            # 图片：原先无文字段落被直接跳过导致配图丢失；这里为每张图产出一个 figure 段落
+            for rid, cx, cy in paragraph_image_refs(blk):
+                k = img_counter
+                img_counter += 1
+                part = doc.part.related_parts.get(rid)
+                if part is None:
+                    continue  # 关系缺失：占位计数已自增，保持与格式化端下标一致
+                b64 = base64.b64encode(part.blob).decode("ascii")
+                items.append({
+                    "index": idx,
+                    "text": "[图片]",
+                    "kind": "image",
+                    "type": "figure",
+                    "image_index": k,
+                    "image_b64": f"data:{part.content_type};base64,{b64}",
+                })
+                idx += 1
             text = (blk.text or "").strip()
             if not text:
                 continue
@@ -154,9 +174,9 @@ def parse_docx(file_bytes: bytes) -> list[dict]:
     if not kept:
         raise ParseError("预扫描后没有可识别的段落（未找到目录之后的内容）")
 
-    # 表格不送 AI（解析阶段已确定 type=table）；其余文本段整片送 AI
+    # 表格/图片不送 AI（解析阶段已确定 type）；其余文本段整片送 AI
     text_items = [{"index": p["index"], "text": p["text"], "block": None}
-                  for p in kept if p.get("kind") != "table"]
+                  for p in kept if p.get("kind") not in ("table", "image")]
 
     classified = []
     if text_items:
@@ -183,6 +203,18 @@ def parse_docx(file_bytes: bytes) -> list[dict]:
                 "reason": "解析阶段识别为表格",
                 "block": "body",
                 "cells": p["cells"],
+            })
+            continue
+        if p.get("kind") == "image":
+            results.append({
+                "index": p["index"],
+                "text": p["text"],
+                "type": "figure",
+                "confidence": 1.0,
+                "reason": "解析阶段识别为图片",
+                "block": "body",
+                "image_index": p["image_index"],
+                "image_b64": p["image_b64"],
             })
             continue
         c = cmap.get(p["index"], {})

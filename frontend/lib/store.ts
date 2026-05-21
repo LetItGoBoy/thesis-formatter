@@ -137,6 +137,7 @@ export const TYPE_TO_BLOCK: Record<string, BlockKey> = (() => {
   m["cover"] = "abstract";
   m["future_work"] = "conclusion";
   m["figure_caption"] = "body";  // 已从下拉框移除，但AI识别结果仍需正确归块
+  m["figure"] = "body"; // 解析阶段识别的图片段落
   return m;
 })();
 
@@ -148,6 +149,7 @@ export const TYPE_LABEL: Record<string, string> = (() => {
   m["cover"] = "封面（旧版兼容）";
   m["future_work"] = "展望内容（旧版兼容）";
   m["figure_caption"] = "图题注";
+  m["figure"] = "图片";
   return m;
 })();
 
