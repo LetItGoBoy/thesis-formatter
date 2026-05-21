@@ -41,15 +41,15 @@ interface RenderStyle {
 
 const STYLES: Record<string, RenderStyle> = {
   // toc
-  toc_title: { chineseFont: "黑体", ptSize: 16, bold: true, align: "center", fixed: "目　　　录" },
+  toc_title: { chineseFont: "黑体", ptSize: 16, bold: true, align: "center", fixed: "目　　录" },
   toc_h1: { chineseFont: "宋体", ptSize: 12, align: "left" },
   toc_h2: { chineseFont: "宋体", ptSize: 12, align: "left", leadingFullWidthSpaces: 2 },
   toc_h3: { chineseFont: "宋体", ptSize: 12, align: "left", leadingFullWidthSpaces: 4 },
 
   // abstract
   paper_title: { chineseFont: "宋体", ptSize: 18, bold: true, align: "center", spaceAfterPt: 18 },
-  author_line: { chineseFont: "仿宋", ptSize: 12, align: "left", leftIndent: 6 },
-  instructor: { chineseFont: "仿宋", ptSize: 12, align: "left", leftIndent: 6 },
+  author_line: { chineseFont: "仿宋", ptSize: 12, align: "left", leftIndent: 14 },
+  instructor: { chineseFont: "仿宋", ptSize: 12, align: "left", leftIndent: 14 },
   abstract_title_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", fixed: "摘要" },
   abstract_body_cn: { chineseFont: "仿宋", ptSize: 12, align: "justify", indent: 2 },
   keywords_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "关键词：" },

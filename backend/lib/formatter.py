@@ -94,6 +94,28 @@ def _set_rpr_size(rpr, pt):
         el.set(qn("w:val"), half)
 
 
+def _set_para_mark_size(paragraph, pt):
+    """设置段落标记（pilcrow）的字号，决定空段落的可见高度。"""
+    pPr = paragraph._p.get_or_add_pPr()
+    rpr = pPr.find(qn("w:rPr"))
+    if rpr is None:
+        rpr = OxmlElement("w:rPr")
+        pPr.append(rpr)
+    _set_rpr_size(rpr, pt)
+
+
+def _make_blank_line(paragraph, style):
+    """构造一个真实的空行段落，高度 = 字号 × 行距，用于「空一行」分隔。"""
+    disable_snap_to_grid(paragraph)
+    pf = paragraph.paragraph_format
+    ls = float(style.get("line_spacing", 1.5))
+    pf.line_spacing = ls
+    pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+    pf.space_before = Pt(0)
+    pf.space_after = Pt(0)
+    _set_para_mark_size(paragraph, float(style.get("font_size_pt", 12)))
+
+
 def _set_rpr_bold(rpr, bold):
     b = rpr.find(qn("w:b"))
     bcs = rpr.find(qn("w:bCs"))
@@ -243,7 +265,7 @@ def _normalize_text(text, ptype, style):
 # ============================================================
 # 段落样式
 # ============================================================
-def _apply_paragraph_style(paragraph, ptype, style):
+def _apply_paragraph_style(paragraph, ptype, style, skip_page_break=False):
     disable_snap_to_grid(paragraph)  # 先取消网格
 
     pf = paragraph.paragraph_format
@@ -283,7 +305,7 @@ def _apply_paragraph_style(paragraph, ptype, style):
         pf.first_line_indent = None
         pf.left_indent       = None
 
-    if style.get("page_break_before"):
+    if style.get("page_break_before") and not skip_page_break:
         pf.page_break_before = True
 
     # 支持 font_cn（新字段）或旧字段 chinese_font；同理 font_en_num / ascii_font
@@ -481,6 +503,8 @@ def format_docx(paragraphs, format_config, source_bytes=None):
         cur_block = _block_of(ptype, styles)
         need_page_break = last_block is not None and cur_block != last_block
         last_block = cur_block
+        # 是否需要另起一页：大块切换 或 段落样式自带 page_break_before
+        starts_new_page = need_page_break or bool(style.get("page_break_before"))
 
         # 表格：用 cells 网格重建为真正的 Word 表格（三线表样式由 _format_tables 统一施加）
         if ptype == "table" and p.get("cells"):
@@ -492,10 +516,21 @@ def format_docx(paragraphs, format_config, source_bytes=None):
 
         text = _normalize_text(p.get("text", ""), ptype, style)
 
+        # 前置真实空行（blank_lines_before）。若本段要另起一页，则把分页放到第一个
+        # 空行上，使空行落在新页顶部、正文随后；否则空行就在当前位置之前。
+        n_blank = int(style.get("blank_lines_before", 0))
+        page_break_consumed = False
+        for i in range(n_blank):
+            blank = doc.add_paragraph()
+            if i == 0 and starts_new_page:
+                blank.paragraph_format.page_break_before = True
+                page_break_consumed = True
+            _make_blank_line(blank, style)
+
         para = doc.add_paragraph()
 
-        # 大块切换 -> 另起一页
-        if need_page_break:
+        # 大块切换 -> 另起一页（若分页已由前置空行承担则跳过）
+        if need_page_break and not page_break_consumed:
             para.paragraph_format.page_break_before = True
 
         # 目录条目：右对齐点状前导制表位 + 分离页码
@@ -513,7 +548,7 @@ def format_docx(paragraphs, format_config, source_bytes=None):
         else:
             para.add_run(text)
 
-        _apply_paragraph_style(para, ptype, style)
+        _apply_paragraph_style(para, ptype, style, skip_page_break=page_break_consumed)
         if ptype in _OUTLINE_LEVEL:
             _set_outline_level(para, _OUTLINE_LEVEL[ptype])
 
