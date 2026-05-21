@@ -364,7 +364,7 @@
     "conclusion_title": {
       "block": "conclusion",
       "label": "总结标题",
-      "fixed_content": "总　　结",
+      "fixed_content": "总　结",
       "use_fixed_content": true,
       "font_cn": "宋体",
       "font_en_num": "Times New Roman",
@@ -372,7 +372,7 @@
       "bold": true,
       "alignment": "center",
       "snap_to_grid": false,
-      "note": "固定内容：总　　结（中间两个全角空格），本块另起一页"
+      "note": "固定内容：总　结（中间一个全角空格），小三宋体加粗居中，本块另起一页"
     },
     "conclusion_body": {
       "block": "conclusion",
@@ -383,8 +383,11 @@
       "bold": false,
       "alignment": "justify",
       "line_spacing": 1.5,
+      "char_spacing": "standard",
       "first_line_indent_chars": 2,
-      "snap_to_grid": false
+      "blank_lines_before": 1,
+      "snap_to_grid": false,
+      "note": "小四宋体，行距1.5倍，字符间距标准；与总结标题之间空一行"
     },
 
     "references_title": {
@@ -409,9 +412,10 @@
       "font_size_pt": 12,
       "bold": false,
       "alignment": "left",
+      "line_spacing": 1.5,
       "first_line_indent_chars": 0,
       "snap_to_grid": false,
-      "note": "仿宋小四左对齐，英文数字用Times New Roman"
+      "note": "仿宋小四左对齐，行距1.5倍，英文数字用Times New Roman"
     },
     "ref": {
       "block": "references",
@@ -421,6 +425,7 @@
       "font_size_pt": 12,
       "bold": false,
       "alignment": "left",
+      "line_spacing": 1.5,
       "first_line_indent_chars": 0,
       "snap_to_grid": false,
       "note": "兼容旧类型，格式同reference_item"
