@@ -329,7 +329,6 @@ function ParagraphRow({
           <Select
             value={p.type}
             onChange={(e) => onUpdate(p.index, { type: e.target.value })}
-            disabled={p.confirmed}
           >
             <optgroup label={`${blockKey} · 本块类型`}>
               {TYPES_BY_BLOCK[blockKey].map((t) => (
@@ -392,14 +391,12 @@ function ParagraphRow({
       ) : p.type === "table" && p.cells ? (
         <TableEditor
           cells={p.cells}
-          disabled={p.confirmed}
           onChange={(cells) => onUpdate(p.index, { cells })}
         />
       ) : (
         <Textarea
           value={p.text}
           onChange={(e) => onUpdate(p.index, { text: e.target.value })}
-          disabled={p.confirmed}
           rows={Math.min(6, Math.max(2, Math.ceil(p.text.length / 60) || 2))}
           className="text-base leading-relaxed"
         />

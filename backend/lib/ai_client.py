@@ -238,6 +238,138 @@ def _default_type(block: str | None) -> str:
     return BLOCK_DEFAULT_TYPE.get(block, "body")
 
 
+# ============================================================
+# 规则置信度：按文本特征与所判类型的吻合度打分
+# 替代大模型自报的不可信 confidence（模型常照抄示例值 0.95）。
+# ============================================================
+_CH_NUM = "一二三四五六七八九十百零"
+_RE_CHAPTER = re.compile(rf"^第[{_CH_NUM}\d]+章")
+_RE_H2 = re.compile(r"^\d+\.\d+(?!\.\d)\s*\S")        # 1.1（但非 1.1.1）
+_RE_H3 = re.compile(r"^\d+\.\d+\.\d+\s*\S")           # 1.1.1
+_RE_FIG = re.compile(rf"^图\s*[\d{_CH_NUM}]")
+_RE_TAB = re.compile(rf"^表\s*[\d{_CH_NUM}]")
+_RE_FIGTAB = re.compile(rf"^[图表]\s*[\d{_CH_NUM}]")
+_RE_KW_CN = re.compile(r"^关键词\s*[:：]")
+_RE_KW_EN = re.compile(r"^key\s*words?\s*[:：]?", re.IGNORECASE)
+_RE_NUMBERED = re.compile(r"^\d+\s*[.、]\s*\S")
+_RE_REF = re.compile(r"^\[\d+\]|^\d+[.\s]")
+_RE_FORMULA_NUM = re.compile(r"^\(\s*\d+\s*[-—]\s*\d+\s*\)$")
+_RE_END_PUNCT = re.compile(r"[。！？!?.]$")
+_RE_SENT_PUNCT = re.compile(r"[。，；！？]")
+_RE_PAGENUM_END = re.compile(r"\d{1,4}$")
+
+# 固定内容标题：去空格后直接比对（命中即高置信，否则强烈怀疑误判）
+_FIXED_TITLE = {
+    "toc_title": ("目录",),
+    "abstract_title_cn": ("摘要",),
+    "abstract_title_en": ("abstract",),
+    "references_title": ("参考文献", "references"),
+    "conclusion_title": ("总结", "结论"),
+}
+
+
+def compute_rule_confidence(text: str, ptype: str) -> float:
+    """根据文本特征与类型的吻合度返回 0.10~0.98 的置信度。"""
+    t = (text or "").strip()
+    n = len(t)
+
+    if ptype in _FIXED_TITLE:
+        bare = re.sub(r"\s+", "", t).lower()
+        return 0.97 if bare in _FIXED_TITLE[ptype] else 0.25
+
+    score = 0.50
+    if ptype == "h1":
+        if _RE_CHAPTER.match(t):
+            score += 0.45
+        elif n <= 25 and not _RE_SENT_PUNCT.search(t):
+            score += 0.15
+        if _RE_SENT_PUNCT.search(t) and n > 40:
+            score -= 0.50
+        if _RE_FIGTAB.match(t):
+            score -= 0.40
+    elif ptype == "h2":
+        if _RE_H2.match(t):
+            score += 0.45
+        if n <= 30:
+            score += 0.10
+        if n > 50:
+            score -= 0.40
+        if _RE_FIGTAB.match(t):
+            score -= 0.35
+    elif ptype == "h3":
+        if _RE_H3.match(t):
+            score += 0.45
+        if n <= 30:
+            score += 0.10
+        if n > 50:
+            score -= 0.40
+    elif ptype == "figure_caption":
+        if _RE_FIG.match(t):
+            score += 0.45
+        if n <= 40:
+            score += 0.10
+        if _RE_TAB.match(t):
+            score -= 0.45
+    elif ptype == "table_caption":
+        if _RE_TAB.match(t):
+            score += 0.45
+        if n <= 40:
+            score += 0.10
+        if _RE_FIG.match(t):
+            score -= 0.45
+    elif ptype == "caption":
+        if _RE_FIGTAB.match(t):
+            score += 0.35
+    elif ptype == "keywords_cn":
+        score += 0.48 if _RE_KW_CN.match(t) else -0.20
+        if n > 100:
+            score -= 0.30
+    elif ptype == "keywords_en":
+        score += 0.48 if _RE_KW_EN.match(t) else -0.20
+        if n > 120:
+            score -= 0.30
+    elif ptype == "numbered_item":
+        score += 0.45 if _RE_NUMBERED.match(t) else -0.30
+    elif ptype in ("reference_item", "ref"):
+        if _RE_REF.match(t):
+            score += 0.40
+        if 20 <= n <= 300:
+            score += 0.10
+        if n < 10:
+            score -= 0.30
+    elif ptype == "formula_number":
+        score += 0.48 if _RE_FORMULA_NUM.match(t) else -0.30
+    elif ptype in ("toc_h1", "toc_h2", "toc_h3"):
+        score += 0.30 if _RE_PAGENUM_END.search(t) else -0.35
+        if ptype == "toc_h1" and _RE_CHAPTER.match(t):
+            score += 0.18
+        elif ptype == "toc_h2" and _RE_H2.match(t):
+            score += 0.15
+        elif ptype == "toc_h3" and _RE_H3.match(t):
+            score += 0.15
+    elif ptype in ("body", "conclusion_body", "abstract_body_cn", "abstract_body_en"):
+        score = 0.55
+        if _RE_END_PUNCT.search(t) and n > 30:
+            score += 0.15
+        if n < 8:
+            score -= 0.35
+        if _RE_FIGTAB.match(t):
+            score -= 0.45
+        if _RE_CHAPTER.match(t):
+            score -= 0.45
+        elif _RE_H3.match(t) or _RE_H2.match(t):
+            score -= 0.25
+    elif ptype == "paper_title":
+        if n <= 40 and not _RE_SENT_PUNCT.search(t):
+            score += 0.25
+        if n > 60:
+            score -= 0.30
+    elif ptype in ("author_line", "instructor"):
+        score = 0.60  # 难以从文本判定，给中性偏上
+
+    return max(0.10, min(0.98, score))
+
+
 def _build_whole_doc_prompt() -> str:
     """整片识别提示词：AI 通读全文，按语义+上下文判断边界与类型。"""
     lines = [
@@ -363,6 +495,7 @@ def _classify_batch(client: BaseAIClient, items: list[dict], block: str | None,
 
     allowed = set(_allowed_types(block))
     fallback = _default_type(block)
+    text_by_idx = {it["index"]: it.get("text", "") for it in items}
 
     arr = None
     parse_err = None
@@ -398,10 +531,8 @@ def _classify_batch(client: BaseAIClient, items: list[dict], block: str | None,
         t = entry.get("type", fallback)
         if t not in allowed:
             t = fallback
-        try:
-            conf = max(0.0, min(1.0, float(entry.get("confidence", 0.5))))
-        except Exception:
-            conf = 0.5
+        # 用规则置信度替代模型自报值（后者常照抄示例 0.95，无信号）
+        conf = compute_rule_confidence(text_by_idx.get(idx, ""), t)
         seen[idx] = {"index": idx, "type": t, "confidence": conf,
                      "reason": entry.get("reason", "")}
 
