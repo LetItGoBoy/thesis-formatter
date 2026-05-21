@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import type { Paragraph } from "@/lib/api";
 import type { BlockKey } from "@/lib/store";
 
@@ -244,40 +245,57 @@ const BLOCK_TITLES: Record<BlockKey, string> = {
   references: "参考文献重构预览",
 };
 
+// A4 内边距 = 页面边距，百分比相对「页面宽度21cm」折算（padding-% 始终相对宽度）：
+// 上2.5cm→11.9%，下2cm→9.52%，左3cm→14.29%，右2cm→9.52%
+const A4_PADDING: CSSProperties = {
+  paddingTop: "11.9%",
+  paddingBottom: "9.52%",
+  paddingLeft: "14.29%",
+  paddingRight: "9.52%",
+};
+
 export function BlockPreview({ block, paragraphs }: Props) {
   return (
     <div className="rounded-lg border border-slate-300 bg-white shadow-sm">
       <div className="border-b border-dashed border-orange-300 bg-orange-50 px-4 py-2 text-xs text-orange-700 flex items-center justify-between">
-        <span>↳ 新一页（{BLOCK_TITLES[block]}）</span>
+        <span>↳ 新一页（{BLOCK_TITLES[block]}）· A4 比例</span>
         <span className="text-slate-400">
           ASCII / 数字 → Times New Roman · 中文按段落类型字体
         </span>
       </div>
-      <div className="p-6 space-y-2 max-h-[60vh] overflow-y-auto">
-        {paragraphs.length === 0 ? (
-          <div className="text-center text-slate-400 text-sm">本块暂无段落</div>
-        ) : (
-          paragraphs.map((p) => {
-            // 正文大块内 h1 视觉提示"另起一页"
-            const isH1Break = block === "body" && p.type === "h1";
-            return (
-              <div key={p.index}>
-                {isH1Break && (
-                  <div className="my-3 border-t border-dashed border-orange-300 text-xs text-orange-600 text-center bg-orange-50 py-1">
-                    ↳ 一级标题另起一页
-                  </div>
-                )}
-                {p.type === "table" && p.cells ? (
-                  <TablePreview p={p} />
-                ) : p.type === "toc_h1" || p.type === "toc_h2" || p.type === "toc_h3" ? (
-                  <TocLine p={p} />
-                ) : (
-                  <ParagraphLine p={p} />
-                )}
+      <div className="max-h-[78vh] overflow-y-auto bg-slate-200 p-4">
+        {/* 浮动占位法：::before 高度=宽度×141.4%（A4纵横比）撑出最小一页高度，
+            内容更长时整页自然增高，不会溢出到灰底之外 */}
+        <div className="mx-auto bg-white shadow-md before:float-left before:content-[''] before:pt-[141.43%] after:block after:clear-both after:content-['']">
+          <div style={A4_PADDING}>
+            {paragraphs.length === 0 ? (
+              <div className="text-center text-slate-400 text-sm">本块暂无段落</div>
+            ) : (
+              <div className="space-y-2">
+                {paragraphs.map((p) => {
+                  // 正文大块内 h1 视觉提示"另起一页"
+                  const isH1Break = block === "body" && p.type === "h1";
+                  return (
+                    <div key={p.index}>
+                      {isH1Break && (
+                        <div className="my-3 border-t border-dashed border-orange-300 text-xs text-orange-600 text-center bg-orange-50 py-1">
+                          ↳ 一级标题另起一页
+                        </div>
+                      )}
+                      {p.type === "table" && p.cells ? (
+                        <TablePreview p={p} />
+                      ) : p.type === "toc_h1" || p.type === "toc_h2" || p.type === "toc_h3" ? (
+                        <TocLine p={p} />
+                      ) : (
+                        <ParagraphLine p={p} />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })
-        )}
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

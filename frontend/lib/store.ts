@@ -105,6 +105,32 @@ export function blockOf(type: string): BlockKey {
   return TYPE_TO_BLOCK[type] || "body";
 }
 
+const blockOrder = (b: BlockKey) => BLOCKS.find((x) => x.key === b)?.order ?? 99;
+
+// 为「在某大块末尾新增段落」计算一个保持全局顺序的索引（支持小数，后端只按 index 排序）
+function nextIndexForBlock(paragraphs: Paragraph[], block: BlockKey): number {
+  const blkOf = (p: Paragraph) => ((p.block as BlockKey) || blockOf(p.type));
+  const inBlock = paragraphs.filter((p) => blkOf(p) === block);
+  if (inBlock.length > 0) {
+    const lastIdx = Math.max(...inBlock.map((p) => p.index));
+    const after = paragraphs
+      .map((p) => p.index)
+      .filter((i) => i > lastIdx)
+      .sort((a, b) => a - b)[0];
+    return after !== undefined ? (lastIdx + after) / 2 : lastIdx + 1;
+  }
+  // 空块：按大块顺序插到前一块之后、后一块之前
+  const target = blockOrder(block);
+  const before = paragraphs.filter((p) => blockOrder(blkOf(p)) < target).map((p) => p.index);
+  const after = paragraphs.filter((p) => blockOrder(blkOf(p)) > target).map((p) => p.index);
+  const beforeMax = before.length ? Math.max(...before) : null;
+  const afterMin = after.length ? Math.min(...after) : null;
+  if (beforeMax !== null && afterMin !== null) return (beforeMax + afterMin) / 2;
+  if (beforeMax !== null) return beforeMax + 1;
+  if (afterMin !== null) return afterMin - 1;
+  return 0;
+}
+
 // ============================================================
 // Zustand store
 // ============================================================
@@ -120,6 +146,8 @@ interface ThesisState {
   unconfirmParagraph: (index: number) => void;
   confirmBlock: (block: BlockKey) => void;
   setTypeMany: (indices: number[], type: string) => void;
+  deleteParagraph: (index: number) => void;
+  addParagraph: (block: BlockKey) => void;
   setOutput: (blob: Blob) => void;
   reset: () => void;
 }
@@ -185,6 +213,25 @@ export const useThesisStore = create<ThesisState>((set) => ({
           idxSet.has(p.index) ? { ...p, type, block: newBlock } : p
         ),
       };
+    }),
+
+  deleteParagraph: (index) =>
+    set((s) => ({
+      paragraphs: s.paragraphs.filter((p) => p.index !== index),
+    })),
+
+  addParagraph: (block) =>
+    set((s) => {
+      const type = TYPES_BY_BLOCK[block][0].value; // 默认本块第一个类型，用户可改
+      const newPara: Paragraph = {
+        index: nextIndexForBlock(s.paragraphs, block),
+        text: "",
+        type,
+        confidence: 1,
+        confirmed: false,
+        block,
+      };
+      return { paragraphs: [...s.paragraphs, newPara] };
     }),
 
   setOutput: (blob) => set({ outputBlob: blob }),

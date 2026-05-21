@@ -31,6 +31,8 @@ export default function ReviewPage() {
     confirmParagraph,
     unconfirmParagraph,
     confirmBlock,
+    deleteParagraph,
+    addParagraph,
     setOutput,
   } = useThesisStore();
 
@@ -153,8 +155,8 @@ export default function ReviewPage() {
                   </div>
                 </header>
 
-                <div className="grid lg:grid-cols-2 gap-6 p-4">
-                  <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+                <div className="grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 p-4">
+                  <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-2">
                     {items.length === 0 ? (
                       <div className="text-center text-slate-400 text-sm py-8">
                         本块暂无段落（AI 未识别到此类型）
@@ -168,9 +170,18 @@ export default function ReviewPage() {
                           onUpdate={updateParagraph}
                           onConfirm={confirmParagraph}
                           onUnconfirm={unconfirmParagraph}
+                          onDelete={deleteParagraph}
                         />
                       ))
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full border-dashed"
+                      onClick={() => addParagraph(blk.key)}
+                    >
+                      ＋ 在本块添加段落
+                    </Button>
                   </div>
 
                   {previewBlocks[blk.key] && <BlockPreview block={blk.key} paragraphs={items} />}
@@ -200,13 +211,16 @@ function ParagraphRow({
   onUpdate,
   onConfirm,
   onUnconfirm,
+  onDelete,
 }: {
   p: Paragraph;
   blockKey: BlockKey;
   onUpdate: (i: number, patch: Partial<Paragraph>) => void;
   onConfirm: (i: number) => void;
   onUnconfirm: (i: number) => void;
+  onDelete: (i: number) => void;
 }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const isLow = !p.confirmed && p.confidence < LOW_CONFIDENCE;
   const currentBlock = (p.block as BlockKey) || blockOf(p.type);
   const movedFromOriginal = currentBlock !== blockKey;
@@ -292,14 +306,44 @@ function ParagraphRow({
       )}
 
       <div className="mt-2 flex justify-end gap-2">
-        {p.confirmed ? (
-          <Button size="sm" variant="outline" onClick={() => onUnconfirm(p.index)}>
-            撤销确认
-          </Button>
+        {confirmingDelete ? (
+          <>
+            <span className="text-xs text-red-600 self-center mr-auto">确认删除本段？</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setConfirmingDelete(false)}
+            >
+              取消
+            </Button>
+            <Button
+              size="sm"
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => onDelete(p.index)}
+            >
+              删除
+            </Button>
+          </>
         ) : (
-          <Button size="sm" onClick={() => onConfirm(p.index)}>
-            ✓ 确认本段
-          </Button>
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mr-auto text-red-600 hover:bg-red-50"
+              onClick={() => setConfirmingDelete(true)}
+            >
+              🗑 删除
+            </Button>
+            {p.confirmed ? (
+              <Button size="sm" variant="outline" onClick={() => onUnconfirm(p.index)}>
+                撤销确认
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => onConfirm(p.index)}>
+                ✓ 确认本段
+              </Button>
+            )}
+          </>
         )}
       </div>
     </div>
