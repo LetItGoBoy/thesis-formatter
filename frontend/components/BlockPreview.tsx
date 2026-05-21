@@ -32,6 +32,7 @@ interface RenderStyle {
   isKeywords?: boolean;
   keywordPrefix?: string;
   isChapterTitle?: boolean;
+  pageBreakBefore?: boolean;
 }
 
 const STYLES: Record<string, RenderStyle> = {
@@ -48,8 +49,8 @@ const STYLES: Record<string, RenderStyle> = {
   abstract_title_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", fixed: "摘要" },
   abstract_body_cn: { chineseFont: "仿宋", ptSize: 12, align: "justify", indent: 2 },
   keywords_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "关键词：" },
-  abstract_title_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", fixed: "Abstract" },
-  abstract_body_en: { chineseFont: "Times New Roman", ptSize: 12, align: "justify" },
+  abstract_title_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", fixed: "Abstract", pageBreakBefore: true },
+  abstract_body_en: { chineseFont: "Times New Roman", ptSize: 12, align: "justify", indent: 2 },
   keywords_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "Keywords:" },
 
   // body
@@ -90,7 +91,7 @@ function normalizeText(text: string, type: string): string {
     if (bare === st.fixed.replace(/\s+/g, "")) return st.fixed;
   }
 
-  // 关键词清理：分号 / 逗号 / 顿号 → 空格
+  // 关键词清理：所有分隔符 → 全角空格
   if (st.isKeywords) {
     let body = text;
     const prefixes = [st.keywordPrefix, st.keywordPrefix?.replace(/[:：]/, ":"), st.keywordPrefix?.replace(/[:：]/, "：")];
@@ -100,8 +101,13 @@ function normalizeText(text: string, type: string): string {
         break;
       }
     }
-    body = body.replace(/[;；,，、]/g, " ").replace(/\s+/g, " ").trim();
-    return st.keywordPrefix ? `${st.keywordPrefix} ${body}` : body;
+    body = body.replace(/[;；,，、\s]+/g, "　").replace(/^　|　$/g, "");
+    return st.keywordPrefix ? `${st.keywordPrefix}　${body}` : body;
+  }
+
+  // 作者行：补全角空格使"作　　者"与"指导教师"等宽，居中时视觉对齐
+  if (type === "author_line") {
+    return text.replace(/^(作)\s*(者)/, "作　　者");
   }
 
   // 数字序号 1、 → 1.
@@ -287,9 +293,15 @@ export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Pro
                 {paragraphs.map((p) => {
                   // 正文大块内 h1 视觉提示"另起一页"
                   const isH1Break = block === "body" && p.type === "h1";
+                  const isPageBreak = (STYLES[p.type] as RenderStyle | undefined)?.pageBreakBefore;
                   const isSelected = selectedIndex === p.index;
                   return (
                     <div key={p.index}>
+                      {isPageBreak && (
+                        <div className="my-3 border-t border-dashed border-blue-300 text-xs text-blue-600 text-center bg-blue-50 py-1">
+                          ↳ 另起一页（英文摘要）
+                        </div>
+                      )}
                       {isH1Break && (
                         <div className="my-3 border-t border-dashed border-orange-300 text-xs text-orange-600 text-center bg-orange-50 py-1">
                           ↳ 一级标题另起一页

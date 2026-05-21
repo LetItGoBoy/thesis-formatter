@@ -188,9 +188,14 @@ def _normalize_text(text, ptype, style):
             if p and body.startswith(p):
                 body = body[len(p):]
                 break
-        body = re.sub(r"[;；,，、]", " ", body)
-        body = re.sub(r"\s+", " ", body).strip()
-        return f"{prefix} {body}" if prefix else body
+        # 关键词分隔符统一换为全角空格
+        body = re.sub(r"[;；,，、\s]+", FULL_WIDTH_SPACE, body).strip(FULL_WIDTH_SPACE)
+        return f"{prefix}{FULL_WIDTH_SPACE}{body}" if prefix else body
+
+    # 作者行：将"作者"补全角空格，使其与"指导教师"等宽，居中时视觉对齐
+    if ptype == "author_line":
+        text = re.sub(r"^(作)\s*(者)", r"作　　者", text)
+        return text
 
     if style.get("normalize_numbered_prefix"):
         text = re.sub(r"^(\s*\d+)\s*[、,，]\s*", r"\1. ", text)
@@ -235,8 +240,15 @@ def _apply_paragraph_style(paragraph, ptype, style):
         pf.line_spacing = float(ls)
         pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
 
-    pf.space_before = Pt(float(style.get("space_before_pt", 0)))
-    pf.space_after  = Pt(float(style.get("space_after_pt",  0)))
+    # space_before_lines → 转为 pt（行数 × 字号 × 行距倍数）
+    sbl = float(style.get("space_before_lines", 0))
+    if sbl > 0:
+        _pt = float(style.get("font_size_pt", 12))
+        _ls = float(style.get("line_spacing", 1.5))
+        pf.space_before = Pt(sbl * _pt * _ls)
+    else:
+        pf.space_before = Pt(float(style.get("space_before_pt", 0)))
+    pf.space_after = Pt(float(style.get("space_after_pt", 0)))
 
     pt = float(style.get("font_size_pt", 12))
     first_chars = style.get("first_line_indent_chars", 0)
