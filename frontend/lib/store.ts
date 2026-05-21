@@ -139,7 +139,9 @@ interface ThesisState {
   docxBase64: string;
   paragraphs: Paragraph[];
   outputBlob: Blob | null;
+  template: string;
 
+  setTemplate: (template: string) => void;
   setSource: (fileName: string, docxBase64: string, paragraphs: Paragraph[]) => void;
   updateParagraph: (index: number, patch: Partial<Paragraph>) => void;
   confirmParagraph: (index: number) => void;
@@ -157,6 +159,9 @@ export const useThesisStore = create<ThesisState>((set) => ({
   docxBase64: "",
   paragraphs: [],
   outputBlob: null,
+  template: "hulunbeier_univ",
+
+  setTemplate: (template) => set({ template }),
 
   setSource: (fileName, docxBase64, paragraphs) =>
     set({

@@ -27,6 +27,7 @@ export default function ReviewPage() {
     fileName,
     docxBase64,
     paragraphs,
+    template,
     updateParagraph,
     confirmParagraph,
     unconfirmParagraph,
@@ -77,7 +78,7 @@ export default function ReviewPage() {
     setFormatting(true);
     setError("");
     try {
-      const blob = await formatDocx(paragraphs, "hulunbeier_univ", docxBase64);
+      const blob = await formatDocx(paragraphs, template, docxBase64);
       setOutput(blob);
       router.push("/done");
     } catch (e: unknown) {
