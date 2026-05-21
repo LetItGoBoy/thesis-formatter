@@ -18,6 +18,7 @@ import {
 import { formatDocx } from "@/lib/api";
 import type { Paragraph } from "@/lib/api";
 import { BlockPreview } from "@/components/BlockPreview";
+import { CompareView } from "@/components/CompareView";
 
 const LOW_CONFIDENCE = 0.7;
 
@@ -40,6 +41,7 @@ export default function ReviewPage() {
 
   const [formatting, setFormatting] = useState(false);
   const [error, setError] = useState("");
+  const [showCompare, setShowCompare] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [previewBlocks, setPreviewBlocks] = useState<Record<BlockKey, boolean>>({
     toc: true,
@@ -112,6 +114,15 @@ export default function ReviewPage() {
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => router.push("/")}>
                 重新上传
+              </Button>
+              <Button
+                variant="outline"
+                size="md"
+                disabled={!allConfirmed}
+                onClick={() => setShowCompare(true)}
+                title={allConfirmed ? "" : "确认全部段落后可用"}
+              >
+                {allConfirmed ? "🔍 对比预览（原文 / 结果）" : "🔒 对比预览"}
               </Button>
               <Button size="md" disabled={!allConfirmed || formatting} onClick={handleFormat}>
                 {formatting
@@ -227,7 +238,15 @@ export default function ReviewPage() {
           })}
         </div>
 
-        <div className="mt-8 pb-12 flex justify-end">
+        <div className="mt-8 pb-12 flex justify-end gap-3">
+          <Button
+            size="lg"
+            variant="outline"
+            disabled={!allConfirmed}
+            onClick={() => setShowCompare(true)}
+          >
+            {allConfirmed ? "🔍 对比预览（原文 / 结果）" : "🔒 对比预览"}
+          </Button>
           <Button size="lg" disabled={!allConfirmed || formatting} onClick={handleFormat}>
             {formatting
               ? "格式化中..."
@@ -237,6 +256,13 @@ export default function ReviewPage() {
           </Button>
         </div>
       </div>
+
+      {showCompare && (
+        <CompareView
+          paragraphs={[...paragraphs].sort((a, b) => a.index - b.index)}
+          onClose={() => setShowCompare(false)}
+        />
+      )}
     </main>
   );
 }

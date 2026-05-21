@@ -39,7 +39,7 @@ interface RenderStyle {
   pageBreakBefore?: boolean;
 }
 
-const STYLES: Record<string, RenderStyle> = {
+export const STYLES: Record<string, RenderStyle> = {
   // toc
   toc_title: { chineseFont: "黑体", ptSize: 16, bold: true, align: "center", fixed: "目　　录" },
   toc_h1: { chineseFont: "宋体", ptSize: 12, align: "left" },
@@ -254,6 +254,25 @@ function ParagraphLine({ p }: { p: Paragraph }) {
   );
 }
 
+/** 单段格式化预览：按类型分派到 图片 / 表格 / 目录条目 / 普通段落 渲染。 */
+export function FormattedParagraph({ p }: { p: Paragraph }) {
+  if (p.type === "figure" && p.image_b64) {
+    return (
+      <div style={{ textAlign: "center", padding: "4px 0" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={p.image_b64}
+          alt="图片"
+          style={{ maxWidth: "100%", maxHeight: "200px", display: "inline-block", objectFit: "contain" }}
+        />
+      </div>
+    );
+  }
+  if (p.type === "table" && p.cells) return <TablePreview p={p} />;
+  if (p.type === "toc_h1" || p.type === "toc_h2" || p.type === "toc_h3") return <TocLine p={p} />;
+  return <ParagraphLine p={p} />;
+}
+
 interface Props {
   block: BlockKey;
   paragraphs: Paragraph[]; // 该大块的段落（已按 index 升序）
@@ -331,22 +350,7 @@ export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Pro
                             : "hover:bg-indigo-50/40"
                         }`}
                       >
-                        {p.type === "figure" && p.image_b64 ? (
-                          <div style={{ textAlign: "center", padding: "4px 0" }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={p.image_b64}
-                              alt="图片"
-                              style={{ maxWidth: "100%", maxHeight: "200px", display: "inline-block", objectFit: "contain" }}
-                            />
-                          </div>
-                        ) : p.type === "table" && p.cells ? (
-                          <TablePreview p={p} />
-                        ) : p.type === "toc_h1" || p.type === "toc_h2" || p.type === "toc_h3" ? (
-                          <TocLine p={p} />
-                        ) : (
-                          <ParagraphLine p={p} />
-                        )}
+                        <FormattedParagraph p={p} />
                       </div>
                     </div>
                   );
