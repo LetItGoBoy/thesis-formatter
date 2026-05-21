@@ -89,7 +89,7 @@ export default function ReviewPage() {
 
   return (
     <main className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[110rem] mx-auto">
         <header className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur py-4 mb-4 border-b">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <div>
