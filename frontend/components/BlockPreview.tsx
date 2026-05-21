@@ -254,6 +254,18 @@ const A4_PADDING: CSSProperties = {
   paddingRight: "9.52%",
 };
 
+// 严格 A4 矩形：宽度撑满预览列，高度 = 宽度 × 297/210，内容在页内滚动，
+// 页面比例恒为 A4，不会因内容多而被拉长变窄。
+const A4_PAGE: CSSProperties = {
+  width: "100%",
+  aspectRatio: "210 / 297",
+  background: "white",
+  boxShadow: "0 1px 6px rgba(0,0,0,0.18)",
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
+};
+
 export function BlockPreview({ block, paragraphs }: Props) {
   return (
     <div className="rounded-lg border border-slate-300 bg-white shadow-sm">
@@ -263,11 +275,9 @@ export function BlockPreview({ block, paragraphs }: Props) {
           ASCII / 数字 → Times New Roman · 中文按段落类型字体
         </span>
       </div>
-      <div className="max-h-[78vh] overflow-y-auto bg-slate-200 p-4">
-        {/* 浮动占位法：::before 高度=宽度×141.4%（A4纵横比）撑出最小一页高度，
-            内容更长时整页自然增高，不会溢出到灰底之外 */}
-        <div className="mx-auto bg-white shadow-md before:float-left before:content-[''] before:pt-[141.43%] after:block after:clear-both after:content-['']">
-          <div style={A4_PADDING}>
+      <div className="bg-slate-200 p-4">
+        <div style={A4_PAGE}>
+          <div style={{ ...A4_PADDING, flex: 1, minHeight: 0, overflowY: "auto" }}>
             {paragraphs.length === 0 ? (
               <div className="text-center text-slate-400 text-sm">本块暂无段落</div>
             ) : (
