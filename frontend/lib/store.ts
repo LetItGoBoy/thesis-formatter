@@ -19,14 +19,72 @@ export interface BlockDef {
   key: BlockKey;
   label: string;
   order: number;
+  commonMistakes: string[]; // 常犯错误自查清单
 }
 
 export const BLOCKS: BlockDef[] = [
-  { key: "toc", label: "目录大块", order: 1 },
-  { key: "abstract", label: "摘要大块", order: 2 },
-  { key: "body", label: "正文大块", order: 3 },
-  { key: "conclusion", label: "总结大块", order: 4 },
-  { key: "references", label: "参考文献大块", order: 5 },
+  {
+    key: "toc",
+    label: "目录 · Contents",
+    order: 1,
+    commonMistakes: [
+      "目录标题应为黑体、三号、加粗、居中，常被误设为宋体或忘记加粗",
+      "标题「目　　　录」用全角空格，不要用半角空格（间距会随网格变化）",
+      "一级/二级/三级目录缩进层级写反：二级前空 2 格、三级前空 4 格",
+      "标题与页码之间应有点线（……）引导，不要手动敲点或省略",
+      "目录条目字号应为小四（12pt），常误用其他字号",
+      "目录第一个一级标题通常是「摘　　要」（两个全角空格），不要写成「摘要」",
+      "英文摘要（Abstract）不写入目录，若有请删除此条目",
+      "致谢不写入目录，若有「致谢」条目请删除",
+      "目录最后一个一级标题通常是「附录」",
+      "章节标题格式：「第*章 标题」，「章」字后留一个空格再写标题，不能紧连",
+    ],
+  },
+  {
+    key: "abstract",
+    label: "摘要 · Abstract",
+    order: 2,
+    commonMistakes: [
+      "中文摘要正文应为仿宋，常被误设为宋体",
+      "关键词之间必须用空格分隔，禁止用分号（；）或顿号（、）",
+      "论文题目应为小二（18pt）、加粗、居中",
+      "中英文摘要标题（摘要 / Abstract）应顶格、加粗",
+      "英文摘要与英文关键词须为 Times New Roman",
+    ],
+  },
+  {
+    key: "body",
+    label: "正文 · Body",
+    order: 3,
+    commonMistakes: [
+      "每个一级标题（章）必须另起一页，常忘记分页",
+      "正文首行须缩进 2 字符，不要用空格代替缩进",
+      "数字序号用英文点号（1.），禁止中文顿号（1、）",
+      "数字和英文字母须为 Times New Roman，中文用宋体",
+      "表格须为三线表，且整表不能跨页",
+    ],
+  },
+  {
+    key: "conclusion",
+    label: "结论 · Conclusion",
+    order: 4,
+    commonMistakes: [
+      "标题固定为「总　　结」（两个全角空格），字号小三（15pt）加粗居中",
+      "本块必须另起一页",
+      "总结正文首行须缩进 2 字符",
+    ],
+  },
+  {
+    key: "references",
+    label: "参考文献 · References",
+    order: 5,
+    commonMistakes: [
+      "标题「参考文献」应为四号、加粗、居中，本块另起一页",
+      "著录格式应符合 GB/T 7714 标准",
+      "英文与数字须为 Times New Roman",
+      "参考文献正文不加首行缩进，常误加缩进",
+    ],
+  },
 ];
 
 export interface TypeOption {

@@ -55,7 +55,7 @@
     "toc_title": {
       "block": "toc",
       "label": "目录标题",
-      "fixed_content": "目   录",
+      "fixed_content": "目　　　录",
       "use_fixed_content": true,
       "font_cn": "黑体",
       "font_en_num": "Times New Roman",
@@ -354,7 +354,7 @@
     "conclusion_title": {
       "block": "conclusion",
       "label": "总结标题",
-      "fixed_content": "总  结",
+      "fixed_content": "总　　结",
       "use_fixed_content": true,
       "font_cn": "宋体",
       "font_en_num": "Times New Roman",
@@ -362,7 +362,7 @@
       "bold": true,
       "alignment": "center",
       "snap_to_grid": false,
-      "note": "固定内容：总  结（中间两个字符空格），本块另起一页"
+      "note": "固定内容：总　　结（中间两个全角空格），本块另起一页"
     },
     "conclusion_body": {
       "block": "conclusion",

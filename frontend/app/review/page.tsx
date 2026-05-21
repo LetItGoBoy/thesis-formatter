@@ -130,13 +130,24 @@ export default function ReviewPage() {
             return (
               <section key={blk.key} className="rounded-2xl bg-white border border-slate-200 shadow-sm">
                 <header className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
-                  <div>
+                  <div className="min-w-0">
                     <h2 className="text-lg font-bold">
                       {blk.order}. {blk.label}
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
                       共 {items.length} 段，已确认 {itemConfirmed} 段 · 将另起一页
                     </p>
+                    <details className="mt-2 group">
+                      <summary className="cursor-pointer list-none inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800 select-none">
+                        <span className="transition group-open:rotate-90">▶</span>
+                        ⚠️ 本块常见错误自查（{blk.commonMistakes.length} 条）
+                      </summary>
+                      <ul className="mt-2 max-w-2xl rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-1 list-disc pl-5">
+                        {blk.commonMistakes.map((m, i) => (
+                          <li key={i}>{m}</li>
+                        ))}
+                      </ul>
+                    </details>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button

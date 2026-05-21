@@ -36,7 +36,7 @@ interface RenderStyle {
 
 const STYLES: Record<string, RenderStyle> = {
   // toc
-  toc_title: { chineseFont: "黑体", ptSize: 16, bold: true, align: "center", fixed: "目  录" },
+  toc_title: { chineseFont: "黑体", ptSize: 16, bold: true, align: "center", fixed: "目　　　录" },
   toc_h1: { chineseFont: "宋体", ptSize: 12, align: "left" },
   toc_h2: { chineseFont: "宋体", ptSize: 12, align: "left", leadingFullWidthSpaces: 2 },
   toc_h3: { chineseFont: "宋体", ptSize: 12, align: "left", leadingFullWidthSpaces: 4 },
@@ -66,7 +66,7 @@ const STYLES: Record<string, RenderStyle> = {
   caption: { chineseFont: "宋体", ptSize: 10.5, align: "center" },
 
   // conclusion
-  conclusion_title: { chineseFont: "宋体", ptSize: 15, bold: true, align: "center", fixed: "总  结" },
+  conclusion_title: { chineseFont: "宋体", ptSize: 15, bold: true, align: "center", fixed: "总　　结" },
   conclusion_body: { chineseFont: "宋体", ptSize: 12, align: "justify", indent: 2 },
 
   // references
