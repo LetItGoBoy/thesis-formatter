@@ -26,7 +26,7 @@ const A4_PADDING: CSSProperties = {
   paddingRight: "9%",
 };
 
-// 左侧「原文」：统一朴素样式渲染当前文本，不套任何格式
+// 左侧「原文」：按原始 Word 格式属性渲染，还原上传时的样式
 function PlainParagraph({ p }: { p: Paragraph }) {
   if (p.type === "figure" && p.image_b64) {
     return (
@@ -57,16 +57,22 @@ function PlainParagraph({ p }: { p: Paragraph }) {
       </table>
     );
   }
+  const s = p.orig_style;
+  // 1cm ≈ 37.8px（96dpi）
+  const CM = 37.8;
+  const textStyle: CSSProperties = {
+    fontFamily: '"Times New Roman", "SimSun", "Songti SC", serif',
+    fontSize: s ? `${s.font_size_pt}pt` : "12pt",
+    fontWeight: s?.is_bold ? "bold" : "normal",
+    textAlign: (s?.alignment ?? "left") as CSSProperties["textAlign"],
+    paddingLeft: s && s.indent_cm > 0 ? `${s.indent_cm * CM}px` : undefined,
+    textIndent: s && s.first_line_cm > 0 ? `${s.first_line_cm * CM}px` : undefined,
+    lineHeight: 1.7,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+  };
   return (
-    <div
-      style={{
-        fontFamily: '"Times New Roman", "SimSun", "Songti SC", serif',
-        fontSize: "12pt",
-        lineHeight: 1.7,
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-word",
-      }}
-    >
+    <div style={textStyle}>
       {p.text || <span style={{ color: "#cbd5e1" }}>（空段）</span>}
     </div>
   );

@@ -18,6 +18,7 @@ from docx.table import Table as DocxTable
 from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.oxml.table import CT_Tbl
 from docx.oxml.text.paragraph import CT_P
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 from .ai_client import AIFatalError, classify_paragraphs_batch
 from .docx_images import paragraph_image_refs
@@ -103,6 +104,45 @@ def _table_to_cells(table: DocxTable) -> list[list[str]]:
     return grid
 
 
+def _capture_orig_style(p: DocxParagraph) -> dict:
+    """抽取段落原始格式属性，供前端「上传原文」侧原样渲染。"""
+    fmt = p.paragraph_format
+    _align = {
+        WD_ALIGN_PARAGRAPH.CENTER: "center",
+        WD_ALIGN_PARAGRAPH.RIGHT: "right",
+        WD_ALIGN_PARAGRAPH.JUSTIFY: "justify",
+    }
+    alignment = _align.get(fmt.alignment, "left")
+    indent_emu = fmt.left_indent
+    indent_cm = round(indent_emu.cm, 2) if indent_emu else 0.0
+    first_line_emu = fmt.first_line_indent
+    first_line_cm = round(first_line_emu.cm, 2) if first_line_emu else 0.0
+    is_bold = False
+    font_size_pt = 12.0
+    for run in p.runs:
+        if run.text.strip():
+            if run.bold is not None:
+                is_bold = bool(run.bold)
+            if run.font.size:
+                font_size_pt = round(run.font.size.pt, 1)
+            break
+    if font_size_pt == 12.0:
+        try:
+            sz = p.style.font.size
+            if sz:
+                font_size_pt = round(sz.pt, 1)
+        except Exception:
+            pass
+    return {
+        "alignment": alignment,
+        "indent_cm": indent_cm,
+        "first_line_cm": first_line_cm,
+        "is_bold": is_bold,
+        "font_size_pt": font_size_pt,
+        "style_name": p.style.name if p.style else "",
+    }
+
+
 def extract_blocks(file_bytes: bytes) -> list[dict]:
     """
     按文档顺序抽取「段落」与「表格」，保留所有非空块，顺序索引（一段不漏）。
@@ -142,7 +182,7 @@ def extract_blocks(file_bytes: bytes) -> list[dict]:
             text = (blk.text or "").strip()
             if not text:
                 continue
-            items.append({"index": idx, "text": text})
+            items.append({"index": idx, "text": text, "orig_style": _capture_orig_style(blk)})
             idx += 1
     return items
 
@@ -226,5 +266,6 @@ def parse_docx(file_bytes: bytes) -> list[dict]:
             "confidence": c.get("confidence", 0.5),
             "reason": c.get("reason", ""),
             "block": _type_to_block(ptype),
+            "orig_style": p.get("orig_style"),
         })
     return results

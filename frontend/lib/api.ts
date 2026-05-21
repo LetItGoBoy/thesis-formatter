@@ -17,6 +17,14 @@ export interface Paragraph {
   cells?: string[][]; // 仅当 type==="table" 时存在：表格单元格网格（行 × 列）
   image_b64?: string; // 仅当 type==="figure" 时存在：base64 data URI，用于预览
   image_index?: number; // 仅当 type==="figure" 时存在：对应 source_bytes 中的图片序号
+  orig_style?: {
+    alignment: "left" | "center" | "right" | "justify";
+    indent_cm: number;
+    first_line_cm: number;
+    is_bold: boolean;
+    font_size_pt: number;
+    style_name: string;
+  };
 }
 
 export interface ParseResponse {
