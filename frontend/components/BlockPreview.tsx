@@ -26,6 +26,9 @@ interface RenderStyle {
   bold?: boolean;
   align?: "left" | "center" | "right" | "justify";
   indent?: number; // first-line indent in chars
+  leftIndent?: number; // left indent in chars (whole paragraph)
+  spaceAfterPt?: number; // bottom margin in pt
+  spaceBeforePt?: number; // top margin in pt
   leadingFullWidthSpaces?: number;
   block?: BlockKey;
   fixed?: string;
@@ -44,13 +47,13 @@ const STYLES: Record<string, RenderStyle> = {
   toc_h3: { chineseFont: "宋体", ptSize: 12, align: "left", leadingFullWidthSpaces: 4 },
 
   // abstract
-  paper_title: { chineseFont: "宋体", ptSize: 18, bold: true, align: "center" },
-  author_line: { chineseFont: "仿宋", ptSize: 12, align: "center" },
-  instructor: { chineseFont: "仿宋", ptSize: 12, align: "center" },
+  paper_title: { chineseFont: "宋体", ptSize: 18, bold: true, align: "center", spaceAfterPt: 18 },
+  author_line: { chineseFont: "仿宋", ptSize: 12, align: "left", leftIndent: 6 },
+  instructor: { chineseFont: "仿宋", ptSize: 12, align: "left", leftIndent: 6 },
   abstract_title_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", fixed: "摘要" },
   abstract_body_cn: { chineseFont: "仿宋", ptSize: 12, align: "justify", indent: 2 },
   keywords_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "关键词：" },
-  abstract_title_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", fixed: "Abstract", pageBreakBefore: true },
+  abstract_title_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", fixed: "Abstract", pageBreakBefore: true, spaceBeforePt: 18 },
   abstract_body_en: { chineseFont: "Times New Roman", ptSize: 12, align: "justify", indent: 2 },
   keywords_en: { chineseFont: "Times New Roman", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "Keywords:", capitalizeWords: true },
 
@@ -238,6 +241,9 @@ function ParagraphLine({ p }: { p: Paragraph }) {
         fontWeight: st.bold ? 700 : 400,
         textAlign: st.align || "left",
         textIndent: st.indent ? `${st.indent * st.ptSize}pt` : 0,
+        marginLeft: st.leftIndent ? `${st.leftIndent * st.ptSize}pt` : undefined,
+        marginTop: st.spaceBeforePt ? `${st.spaceBeforePt}pt` : undefined,
+        marginBottom: st.spaceAfterPt ? `${st.spaceAfterPt}pt` : undefined,
         lineHeight: 1.7,
         whiteSpace: "pre-wrap",
         wordBreak: "break-word",
