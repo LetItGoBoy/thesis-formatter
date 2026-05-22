@@ -103,8 +103,11 @@ export function CompareView({ paragraphs, onClose }: Props) {
       <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
         {/* 左：原始 Word 文档（docx-preview 高保真渲染） */}
         <div className="flex flex-col min-h-0 rounded-xl bg-white overflow-hidden shadow-lg">
-          <div className="border-b bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600 shrink-0">
-            上传原文（原始排版）
+          <div className="border-b bg-slate-100 px-4 py-2 shrink-0">
+            <div className="text-sm font-semibold text-slate-600">上传原文（原始排版）</div>
+            <div className="text-xs text-amber-600 mt-0.5">
+              ⚠ 网页渲染约 90% 还原原文排版，字体/行距/分页可能与 Word/WPS 略有差异，仅供参考
+            </div>
           </div>
           <div
             ref={leftRef}

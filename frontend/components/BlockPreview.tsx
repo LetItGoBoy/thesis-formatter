@@ -48,8 +48,8 @@ export const STYLES: Record<string, RenderStyle> = {
 
   // abstract
   paper_title: { chineseFont: "宋体", ptSize: 18, bold: true, align: "center", spaceAfterPt: 18 },
-  author_line: { chineseFont: "仿宋", ptSize: 12, align: "left", leftIndent: 14 },
-  instructor: { chineseFont: "仿宋", ptSize: 12, align: "left", leftIndent: 14 },
+  author_line: { chineseFont: "仿宋", ptSize: 12, align: "center" },
+  instructor: { chineseFont: "仿宋", ptSize: 12, align: "center" },
   abstract_title_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", fixed: "摘要" },
   abstract_body_cn: { chineseFont: "仿宋", ptSize: 12, align: "justify", indent: 2 },
   keywords_cn: { chineseFont: "仿宋", ptSize: 12, bold: true, align: "left", isKeywords: true, keywordPrefix: "关键词：" },

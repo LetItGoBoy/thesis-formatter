@@ -124,12 +124,12 @@
       "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
-      "alignment": "left",
-      "indent_chars": 14,
+      "alignment": "center",
+      "indent_chars": 0,
       "line_spacing": 1.5,
       "blank_lines_before": 1,
       "snap_to_grid": false,
-      "note": "与题目空一行（前置一个真实空行）；左缩进14字符使作者块整体居中，且与指导老师首字对齐"
+      "note": "与题目空一行（前置一个真实空行）；居中对齐"
     },
     "instructor": {
       "block": "abstract",
@@ -138,8 +138,8 @@
       "font_en_num": "Times New Roman",
       "font_size_pt": 12,
       "bold": false,
-      "alignment": "left",
-      "indent_chars": 14,
+      "alignment": "center",
+      "indent_chars": 0,
       "line_spacing": 1.5,
       "snap_to_grid": false
     },
