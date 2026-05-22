@@ -79,8 +79,9 @@ export function CompareView({ paragraphs, onClose }: Props) {
     requestAnimationFrame(() => { syncing.current = false; });
   }
 
-  // 渲染时插入大块分隔（右侧体现「另起一页」）
+  // 渲染时插入分隔标记：大块切换 + 正文内每个 h1 各自另起一页
   let prevBlock: BlockKey | null = null;
+  let prevType: string | null = null;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex flex-col p-3 md:p-6">
@@ -133,12 +134,20 @@ export function CompareView({ paragraphs, onClose }: Props) {
                 {paragraphs.map((p) => {
                   const blk = (p.block as BlockKey) || blockOf(p.type);
                   const isNewBlock = prevBlock !== null && blk !== prevBlock;
+                  // h1 在正文块内（非首次进入正文）也强制另起一页
+                  const isH1Break = p.type === "h1" && !isNewBlock && prevType !== null;
                   prevBlock = blk;
+                  prevType = p.type;
                   return (
                     <div key={p.index}>
                       {isNewBlock && (
                         <div className="my-3 border-t border-dashed border-orange-300 text-xs text-orange-600 text-center bg-orange-50 py-1">
                           ↳ 另起一页（{BLOCK_LABEL[blk]}）
+                        </div>
+                      )}
+                      {isH1Break && (
+                        <div className="my-3 border-t border-dashed border-sky-300 text-xs text-sky-600 text-center bg-sky-50 py-1">
+                          ↳ 另起一页（一级标题）
                         </div>
                       )}
                       <FormattedParagraph p={p} />
