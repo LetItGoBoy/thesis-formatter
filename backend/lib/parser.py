@@ -55,16 +55,61 @@ def _norm(text: str) -> str:
     return re.sub(r"\s+", "", text)
 
 
+# 原创性声明 / 签名 / 日期 识别标记
+_DECL_END = "特此声明"
+_DECL_MARKERS = ("郑重声明", "原创性声明", "知识产权声明", "原创性及知识产权")
+_SIG_MARKERS = ("毕业论文作者", "指导教师", "学生签名", "导师签名", "作者签名", "签名", "日期")
+_DATE_RE = re.compile(r"年\s*月\s*日|\d{2,4}\s*年")
+
+
 def find_content_start(paragraphs: list[dict]) -> int | None:
     """
-    定位「目录」标题所在索引。其之前的封面、原创性声明等整体跳过。
+    定位正文真正开始的索引，其之前的封面、原创性声明整体跳过。
 
-    只保留这一条可靠的预扫描规则（封面/声明必在目录前）；目录内部的细分边界
-    （摘要/正文/总结/参考文献）交给 AI 通读全文语义判断，避免关键词漏判
-    （如标题页夹在目录与摘要之间、章标题无"第X章"前缀等）。
+    论文版式不一（封面→声明→目录→摘要 或 封面→声明→标题页→摘要→目录），
+    若只认「目录」会在「目录在摘要之后」时漏跳封面/声明，导致它们被误判为摘要。
+    因此以「原创性声明」为主锚点：声明之前是封面、声明本身需跳过，声明之后
+    （无论是标题页、摘要还是目录）都是正文，交 AI 通读判断。
 
-    找不到目录标题时返回 None，调用方退化为全文交AI识别（安全兜底）。
+    优先级：
+      1. 「特此声明」结束 → 跳过其后的签名/日期/空行 → 返回第一段正文
+      2. 无「特此声明」时，在声明标记之后找「目录」或「摘要/Abstract」
+      3. 全文找「目录」（无封面/声明的简单文档）
+    找不到任何锚点时返回 None，调用方退化为全文交 AI 识别（安全兜底）。
     """
+    n = len(paragraphs)
+
+    # 1. 以「特此声明」为声明结束锚点
+    decl_end = next((i for i, p in enumerate(paragraphs) if _DECL_END in p["text"]), None)
+    if decl_end is not None:
+        j = decl_end + 1
+        skipped = 0
+        while j < n and skipped < 6:
+            t = paragraphs[j]["text"]
+            if (any(m in t for m in _SIG_MARKERS) or _DATE_RE.search(t)
+                    or len(_norm(t)) <= 1):
+                j += 1
+                skipped += 1
+                continue
+            break
+        if j < n:
+            return j
+
+    # 2. 无「特此声明」：从声明标记之后开始找目录/摘要
+    decl_start = next(
+        (i for i, p in enumerate(paragraphs)
+         if any(m in p["text"] for m in _DECL_MARKERS)),
+        None,
+    )
+    search_from = decl_start + 1 if decl_start is not None else 0
+    for i in range(search_from, n):
+        if _norm(paragraphs[i]["text"]) == "目录":
+            return i
+    for i in range(search_from, n):
+        if _norm(paragraphs[i]["text"]).lower() in ("摘要", "abstract"):
+            return i
+
+    # 3. 全局兜底：找目录
     for i, p in enumerate(paragraphs):
         if _norm(p["text"]) == "目录":
             return i
@@ -202,10 +247,10 @@ def parse_docx(file_bytes: bytes) -> list[dict]:
     if not raw_items:
         return []
 
-    # 预扫描定位目录：之前的封面/声明整体跳过，从目录开始整片送AI（block=None 不约束）
+    # 预扫描定位正文起点：封面/原创性声明整体跳过，从正文起整片送AI（block=None 不约束）
     start = find_content_start(raw_items)
     if start is None:
-        logger.warning("未检测到目录标题，全文交AI识别")
+        logger.warning("未检测到正文起点锚点（目录/声明），全文交AI识别")
         kept = raw_items
     else:
         kept = raw_items[start:]
