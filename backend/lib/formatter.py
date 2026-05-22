@@ -596,6 +596,16 @@ def format_docx(paragraphs, format_config, source_bytes=None):
 
     ordered = sorted(paragraphs, key=lambda p: p.get("index", 0))
 
+    # 参考文献自动补序号：若段落文字本身不带 [n] 前缀（Word 自动编号情形），自动注入
+    _REF_TYPES = {"reference_item", "ref"}
+    _ref_items = [p for p in ordered if p.get("type") in _REF_TYPES]
+    _already_num = sum(
+        1 for p in _ref_items
+        if re.match(r"^\s*\[\d+\]", p.get("text", ""))
+    )
+    _auto_num_refs = bool(_ref_items) and _already_num < len(_ref_items) / 2
+    _ref_seq = 0
+
     last_block = None
     for p in ordered:
         ptype = p.get("type", "body")
@@ -620,6 +630,11 @@ def format_docx(paragraphs, format_config, source_bytes=None):
             continue
 
         text = _normalize_text(p.get("text", ""), ptype, style)
+
+        # 参考文献序号：自动补 [n] 前缀
+        if ptype in _REF_TYPES and _auto_num_refs:
+            _ref_seq += 1
+            text = f"[{_ref_seq}] {text}"  #   = en-space，比普通空格稍宽，排版更美观
 
         # 前置真实空行（blank_lines_before）。若本段要另起一页，则把分页放到第一个
         # 空行上，使空行落在新页顶部、正文随后；否则空行就在当前位置之前。

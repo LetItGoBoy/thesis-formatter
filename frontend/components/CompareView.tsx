@@ -83,6 +83,14 @@ export function CompareView({ paragraphs, onClose }: Props) {
   let prevBlock: BlockKey | null = null;
   let prevType: string | null = null;
 
+  // 参考文献序号：检测是否需要自动注入 [n]
+  const _refTypes = new Set(["reference_item", "ref"]);
+  const _reRefs = /^\s*\[\d+\]/;
+  const _refItems = paragraphs.filter((p) => _refTypes.has(p.type));
+  const _alreadyNum = _refItems.filter((p) => _reRefs.test(p.text)).length;
+  const _autoNumRefs = _refItems.length > 0 && _alreadyNum < _refItems.length / 2;
+  let refSeq = 0;
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex flex-col p-3 md:p-6">
       <div className="flex items-center justify-between mb-3 text-white">
@@ -137,10 +145,14 @@ export function CompareView({ paragraphs, onClose }: Props) {
                 {paragraphs.map((p) => {
                   const blk = (p.block as BlockKey) || blockOf(p.type);
                   const isNewBlock = prevBlock !== null && blk !== prevBlock;
-                  // h1 在正文块内（非首次进入正文）也强制另起一页
                   const isH1Break = p.type === "h1" && !isNewBlock && prevType !== null;
                   prevBlock = blk;
                   prevType = p.type;
+                  // 参考文献自动加 [n]
+                  const isRef = _refTypes.has(p.type);
+                  if (isRef && _autoNumRefs) refSeq++;
+                  const displayP =
+                    isRef && _autoNumRefs ? { ...p, text: `[${refSeq}] ${p.text}` } : p;
                   return (
                     <div key={p.index}>
                       {isNewBlock && (
@@ -153,7 +165,7 @@ export function CompareView({ paragraphs, onClose }: Props) {
                           ↳ 另起一页（一级标题）
                         </div>
                       )}
-                      <FormattedParagraph p={p} />
+                      <FormattedParagraph p={displayP} />
                     </div>
                   );
                 })}

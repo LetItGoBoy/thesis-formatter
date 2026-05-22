@@ -309,7 +309,24 @@ const A4_PAGE: CSSProperties = {
   overflow: "hidden",
 };
 
+const _REF_TYPES = new Set(["reference_item", "ref"]);
+const _RE_HAS_REF_NUM = /^\s*\[\d+\]/;
+
+/** 为参考文献条目注入 [n] 序号（若文字本身已有则保留原样） */
+function withRefNumbers(paragraphs: Paragraph[]): Paragraph[] {
+  const refs = paragraphs.filter((p) => _REF_TYPES.has(p.type));
+  const alreadyNumbered = refs.filter((p) => _RE_HAS_REF_NUM.test(p.text)).length;
+  if (!refs.length || alreadyNumbered >= refs.length / 2) return paragraphs;
+  let seq = 0;
+  return paragraphs.map((p) => {
+    if (!_REF_TYPES.has(p.type)) return p;
+    seq++;
+    return { ...p, text: `[${seq}] ${p.text}` };
+  });
+}
+
 export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Props) {
+  const displayParagraphs = block === "references" ? withRefNumbers(paragraphs) : paragraphs;
   return (
     <div className="rounded-lg border border-slate-300 bg-white shadow-sm">
       <div className="border-b border-dashed border-orange-300 bg-orange-50 px-4 py-2 text-xs text-orange-700 flex items-center justify-between">
@@ -321,11 +338,11 @@ export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Pro
       <div className="bg-slate-200 p-4">
         <div style={A4_PAGE}>
           <div style={{ ...A4_PADDING, flex: 1, minHeight: 0, overflowY: "auto" }}>
-            {paragraphs.length === 0 ? (
+            {displayParagraphs.length === 0 ? (
               <div className="text-center text-slate-400 text-sm">本块暂无段落</div>
             ) : (
               <div className="space-y-2">
-                {paragraphs.map((p) => {
+                {displayParagraphs.map((p) => {
                   // 正文大块内 h1 视觉提示"另起一页"
                   const isH1Break = block === "body" && p.type === "h1";
                   const isPageBreak = (STYLES[p.type] as RenderStyle | undefined)?.pageBreakBefore;
