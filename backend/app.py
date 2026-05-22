@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 
 from lib.parser import parse_docx, ParseError
 from lib.formatter import format_docx
+from lib import db
 
 load_dotenv()
 
@@ -34,6 +35,9 @@ logger = logging.getLogger("thesis.app")
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+# 启动即建表（幂等）。SQLite 文件路径见 lib/db.py（默认 backend/data/thesis.db）
+db.init_db()
 
 FLASK_PORT = int(os.environ.get("FLASK_PORT", 5000))
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", 20))
