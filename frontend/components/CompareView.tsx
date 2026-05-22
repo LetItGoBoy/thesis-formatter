@@ -1,14 +1,16 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import type { Paragraph } from "@/lib/api";
-import { blockOf, type BlockKey } from "@/lib/store";
+import { blockOf, type BlockKey, useThesisStore } from "@/lib/store";
 import { FormattedParagraph } from "./BlockPreview";
 
 /**
- * 前后对比预览：左「上传原文」（解析后的朴素文本）、右「格式化结果」（重构排版），
- * 两侧按比例联动滚动，便于一眼核对内容是否丢失、样式是否套对。
+ * 前后对比预览
+ * 左侧：docx-preview 高保真渲染原始 Word 文档（直接还原上传时的排版）
+ * 右侧：格式化结果（本系统重构后的排版，FormattedParagraph）
+ * 两侧按比例联动滚动
  */
 
 const BLOCK_LABEL: Record<BlockKey, string> = {
@@ -26,69 +28,44 @@ const A4_PADDING: CSSProperties = {
   paddingRight: "9%",
 };
 
-// 左侧「原文」：按原始 Word 格式属性渲染，还原上传时的样式
-function PlainParagraph({ p }: { p: Paragraph }) {
-  if (p.type === "figure" && p.image_b64) {
-    return (
-      <div style={{ textAlign: "center", padding: "4px 0" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={p.image_b64}
-          alt="图片"
-          style={{ maxWidth: "100%", maxHeight: "200px", display: "inline-block", objectFit: "contain" }}
-        />
-      </div>
-    );
-  }
-  if (p.type === "table" && p.cells) {
-    return (
-      <table style={{ borderCollapse: "collapse", width: "100%", fontSize: "10.5pt" }}>
-        <tbody>
-          {p.cells.map((row, r) => (
-            <tr key={r}>
-              {row.map((cell, c) => (
-                <td key={c} style={{ border: "1px solid #cbd5e1", padding: "2px 6px" }}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
-  }
-  const s = p.orig_style;
-  // 1cm ≈ 37.8px（96dpi）
-  const CM = 37.8;
-  const textStyle: CSSProperties = {
-    fontFamily: '"Times New Roman", "SimSun", "Songti SC", serif',
-    fontSize: s ? `${s.font_size_pt}pt` : "12pt",
-    fontWeight: s?.is_bold ? "bold" : "normal",
-    textAlign: (s?.alignment ?? "left") as CSSProperties["textAlign"],
-    paddingLeft: s && s.indent_cm > 0 ? `${s.indent_cm * CM}px` : undefined,
-    textIndent: s && s.first_line_cm > 0 ? `${s.first_line_cm * CM}px` : undefined,
-    lineHeight: 1.7,
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-  };
-  return (
-    <div style={textStyle}>
-      {p.text || <span style={{ color: "#cbd5e1" }}>（空段）</span>}
-    </div>
-  );
-}
-
 interface Props {
-  paragraphs: Paragraph[]; // 已按 index 升序
+  paragraphs: Paragraph[]; // 已按 index 升序，用于右侧格式化预览
   onClose: () => void;
 }
 
 export function CompareView({ paragraphs, onClose }: Props) {
+  const docxBase64 = useThesisStore((s) => s.docxBase64);
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
+  const docxContainerRef = useRef<HTMLDivElement>(null);
   const syncing = useRef(false);
-  // 右侧各段 DOM 引用：用于「点击左侧段落 → 右侧滚动到对应内容」
-  const rightItemRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // 用 docx-preview 在左侧高保真渲染原始 Word 文档
+  useEffect(() => {
+    const container = docxContainerRef.current;
+    if (!docxBase64 || !container) return;
+
+    // base64 → ArrayBuffer
+    const binary = atob(docxBase64);
+    const buf = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) buf[i] = binary.charCodeAt(i);
+
+    import("docx-preview")
+      .then(({ renderAsync }) =>
+        renderAsync(buf.buffer, container, undefined, {
+          inWrapper: true,       // 带页面阴影边框
+          ignoreWidth: false,    // 按原始纸张宽度渲染
+          ignoreHeight: true,    // 高度连续滚动，不截断成独立页
+          renderHeaders: false,
+          renderFooters: false,
+          renderFootnotes: false,
+          debug: false,
+        })
+      )
+      .catch((err) => {
+        if (container) container.innerHTML = `<p style="color:#ef4444;padding:16px">原文渲染失败：${err}</p>`;
+      });
+  }, [docxBase64]);
 
   // 按比例联动：源侧滚动比例 → 目标侧 scrollTop（两侧高度不同也能对齐）
   function sync(from: "l" | "r") {
@@ -99,25 +76,7 @@ export function CompareView({ paragraphs, onClose }: Props) {
     const denom = src.scrollHeight - src.clientHeight;
     const ratio = denom > 0 ? src.scrollTop / denom : 0;
     dst.scrollTop = ratio * (dst.scrollHeight - dst.clientHeight);
-    requestAnimationFrame(() => {
-      syncing.current = false;
-    });
-  }
-
-  // 点击左侧某段，右侧平滑滚动到对应段并高亮
-  function jumpRight(index: number) {
-    const dst = rightRef.current;
-    const el = rightItemRefs.current[index];
-    if (!dst || !el) return;
-    syncing.current = true; // 暂停联动，避免右滚又把左拉回去
-    const delta = el.getBoundingClientRect().top - dst.getBoundingClientRect().top;
-    dst.scrollTo({ top: dst.scrollTop + delta - dst.clientHeight / 3, behavior: "smooth" });
-    el.style.transition = "background-color 0.3s";
-    el.style.backgroundColor = "#fef08a";
-    setTimeout(() => {
-      el.style.backgroundColor = "";
-      syncing.current = false;
-    }, 700);
+    requestAnimationFrame(() => { syncing.current = false; });
   }
 
   // 渲染时插入大块分隔（右侧体现「另起一页」）
@@ -129,7 +88,7 @@ export function CompareView({ paragraphs, onClose }: Props) {
         <div>
           <h2 className="text-lg font-bold">前后对比预览</h2>
           <p className="text-xs text-slate-300 mt-0.5">
-            左右联动滚动 · 核对内容是否完整、样式是否正确（最终以下载的 Word 为准）
+            左：原始Word排版 · 右：格式化结果 · 左右联动滚动（最终以下载的 Word 为准）
           </p>
         </div>
         <button
@@ -141,34 +100,25 @@ export function CompareView({ paragraphs, onClose }: Props) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
-        {/* 左：上传原文 */}
+        {/* 左：原始 Word 文档（docx-preview 高保真渲染） */}
         <div className="flex flex-col min-h-0 rounded-xl bg-white overflow-hidden shadow-lg">
           <div className="border-b bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600 shrink-0">
-            上传原文（解析后的文本）
+            上传原文（原始排版）
           </div>
           <div
             ref={leftRef}
             onScroll={() => sync("l")}
-            className="flex-1 min-h-0 overflow-y-auto bg-slate-200 p-4"
+            className="flex-1 min-h-0 overflow-y-auto bg-slate-200 p-2"
           >
-            <div style={{ ...A4_PADDING, background: "white", minHeight: "100%" }}>
-              <div className="space-y-2">
-                {paragraphs.map((p) => (
-                  <div
-                    key={p.index}
-                    onClick={() => jumpRight(p.index)}
-                    className="cursor-pointer rounded hover:bg-blue-50/70 transition-colors"
-                    title="点击定位到右侧格式化结果"
-                  >
-                    <PlainParagraph p={p} />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <div
+              ref={docxContainerRef}
+              className="bg-white min-h-full"
+              style={{ fontSize: "11pt" }}
+            />
           </div>
         </div>
 
-        {/* 右：格式化结果 */}
+        {/* 右：格式化结果（FormattedParagraph） */}
         <div className="flex flex-col min-h-0 rounded-xl bg-white overflow-hidden shadow-lg">
           <div className="border-b bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shrink-0">
             格式化结果（重构排版）
@@ -185,12 +135,7 @@ export function CompareView({ paragraphs, onClose }: Props) {
                   const isNewBlock = prevBlock !== null && blk !== prevBlock;
                   prevBlock = blk;
                   return (
-                    <div
-                      key={p.index}
-                      ref={(el) => {
-                        rightItemRefs.current[p.index] = el;
-                      }}
-                    >
+                    <div key={p.index}>
                       {isNewBlock && (
                         <div className="my-3 border-t border-dashed border-orange-300 text-xs text-orange-600 text-center bg-orange-50 py-1">
                           ↳ 另起一页（{BLOCK_LABEL[blk]}）
