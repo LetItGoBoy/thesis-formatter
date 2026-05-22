@@ -16,15 +16,19 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 logger = logging.getLogger("thesis.ai")
 
 AI_TIMEOUT = float(os.environ.get("AI_TIMEOUT", 120))
-# 模型单次输出 token 上限。整片识别要为每段回写一条 JSON，输出量大；
-# 不显式设置时各家默认很小（DeepSeek 4096 / Moonshot 类似），会把 JSON 数组截断，
-# 导致解析失败 -> 整批回退成 body/0.3（页面全是"正文 30%"即此症状）。
-AI_MAX_TOKENS = int(os.environ.get("AI_MAX_TOKENS", 8192))
-# 批大小：一批的输出（每段约 50~60 token）须能放进 AI_MAX_TOKENS，否则会被截断。
-# 8192 输出 ≈ 容纳 ~130 段；取 120 留余量。仍走整片语义 prompt（block=None），
-# 批边界不强制类型，且解析不全时会自动二分重试，故不影响边界识别。
-BATCH_SIZE = int(os.environ.get("AI_BATCH_SIZE", 120))
-PARA_TEXT_TRUNC = int(os.environ.get("AI_PARA_TRUNC", 300))
+# 模型单次输出 token 上限。整片识别要为每段回写一条 JSON。
+# 取 4096：批内段数受 BATCH_SIZE 限制（≤25 段 ≈ 1000 输出 token），4096 足够留余量；
+# 且对 8k 上下文模型，过大的 max_tokens 会和长输入抢占窗口、反而触发截断。
+AI_MAX_TOKENS = int(os.environ.get("AI_MAX_TOKENS", 4096))
+# 批大小：关键是「输入 + 输出」都要放进模型上下文窗口，不能只算输出！
+# 以 moonshot-v1-8k（8k 总窗口）为基准：系统提示≈800 token，每段输入≈200 token
+# （PARA_TRUNC=200 字 ÷ 1.5 字/token）+ 输出≈40 token。
+#   (8000 - 800) / (200 + 40) ≈ 30 段 -> 取 25 段留安全余量。
+# 旧默认 120 段会让单批输入暴涨到 ~3 万 token，远超 8k，模型只能读到开头一小段，
+# 命中率不足触发二分重试 -> 重试子批仍超窗 -> 递归爆炸 -> 整体解析超时。
+# 上下文更大的模型（moonshot-v1-32k/128k、deepseek 等）可在 .env 调大 AI_BATCH_SIZE。
+BATCH_SIZE = int(os.environ.get("AI_BATCH_SIZE", 25))
+PARA_TEXT_TRUNC = int(os.environ.get("AI_PARA_TRUNC", 200))
 # 并发批数上限：默认 3 以匹配 Moonshot 账号的组织并发上限，避免 429 限流。
 # 账号配额更高时可在 .env 调大 AI_BATCH_CONCURRENCY。
 AI_BATCH_CONCURRENCY = int(os.environ.get("AI_BATCH_CONCURRENCY", 3))
@@ -531,10 +535,11 @@ def _classify_batch(client: BaseAIClient, items: list[dict], block: str | None,
     except Exception as e:
         parse_err = e
 
-    # 解析失败、或覆盖率过低（多半是输出被 max_tokens 截断）：二分重试，
-    # 而不是整批回退成 body/0.3。每个子批输出更短，能完整放进 AI_MAX_TOKENS。
+    # 解析失败、或覆盖率过低（多半是输出被截断或输入超窗）：二分重试，
+    # 而不是整批回退成 body/0.3。每个子批输入/输出都更短，更易完整放进上下文窗口。
+    # depth<3 + 子批须>3 段：限制递归层数，避免单批退化成几十次串行调用而拖垮整体耗时。
     covered = _coverage(arr, items) if arr else 0
-    if (arr is None or covered < len(items) * 0.8) and len(items) > 1 and depth < 5:
+    if (arr is None or covered < len(items) * 0.8) and len(items) > 3 and depth < 3:
         mid = len(items) // 2
         logger.warning("批输出疑似截断/不全（命中 %d/%d），二分重试 depth=%d",
                        covered, len(items), depth)
