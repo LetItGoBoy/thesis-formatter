@@ -18,6 +18,7 @@ from docx.table import Table as DocxTable
 from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.oxml.table import CT_Tbl
 from docx.oxml.text.paragraph import CT_P
+from docx.oxml.ns import qn
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 from .ai_client import AIFatalError, classify_paragraphs_batch
@@ -137,16 +138,30 @@ def select_content_items(items: list[dict]) -> list[dict]:
             break
         remove.update(range(decl_start, decl_end + 1))
 
+    logger.info(
+        "select_content_items: toc_idx=%s decl_start=%s abs_idx=%s "
+        "-> cover_end=%s remove=%d",
+        toc_idx, decl_start, abs_idx, cover_end, len(remove),
+    )
     return [items[i] for i in range(cover_end, n) if i not in remove]
 
 
 def _iter_block_items(doc: DocxDocument):
-    """按文档顺序产出正文里的段落(DocxParagraph)与表格(DocxTable)。"""
-    for child in doc.element.body.iterchildren():
-        if isinstance(child, CT_P):
-            yield DocxParagraph(child, doc)
-        elif isinstance(child, CT_Tbl):
-            yield DocxTable(child, doc)
+    """按文档顺序产出正文里的段落(DocxParagraph)与表格(DocxTable)。
+    Word 自动生成的目录常包裹在 w:sdt（内容控件）中，递归处理以免漏掉。"""
+    def _iter_children(parent):
+        for child in parent.iterchildren():
+            if isinstance(child, CT_P):
+                yield DocxParagraph(child, doc)
+            elif isinstance(child, CT_Tbl):
+                yield DocxTable(child, doc)
+            elif child.tag == qn("w:sdt"):
+                # TOC 等内容控件：进入 w:sdtContent 继续枚举
+                content = child.find(qn("w:sdtContent"))
+                if content is not None:
+                    yield from _iter_children(content)
+
+    yield from _iter_children(doc.element.body)
 
 
 def _table_to_cells(table: DocxTable) -> list[list[str]]:
