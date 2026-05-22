@@ -134,6 +134,13 @@ export default function ReviewPage() {
             </div>
           </div>
           <Progress value={total ? (confirmedCount / total) * 100 : 0} />
+          <div className="mt-3 rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+            <strong className="font-bold">⚠ 重要提示：</strong>
+            本系统只负责<strong>格式对齐</strong>——只要每一段识别正确，<strong>100% 能对齐到学院规范格式</strong>，请同学们逐段仔细核对每一个识别点。
+            <span className="block mt-1">
+              另：文中<strong>图片有很多无法自动还原</strong>，作者已尽力还原，仍可能缺失或错位。请下载格式化后的文档后，<strong>将原文图片重新插回对应位置</strong>，即可获得格式完全对齐的论文。
+            </span>
+          </div>
         </header>
 
         {error && (
