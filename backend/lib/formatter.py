@@ -621,6 +621,13 @@ def format_docx(paragraphs, format_config, source_bytes=None):
     _auto_num_refs = bool(_ref_items) and _already_num < len(_ref_items) / 2
     _ref_seq = 0
 
+    # 一级标题章号自动注入（与 parser.py 同步兜底；若文字已含章号则跳过）
+    _H1_CH_RE = re.compile(r"^第[一二三四五六七八九十百零\d]+章")
+    _h1_items = [p for p in ordered if p.get("type") == "h1"]
+    _ch_found = sum(1 for p in _h1_items if _H1_CH_RE.match(p.get("text", "").strip()))
+    _auto_num_h1 = bool(_h1_items) and _ch_found < len(_h1_items) / 2
+    _h1_seq = 0
+
     # 作者/指导老师首字对齐：缓存 author_line 居中后的左起点，供 instructor 使用
     _author_left_pt: float | None = None
     _text_w_pt = _text_w_cm * 28.35  # cm → pt
@@ -648,7 +655,12 @@ def format_docx(paragraphs, format_config, source_bytes=None):
             _add_image_paragraph(doc, p, _images, _max_img_emu, need_page_break)
             continue
 
-        text = _normalize_text(p.get("text", ""), ptype, style)
+        raw_text = p.get("text", "")
+        # 一级标题章号自动注入（safety net；parser 已注入时此处 skip）
+        if ptype == "h1" and _auto_num_h1:
+            _h1_seq += 1
+            raw_text = f"第{_h1_seq}章 {raw_text}"
+        text = _normalize_text(raw_text, ptype, style)
 
         # 参考文献序号：自动补 [n] 前缀
         if ptype in _REF_TYPES and _auto_num_refs:

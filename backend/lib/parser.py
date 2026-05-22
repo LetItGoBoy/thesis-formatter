@@ -348,4 +348,18 @@ def parse_docx(file_bytes: bytes) -> list[dict]:
             "block": _type_to_block(ptype),
             "orig_style": p.get("orig_style"),
         })
+
+    # 一级标题章号自动注入：Word 自动编号时"第X章"是列表属性而非段落文字，
+    # 若超过一半的 h1 缺少章号前缀，按出现顺序补入（第1章、第2章…）
+    _H1_CH_RE = re.compile(r"^第[一二三四五六七八九十百零\d]+章")
+    _h1s = [r for r in results if r.get("type") == "h1"]
+    _ch_found = sum(1 for r in _h1s if _H1_CH_RE.match(r.get("text", "").strip()))
+    if _h1s and _ch_found < len(_h1s) / 2:
+        _seq = 0
+        for r in results:
+            if r.get("type") == "h1":
+                _seq += 1
+                r["text"] = f"第{_seq}章 {r['text']}"
+        logger.info("自动注入章号：%d 个一级标题", _seq)
+
     return results
