@@ -60,60 +60,84 @@ _DECL_END = "特此声明"
 _DECL_MARKERS = ("郑重声明", "原创性声明", "知识产权声明", "原创性及知识产权")
 _SIG_MARKERS = ("毕业论文作者", "指导教师", "学生签名", "导师签名", "作者签名", "签名", "日期")
 _DATE_RE = re.compile(r"年\s*月\s*日|\d{2,4}\s*年")
+_RE_PURE_NUM = re.compile(r"^\d{1,4}$")  # 手写日期被拆成的数字段（2026 / 4 / 24）
 
 
-def find_content_start(paragraphs: list[dict]) -> int | None:
+def _is_text_item(it: dict) -> bool:
+    return it.get("kind") not in ("table", "image")
+
+
+def _item_text(it: dict) -> str:
+    return it.get("text", "") if _is_text_item(it) else ""
+
+
+def select_content_items(items: list[dict]) -> list[dict]:
     """
-    定位正文真正开始的索引，其之前的封面、原创性声明整体跳过。
+    跳过封面、整体移除原创性声明区域，返回应送 AI 识别的正文条目。
 
-    论文版式不一（封面→声明→目录→摘要 或 封面→声明→标题页→摘要→目录），
-    若只认「目录」会在「目录在摘要之后」时漏跳封面/声明，导致它们被误判为摘要。
-    因此以「原创性声明」为主锚点：声明之前是封面、声明本身需跳过，声明之后
-    （无论是标题页、摘要还是目录）都是正文，交 AI 通读判断。
-
-    优先级：
-      1. 「特此声明」结束 → 跳过其后的签名/日期/空行 → 返回第一段正文
-      2. 无「特此声明」时，在声明标记之后找「目录」或「摘要/Abstract」
-      3. 全文找「目录」（无封面/声明的简单文档）
-    找不到任何锚点时返回 None，调用方退化为全文交 AI 识别（安全兜底）。
+    论文版式多变，目录可能在声明之前或之后（封面→目录→声明→摘要，或
+    封面→声明→标题页→摘要→目录）。因此不能用「跳到声明之后」的单点切割
+    （会误删声明前的目录），而是：
+      1. 封面 = 第一个结构标记（目录/摘要/声明）之前的部分，整段跳过；
+      2. 原创性声明区域（声明正文 +「特此声明」+ 签名/日期文字 + 手写签名/
+         日期图片）作为一个整体区域挖除，无论它在目录前还是后；
+      3. 其余（目录、标题页、摘要、正文…）全部保留，交 AI 通读判断。
+    无任何锚点时返回原始全部条目（安全兜底）。
     """
-    n = len(paragraphs)
+    n = len(items)
+    if n == 0:
+        return items
 
-    # 1. 以「特此声明」为声明结束锚点
-    decl_end = next((i for i, p in enumerate(paragraphs) if _DECL_END in p["text"]), None)
-    if decl_end is not None:
-        j = decl_end + 1
-        skipped = 0
-        while j < n and skipped < 6:
-            t = paragraphs[j]["text"]
-            if (any(m in t for m in _SIG_MARKERS) or _DATE_RE.search(t)
-                    or len(_norm(t)) <= 1):
-                j += 1
-                skipped += 1
-                continue
-            break
-        if j < n:
-            return j
+    def ntxt(it: dict) -> str:
+        return _norm(_item_text(it))
 
-    # 2. 无「特此声明」：从声明标记之后开始找目录/摘要
     decl_start = next(
-        (i for i, p in enumerate(paragraphs)
-         if any(m in p["text"] for m in _DECL_MARKERS)),
+        (i for i in range(n) if any(m in _item_text(items[i]) for m in _DECL_MARKERS)),
         None,
     )
-    search_from = decl_start + 1 if decl_start is not None else 0
-    for i in range(search_from, n):
-        if _norm(paragraphs[i]["text"]) == "目录":
-            return i
-    for i in range(search_from, n):
-        if _norm(paragraphs[i]["text"]).lower() in ("摘要", "abstract"):
-            return i
+    toc_idx = next((i for i in range(n) if ntxt(items[i]) == "目录"), None)
+    abs_idx = next(
+        (i for i in range(n) if ntxt(items[i]).lower() in ("摘要", "abstract")), None
+    )
 
-    # 3. 全局兜底：找目录
-    for i, p in enumerate(paragraphs):
-        if _norm(p["text"]) == "目录":
-            return i
-    return None
+    # 封面终点 = 第一个结构标记（声明/目录/摘要）位置；之前整段是封面
+    markers = [x for x in (decl_start, toc_idx, abs_idx) if x is not None]
+    cover_end = min(markers) if markers else 0
+
+    # 原创性声明区域 [decl_start, decl_end]（含签名/日期/手写图片）
+    remove: set[int] = set()
+    if decl_start is not None:
+        anchor = next(
+            (i for i in range(decl_start, n) if _DECL_END in _item_text(items[i])), None
+        )
+        decl_end = anchor if anchor is not None else decl_start
+        j = decl_end + 1
+        steps = 0
+        while j < n and steps < 20:
+            it = items[j]
+            t = _item_text(it)
+            nt = _norm(t)
+            # 遇到结构标记或实质正文段 -> 声明区域结束
+            if nt == "目录" or nt.lower() in ("摘要", "abstract"):
+                break
+            if _is_text_item(it) and len(nt) >= 15 and not any(m in t for m in _SIG_MARKERS):
+                break
+            # 签名/日期文字、手写签名/日期图片、空行 -> 仍属声明区域
+            if (
+                not _is_text_item(it)
+                or any(m in t for m in _SIG_MARKERS)
+                or _DATE_RE.search(t)
+                or _RE_PURE_NUM.match(nt)
+                or len(nt) <= 2
+            ):
+                decl_end = j
+                j += 1
+                steps += 1
+                continue
+            break
+        remove.update(range(decl_start, decl_end + 1))
+
+    return [items[i] for i in range(cover_end, n) if i not in remove]
 
 
 def _iter_block_items(doc: DocxDocument):
@@ -247,17 +271,13 @@ def parse_docx(file_bytes: bytes) -> list[dict]:
     if not raw_items:
         return []
 
-    # 预扫描定位正文起点：封面/原创性声明整体跳过，从正文起整片送AI（block=None 不约束）
-    start = find_content_start(raw_items)
-    if start is None:
-        logger.warning("未检测到正文起点锚点（目录/声明），全文交AI识别")
-        kept = raw_items
-    else:
-        kept = raw_items[start:]
-        logger.info("预扫描：跳过目录前的封面/声明 %d 段，从目录起整片识别 %d 块",
-                    start, len(kept))
+    # 预扫描：跳过封面、整体移除原创性声明区域（含签名/日期手写图片），
+    # 其余整片送AI（block=None 不约束）。目录无论在声明前后都保留。
+    kept = select_content_items(raw_items)
+    logger.info("预扫描：原始 %d 块 -> 跳过封面/声明后保留 %d 块",
+                len(raw_items), len(kept))
     if not kept:
-        raise ParseError("预扫描后没有可识别的段落（未找到目录之后的内容）")
+        raise ParseError("预扫描后没有可识别的段落（未找到正文内容）")
 
     # 表格/图片不送 AI（解析阶段已确定 type）；其余文本段整片送 AI
     text_items = [{"index": p["index"], "text": p["text"], "block": None}
