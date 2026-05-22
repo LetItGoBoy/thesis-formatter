@@ -273,6 +273,74 @@ export function FormattedParagraph({ p }: { p: Paragraph }) {
   return <ParagraphLine p={p} />;
 }
 
+// ── 作者/指导老师分组：居中的 inline-block 包裹，首字对齐 ──────────────────
+export type PGroup =
+  | { kind: "single"; p: Paragraph }
+  | { kind: "author"; ps: Paragraph[] };
+
+export function groupAuthor(paragraphs: Paragraph[]): PGroup[] {
+  const out: PGroup[] = [];
+  let i = 0;
+  while (i < paragraphs.length) {
+    if (paragraphs[i].type === "author_line") {
+      const ps = [paragraphs[i]];
+      while (i + 1 < paragraphs.length && paragraphs[i + 1].type === "instructor") {
+        ps.push(paragraphs[++i]);
+      }
+      out.push({ kind: "author", ps });
+    } else {
+      out.push({ kind: "single", p: paragraphs[i] });
+    }
+    i++;
+  }
+  return out;
+}
+
+export function AuthorInstructorBlock({
+  ps,
+  onSelect,
+  selectedIndex,
+}: {
+  ps: Paragraph[];
+  onSelect?: (idx: number) => void;
+  selectedIndex?: number | null;
+}) {
+  const st = STYLES["author_line"];
+  const fontFamily = `"Times New Roman", ${CN_FONT_CSS[st.chineseFont] || "serif"}`;
+  return (
+    // outer div: centers the shrink-wrap block
+    <div style={{ textAlign: "center" }}>
+      {/* inner div: shrinks to widest line; all lines left-align within it */}
+      <div style={{ display: "inline-block", textAlign: "left" }}>
+        {ps.map((p) => {
+          const text = normalizeText(p.text, p.type);
+          const isSelected = selectedIndex === p.index;
+          return (
+            <div
+              key={p.index}
+              onClick={() => onSelect?.(p.index)}
+              className={
+                onSelect
+                  ? `cursor-pointer rounded transition ${isSelected ? "ring-2 ring-indigo-400 bg-indigo-50/60" : "hover:bg-indigo-50/40"}`
+                  : ""
+              }
+              style={{
+                fontFamily,
+                fontSize: `${st.ptSize}pt`,
+                fontWeight: 400,
+                lineHeight: 1.7,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {text}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   block: BlockKey;
   paragraphs: Paragraph[]; // 该大块的段落（已按 index 升序）
@@ -327,6 +395,7 @@ function withRefNumbers(paragraphs: Paragraph[]): Paragraph[] {
 
 export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Props) {
   const displayParagraphs = block === "references" ? withRefNumbers(paragraphs) : paragraphs;
+  const groups = groupAuthor(displayParagraphs);
   return (
     <div className="rounded-lg border border-slate-300 bg-white shadow-sm">
       <div className="border-b border-dashed border-orange-300 bg-orange-50 px-4 py-2 text-xs text-orange-700 flex items-center justify-between">
@@ -338,12 +407,22 @@ export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Pro
       <div className="bg-slate-200 p-4">
         <div style={A4_PAGE}>
           <div style={{ ...A4_PADDING, flex: 1, minHeight: 0, overflowY: "auto" }}>
-            {displayParagraphs.length === 0 ? (
+            {groups.length === 0 ? (
               <div className="text-center text-slate-400 text-sm">本块暂无段落</div>
             ) : (
               <div className="space-y-2">
-                {displayParagraphs.map((p) => {
-                  // 正文大块内 h1 视觉提示"另起一页"
+                {groups.map((g, gi) => {
+                  if (g.kind === "author") {
+                    return (
+                      <AuthorInstructorBlock
+                        key={g.ps[0].index}
+                        ps={g.ps}
+                        onSelect={onSelect}
+                        selectedIndex={selectedIndex}
+                      />
+                    );
+                  }
+                  const p = g.p;
                   const isH1Break = block === "body" && p.type === "h1";
                   const isPageBreak = (STYLES[p.type] as RenderStyle | undefined)?.pageBreakBefore;
                   const isSelected = selectedIndex === p.index;

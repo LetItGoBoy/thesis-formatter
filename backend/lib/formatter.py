@@ -214,6 +214,21 @@ def _apply_mixed_font(paragraph, chinese_font, ascii_font, pt, bold):
         parent.remove(r_el)
 
 
+def _approx_width_pt(text: str, pt: float) -> float:
+    """Approximate rendered width of text in pt.
+    CJK / full-width chars ≈ pt wide; half-width space ≈ 0.5 pt; other ASCII ≈ 0.55 pt.
+    Used for computing instructor left-indent to align with centered author line."""
+    w = 0.0
+    for ch in text:
+        if CHINESE_RE.match(ch) or ch == "　":
+            w += pt
+        elif ch == " ":
+            w += pt * 0.5
+        else:
+            w += pt * 0.55
+    return w
+
+
 # ============================================================
 # 文本归一化
 # ============================================================
@@ -606,6 +621,10 @@ def format_docx(paragraphs, format_config, source_bytes=None):
     _auto_num_refs = bool(_ref_items) and _already_num < len(_ref_items) / 2
     _ref_seq = 0
 
+    # 作者/指导老师首字对齐：缓存 author_line 居中后的左起点，供 instructor 使用
+    _author_left_pt: float | None = None
+    _text_w_pt = _text_w_cm * 28.35  # cm → pt
+
     last_block = None
     for p in ordered:
         ptype = p.get("type", "body")
@@ -634,7 +653,13 @@ def format_docx(paragraphs, format_config, source_bytes=None):
         # 参考文献序号：自动补 [n] 前缀
         if ptype in _REF_TYPES and _auto_num_refs:
             _ref_seq += 1
-            text = f"[{_ref_seq}] {text}"  #   = en-space，比普通空格稍宽，排版更美观
+            text = f"[{_ref_seq}] {text}"
+
+        # 作者/指导老师首字对齐
+        # author_line 居中后缓存其左起点 = (正文宽 - 行宽) / 2
+        if ptype == "author_line":
+            _pt = float(style.get("font_size_pt", 12))
+            _author_left_pt = (_text_w_pt - _approx_width_pt(text, _pt)) / 2.0
 
         # 前置真实空行（blank_lines_before）。若本段要另起一页，则把分页放到第一个
         # 空行上，使空行落在新页顶部、正文随后；否则空行就在当前位置之前。
@@ -671,6 +696,11 @@ def format_docx(paragraphs, format_config, source_bytes=None):
         _apply_paragraph_style(para, ptype, style, skip_page_break=page_break_consumed)
         if ptype in _OUTLINE_LEVEL:
             _set_outline_level(para, _OUTLINE_LEVEL[ptype])
+
+        # instructor 左缩进 = author_line 居中后的左起点，首字与作者行对齐
+        if ptype == "instructor" and _author_left_pt is not None and _author_left_pt > 0:
+            para.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            para.paragraph_format.left_indent = Pt(_author_left_pt)
 
     _format_tables(doc, format_config.get("table_format", {}))
 

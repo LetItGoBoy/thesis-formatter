@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import type { Paragraph } from "@/lib/api";
 import { blockOf, type BlockKey, useThesisStore } from "@/lib/store";
-import { FormattedParagraph } from "./BlockPreview";
+import { FormattedParagraph, AuthorInstructorBlock, groupAuthor } from "./BlockPreview";
 
 /**
  * 前后对比预览
@@ -142,17 +142,36 @@ export function CompareView({ paragraphs, onClose }: Props) {
           >
             <div style={{ ...A4_PADDING, background: "white", minHeight: "100%" }}>
               <div className="space-y-2">
-                {paragraphs.map((p) => {
+                {groupAuthor(
+                  // pre-apply ref numbers before grouping
+                  paragraphs.map((p) => {
+                    const isRef = _refTypes.has(p.type);
+                    if (isRef && _autoNumRefs) { refSeq++; return { ...p, text: `[${refSeq}] ${p.text}` }; }
+                    return p;
+                  })
+                ).map((g, gi) => {
+                  if (g.kind === "author") {
+                    const blk = "abstract" as BlockKey;
+                    const isNewBlock = prevBlock !== null && blk !== prevBlock;
+                    prevBlock = blk;
+                    prevType = g.ps[g.ps.length - 1].type;
+                    return (
+                      <div key={g.ps[0].index}>
+                        {isNewBlock && (
+                          <div className="my-3 border-t border-dashed border-orange-300 text-xs text-orange-600 text-center bg-orange-50 py-1">
+                            ↳ 另起一页（{BLOCK_LABEL[blk]}）
+                          </div>
+                        )}
+                        <AuthorInstructorBlock ps={g.ps} />
+                      </div>
+                    );
+                  }
+                  const p = g.p;
                   const blk = (p.block as BlockKey) || blockOf(p.type);
                   const isNewBlock = prevBlock !== null && blk !== prevBlock;
                   const isH1Break = p.type === "h1" && !isNewBlock && prevType !== null;
                   prevBlock = blk;
                   prevType = p.type;
-                  // 参考文献自动加 [n]
-                  const isRef = _refTypes.has(p.type);
-                  if (isRef && _autoNumRefs) refSeq++;
-                  const displayP =
-                    isRef && _autoNumRefs ? { ...p, text: `[${refSeq}] ${p.text}` } : p;
                   return (
                     <div key={p.index}>
                       {isNewBlock && (
@@ -165,7 +184,7 @@ export function CompareView({ paragraphs, onClose }: Props) {
                           ↳ 另起一页（一级标题）
                         </div>
                       )}
-                      <FormattedParagraph p={displayP} />
+                      <FormattedParagraph p={p} />
                     </div>
                   );
                 })}
