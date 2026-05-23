@@ -236,9 +236,9 @@
       "line_spacing": 1.5,
       "space_after_pt": 18,
       "page_break_before": true,
-      "chapter_spacing": 2,
+      "chapter_spacing": 1,
       "snap_to_grid": false,
-      "note": "每章另起一页，章和标题之间自动规范为两个空格，例：第一章  绪论；标题下方空一行"
+      "note": "每章另起一页，章和标题之间自动规范为一个全角空格，例：第一章 绪论；标题下方空一行"
     },
     "h2": {
       "block": "body",
