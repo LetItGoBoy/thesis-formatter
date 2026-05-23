@@ -51,17 +51,21 @@ SEG_TO_FINAL = {
 }
 
 SEG_BLOCK_DESC = {
-    "cover": "封面（题目/学校/姓名/学号/专业/日期等，无正文）",
+    "cover": "封面（题目/学校/姓名/学号/专业/日期等，无正文叙述）",
     "declaration": "原创性声明 / 知识产权声明（含'特此声明'、签名、日期）",
-    "toc": "目录（带页码的章节条目）",
+    "toc": "目录（带页码的章节条目，行尾通常是页码数字）",
     "abstract_cn": "中文摘要部分（论文题目、作者、指导老师、'摘要'标题、摘要正文、中文关键词）",
     "abstract_en": "英文摘要部分（Abstract 标题、英文摘要正文、Keywords）",
-    "body_chN": "正文的第 N 章（每一章是独立一块，N 从 1 开始连续编号；"
-                "章可能写作'第一章 绪论''1 绪论''绪论'等多种形式）",
-    "conclusion": "总结 / 结论（全文末尾的总结性章节，不属于编号正文章节）",
+    "body_chN": "正文的第 N 章。每一章是独立一块，N 从 1 开始按【出现顺序】连续编号"
+                "（即使原文第一个出现的章写作'第三章'或直接是'绪论'，也记为 body_ch1）。"
+                "章标题写法多样：'第一章 绪论' / '第1章 绪论' / '1 绪论' / '一、绪论'，"
+                "甚至直接是章名'绪论'而没有任何章号。判断依据是语义：它开启了一段"
+                "包含 1.1 / 1.2 等小节的正文内容，而不是靠是否出现'第X章'字样。",
+    "conclusion": "总结 / 结论（全文末尾的总结性章节，不带 1.1/1.2 小节，"
+                  "不属于编号正文章节；可能写作'总结''结论''结语'）",
     "references": "参考文献（'参考文献'/'REFERENCES' 标题及其下的文献条目）",
-    "acknowledgement": "致谢",
-    "appendix": "附录",
+    "acknowledgement": "致谢（向师长亲友致谢的一段话，通常很短）",
+    "appendix": "附录（'附录A''附录1'等，常含代码/表格/问卷等附加材料）",
 }
 
 # ============================================================
@@ -88,6 +92,36 @@ V2_BLOCK_LABEL = {
     "body": "正文", "conclusion": "总结", "references": "参考文献",
 }
 
+# 各块的额外判别要点（注入块内识别 prompt，消解最易混淆的类型）
+V2_BLOCK_HINTS = {
+    "toc": [
+        "只有带页码（行尾是数字）的条目才是 toc_*；toc_title 就是'目录'两字。",
+        "toc_h1 含章号或为一级条目，toc_h2 形如'1.1 xxx'，toc_h3 形如'1.1.1 xxx'。",
+    ],
+    "abstract_cn": [
+        "author_line 是作者本人信息（姓名/学号/专业），绝不含'指导''老师''教师'字样。",
+        "instructor 必须含'指导老师''指导教师''Supervisor'等字样，才算指导老师行。",
+        "keywords_cn 只有几个短词、极短（一般不超过 60 字）；成段长句即使在摘要里也是 abstract_body_cn，绝不是关键词。",
+        "paper_title 是论文题目，很短、无句末标点。",
+    ],
+    "abstract_en": [
+        "keywords_en 以 Keywords / Key words 开头，只有几个短词；成段英文叙述是 abstract_body_en。",
+        "单独一行的 Abstract 是 abstract_title_en。",
+    ],
+    "body": [
+        "h1 是【本章】的章标题，通常是本块的第一行，形如'第X章 章名'或直接是章名；每个块最多一个 h1。",
+        "h2 形如'1.1 xxx'，h3 形如'1.1.1 xxx'；所有标题都很短、不带句末标点（。！？）。",
+        "成段的长句叙述是 body；以'图X-X'开头的短行是 figure_caption，以'表X-X'开头的是 table_caption。",
+        "单独成行的公式编号'(2-1)'是 formula_number。",
+    ],
+    "conclusion": [
+        "conclusion_title 是'总结''结论''结语'等标题（很短）；其余成段文字是 conclusion_body。",
+    ],
+    "references": [
+        "references_title 是'参考文献'/'REFERENCES'标题；其余每一条文献是 reference_item。",
+    ],
+}
+
 
 # ============================================================
 # 第一步：语义切块
@@ -104,16 +138,22 @@ def _seg_system_prompt() -> str:
         lines.append(f"- {k}: {v}")
     lines += [
         "",
+        "论文典型结构（仅供参考，实际以语义为准）：",
+        "  封面 → 声明 → [目录] → [中文摘要] → [英文摘要] → 正文各章 → [总结] → 参考文献 → [致谢] → [附录]",
+        "  方括号表示该块可能缺失。目录有时在摘要之前、有时在之后。",
+        "",
         "切块要求（极重要）：",
         "1. 完全靠语义判断，不要只看是否出现某个关键词——很多学生不写'摘要''参考文献'"
         "等字样，或根本没有某些大块（如没写总结、没写英文摘要），这些都要正确应对。",
         "2. 正文必须按【章】切开：每一章是一个独立的块，type 写 body_ch1 / body_ch2 / "
-        "body_ch3 …… 按出现顺序连续编号（即使原文章号是'第三章'，只要它是正文第1个"
-        "出现的章，也记为 body_ch1）。",
+        "body_ch3 …… 按出现顺序连续编号（见上面 body_chN 的说明）。每个 body_chN 块"
+        "应当从该章的章标题那一段开始，到下一章标题前一段结束。",
         "3. 区间必须连续且完整覆盖：所有大块的 [start,end] 拼起来必须恰好等于"
         "[0, 最大index]，不重叠、不留空隙、不遗漏任何一段。",
         "4. 缺失的大块直接不输出（例如没有英文摘要就没有 abstract_en）。",
         "5. cover / declaration 即使存在也要切出来（后续会丢弃，但切块阶段要标出）。",
+        "6. 区分'总结'与正文末章：总结/结论不含 1.1/1.2 小节、是全文性回顾；"
+        "若末章仍是带小节的普通章节，它属于 body_chN 而不是 conclusion。",
         "",
         "输出规则：",
         "- 只输出 JSON，不要 markdown 标记、不要解释。",
@@ -223,8 +263,17 @@ def _repair_coverage(blocks: list[dict], raw_items: list[dict]) -> list[dict]:
 # ============================================================
 # 第二步：块内识别（专属 prompt）
 # ============================================================
+def _classify_key(seg_type: str) -> str | None:
+    """切块 type -> 块内识别用的 prompt/类型表 key（V2_BLOCK_TYPES 的键）。
+    abstract_cn / abstract_en 各用专属 prompt；body_chN 统一用 body。
+    cover/declaration/acknowledgement/appendix 不分类，返回 None。"""
+    if seg_type.startswith("body_ch"):
+        return "body"
+    return seg_type if seg_type in V2_BLOCK_TYPES else None
+
+
 def _final_block(seg_type: str) -> str | None:
-    """切块 type -> 块内识别用的 final block key（body_chN -> body）。"""
+    """切块 type -> 前端五大块（abstract_cn/en -> abstract，body_chN -> body）。"""
     if seg_type.startswith("body_ch"):
         return "body"
     return SEG_TO_FINAL.get(seg_type)
@@ -241,6 +290,12 @@ def _block_system_prompt(block: str) -> str:
     ]
     for t in types:
         lines.append(f"- {t}: {TYPE_DESC.get(t, t)}")
+    hints = V2_BLOCK_HINTS.get(block)
+    if hints:
+        lines.append("")
+        lines.append("判别要点：")
+        for h in hints:
+            lines.append(f"- {h}")
     lines += [
         "",
         "输出规则（极重要）：",
@@ -318,32 +373,32 @@ def recognize_v2(raw_items: list[dict], tier: str | None = None) -> list[dict]:
 
     # 第二步：逐块识别（可分类的块并发跑）
     client = get_ai_client(tier)
-    classify_tasks = []  # (seg_idx, block, items)
+    classify_tasks = []  # (seg_idx, classify_key, items)
     for si, seg in enumerate(segments):
-        if seg["type"] in SEG_DISCARD:
+        if seg["type"] in SEG_DISCARD or seg["type"] in SEG_PASSTHROUGH:
             continue
-        block = _final_block(seg["type"])
-        if seg["type"] in SEG_PASSTHROUGH or block is None:
-            continue  # passthrough / 未知块不送分类
+        ckey = _classify_key(seg["type"])
+        if ckey is None:
+            continue  # 未知块不送分类
         items = [by_index[i] for i in range(seg["start"], seg["end"] + 1) if i in by_index]
-        classify_tasks.append((si, block, items))
+        classify_tasks.append((si, ckey, items))
 
     type_map: dict[int, str] = {}
     if classify_tasks:
         workers = min(4, len(classify_tasks))
         with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="v2-block") as pool:
             futures = {
-                pool.submit(classify_block, client, block, items): (si, block)
-                for si, block, items in classify_tasks
+                pool.submit(classify_block, client, ckey, items): (si, ckey)
+                for si, ckey, items in classify_tasks
             }
             for fut in as_completed(futures):
-                si, block = futures[fut]
+                si, ckey = futures[fut]
                 try:
                     type_map.update(fut.result())
                 except AIFatalError:
                     raise
                 except Exception as e:
-                    logger.warning("块[%s]识别失败: %s", block, e)
+                    logger.warning("块[%s]识别失败: %s", ckey, e)
 
     # 组装最终结果
     results = []
@@ -380,7 +435,8 @@ def recognize_v2(raw_items: list[dict], tier: str | None = None) -> list[dict]:
                     "block": seg_type, "orig_style": it.get("orig_style"),
                 })
                 continue
-            ptype = type_map.get(i, V2_BLOCK_DEFAULT.get(final_block, "body"))
+            ckey = _classify_key(seg_type)
+            ptype = type_map.get(i, V2_BLOCK_DEFAULT.get(ckey, "body"))
             results.append({
                 "index": i, "text": it.get("text", ""), "type": ptype,
                 "confidence": compute_rule_confidence(it.get("text", ""), ptype),

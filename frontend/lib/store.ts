@@ -13,7 +13,7 @@ import type { Paragraph } from "./api";
 // ============================================================
 // 大块定义（与 hulunbeier_univ.json 一致）
 // ============================================================
-export type BlockKey = "toc" | "abstract" | "body" | "conclusion" | "references";
+export type BlockKey = "toc" | "abstract" | "body" | "conclusion" | "references" | "extra";
 
 export interface BlockDef {
   key: BlockKey;
@@ -75,6 +75,15 @@ export const BLOCKS: BlockDef[] = [
       "学位论文、期刊等文献一般应为近五年内发表",
       "参考文献著录顺序：序号、著者、书名、版本、出版社、出版年等",
       "列出的文献都应在正文中有对应的引用标注",
+    ],
+  },
+  {
+    key: "extra",
+    label: "致谢 / 附录 · Extra",
+    order: 6,
+    commonMistakes: [
+      "致谢、附录保持原文排版（系统不重排），仅核对内容是否正确",
+      "若此处误收了正文内容，请改回对应类型移回正文块",
     ],
   },
 ];
@@ -160,6 +169,9 @@ export const TYPES_BY_BLOCK: Record<BlockKey, TypeOption[]> = {
     { value: "reference_item", label: "参考文献正文" },
     { value: "ref", label: "参考文献（兼容）", legacy: true },
   ],
+  extra: [
+    { value: "passthrough", label: "原样保留（不重排）" },
+  ],
 };
 
 // 反向映射：type → block
@@ -173,6 +185,7 @@ export const TYPE_TO_BLOCK: Record<string, BlockKey> = (() => {
   m["future_work"] = "conclusion";
   m["figure_caption"] = "body";  // 已从下拉框移除，但AI识别结果仍需正确归块
   m["figure"] = "body"; // 解析阶段识别的图片段落
+  m["passthrough"] = "extra"; // V2：致谢/附录原样保留
   return m;
 })();
 
@@ -185,11 +198,22 @@ export const TYPE_LABEL: Record<string, string> = (() => {
   m["future_work"] = "展望内容（旧版兼容）";
   m["figure_caption"] = "图题注";
   m["figure"] = "图片";
+  m["passthrough"] = "原样保留（不重排）";
   return m;
 })();
 
 export function blockOf(type: string): BlockKey {
   return TYPE_TO_BLOCK[type] || "body";
+}
+
+// 后端 block 字段 → 前端有效 BlockKey（V2 的 acknowledgement/appendix 归到 extra）
+const _VALID_BLOCKS = new Set<BlockKey>([
+  "toc", "abstract", "body", "conclusion", "references", "extra",
+]);
+export function toBlockKey(block: string | undefined, type: string): BlockKey {
+  if (block === "acknowledgement" || block === "appendix") return "extra";
+  if (block && _VALID_BLOCKS.has(block as BlockKey)) return block as BlockKey;
+  return blockOf(type);
 }
 
 const blockOrder = (b: BlockKey) => BLOCKS.find((x) => x.key === b)?.order ?? 99;
@@ -262,7 +286,7 @@ export const useThesisStore = create<ThesisState>((set) => ({
       paragraphs: paragraphs.map((p) => ({
         ...p,
         confirmed: false,
-        block: p.block || blockOf(p.type),
+        block: toBlockKey(p.block, p.type),
       })),
       outputBlob: null,
     }),

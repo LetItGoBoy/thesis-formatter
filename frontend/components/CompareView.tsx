@@ -19,6 +19,7 @@ const BLOCK_LABEL: Record<BlockKey, string> = {
   body: "正文",
   conclusion: "总结",
   references: "参考文献",
+  extra: "致谢/附录",
 };
 
 const A4_PADDING: CSSProperties = {

@@ -573,6 +573,32 @@ def _block_of(ptype, styles):
     return "body" if blk == "_legacy" else blk
 
 
+_ORIG_ALIGN = {
+    "center": WD_ALIGN_PARAGRAPH.CENTER,
+    "right": WD_ALIGN_PARAGRAPH.RIGHT,
+    "justify": WD_ALIGN_PARAGRAPH.JUSTIFY,
+    "left": WD_ALIGN_PARAGRAPH.LEFT,
+}
+
+
+def _apply_passthrough(paragraph, text, orig):
+    """致谢/附录等 passthrough 段落：按原文捕获样式近似还原，不施加学院规范格式。
+    仅统一中英文混排字体（宋体 + Times New Roman）保持基本观感一致。"""
+    orig = orig or {}
+    disable_snap_to_grid(paragraph)
+    paragraph.add_run(text)
+    size = float(orig.get("font_size_pt") or 12.0)
+    bold = bool(orig.get("is_bold"))
+    _apply_mixed_font(paragraph, "宋体", "Times New Roman", size, bold)
+    pf = paragraph.paragraph_format
+    pf.alignment = _ORIG_ALIGN.get(orig.get("alignment", "left"), WD_ALIGN_PARAGRAPH.LEFT)
+    pf.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+    if orig.get("first_line_cm"):
+        pf.first_line_indent = Cm(float(orig["first_line_cm"]))
+    if orig.get("indent_cm"):
+        pf.left_indent = Cm(float(orig["indent_cm"]))
+
+
 # ============================================================
 # 目录点状前导线
 # ============================================================
@@ -657,11 +683,24 @@ def format_docx(paragraphs, format_config, source_bytes=None):
     for p in ordered:
         ptype = p.get("type", "body")
         style = styles.get(ptype) or styles.get("body", {})
-        cur_block = _block_of(ptype, styles)
+        # passthrough（致谢/附录）按其自身 block 字段分组，不查 styles 配置
+        if ptype == "passthrough":
+            cur_block = p.get("block") or "appendix"
+        else:
+            cur_block = _block_of(ptype, styles)
         need_page_break = last_block is not None and cur_block != last_block
         last_block = cur_block
         # 是否需要另起一页：大块切换 或 段落样式自带 page_break_before
         starts_new_page = need_page_break or bool(style.get("page_break_before"))
+
+        # 致谢/附录：保留原始格式，不重排；大块切换时另起一页
+        if ptype == "passthrough":
+            para = doc.add_paragraph()
+            if need_page_break:
+                para.paragraph_format.page_break_before = True
+            _apply_passthrough(para, p.get("text", ""), p.get("orig_style"))
+            prev_ptype = ptype
+            continue
 
         # 表格：用 cells 网格重建为真正的 Word 表格（三线表样式由 _format_tables 统一施加）
         if ptype == "table" and p.get("cells"):

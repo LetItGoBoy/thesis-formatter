@@ -49,6 +49,7 @@ export default function ReviewPage() {
     body: true,
     conclusion: true,
     references: true,
+    extra: true,
   });
 
   // 预览点击 → 高亮并滚动到左侧对应的确认卡片
@@ -69,6 +70,7 @@ export default function ReviewPage() {
       body: [],
       conclusion: [],
       references: [],
+      extra: [],
     };
     for (const p of paragraphs) {
       const blk = (p.block as BlockKey) || blockOf(p.type);

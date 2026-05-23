@@ -83,6 +83,9 @@ export const STYLES: Record<string, RenderStyle> = {
   // 旧版兼容
   cover: { chineseFont: "宋体", ptSize: 14, align: "center" },
   future_work: { chineseFont: "宋体", ptSize: 12, align: "justify", indent: 2 },
+
+  // V2：致谢/附录原样保留（预览仅作普通左对齐展示，实际不重排）
+  passthrough: { chineseFont: "宋体", ptSize: 12, align: "left" },
 };
 
 // 文本归一化（与 backend formatter._normalize_text_for_type 对齐）
@@ -356,6 +359,7 @@ const BLOCK_TITLES: Record<BlockKey, string> = {
   body: "正文重构预览",
   conclusion: "总结重构预览",
   references: "参考文献重构预览",
+  extra: "致谢/附录（原样保留，不重排）",
 };
 
 // A4 内边距 = 页面边距，百分比相对「页面宽度21cm」折算（padding-% 始终相对宽度）：
