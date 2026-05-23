@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import type { Paragraph } from "@/lib/api";
 import type { BlockKey } from "@/lib/store";
@@ -128,10 +129,10 @@ function normalizeText(text: string, type: string): string {
     text = text.replace(/^(\s*\d+)\s*[、,，]\s*/, "$1. ");
   }
 
-  // h1 章号两个全角空格
+  // h1 章号一个全角空格
   if (st.isChapterTitle) {
     const m = text.match(/^(第[一二三四五六七八九十百零\d]+章)\s*(.*)$/);
-    if (m && m[2]) text = `${m[1]}　　${m[2]}`;
+    if (m && m[2]) text = `${m[1]}　${m[2]}`;
   }
 
   // toc 前导全角空格
@@ -318,6 +319,7 @@ export function AuthorInstructorBlock({
           return (
             <div
               key={p.index}
+              id={`preview-para-${p.index}`}
               onClick={() => onSelect?.(p.index)}
               className={
                 onSelect
@@ -396,6 +398,21 @@ function withRefNumbers(paragraphs: Paragraph[]): Paragraph[] {
 export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Props) {
   const displayParagraphs = block === "references" ? withRefNumbers(paragraphs) : paragraphs;
   const groups = groupAuthor(displayParagraphs);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 左侧卡片选中 → 右侧预览滚动到对应段落
+  useEffect(() => {
+    if (selectedIndex == null || !scrollRef.current) return;
+    const el = document.getElementById(`preview-para-${selectedIndex}`);
+    if (!el) return;
+    const container = scrollRef.current;
+    const cRect = container.getBoundingClientRect();
+    const eRect = el.getBoundingClientRect();
+    const eCenter = eRect.top + eRect.height / 2;
+    const cCenter = cRect.top + cRect.height / 2;
+    container.scrollTop += eCenter - cCenter;
+  }, [selectedIndex]);
+
   return (
     <div className="rounded-lg border border-slate-300 bg-white shadow-sm">
       <div className="border-b border-dashed border-orange-300 bg-orange-50 px-4 py-2 text-xs text-orange-700 flex items-center justify-between">
@@ -406,7 +423,7 @@ export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Pro
       </div>
       <div className="bg-slate-200 p-4">
         <div style={A4_PAGE}>
-          <div style={{ ...A4_PADDING, flex: 1, minHeight: 0, overflowY: "auto" }}>
+          <div ref={scrollRef} style={{ ...A4_PADDING, flex: 1, minHeight: 0, overflowY: "auto" }}>
             {groups.length === 0 ? (
               <div className="text-center text-slate-400 text-sm">本块暂无段落</div>
             ) : (
@@ -439,6 +456,7 @@ export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Pro
                         </div>
                       )}
                       <div
+                        id={`preview-para-${p.index}`}
                         onClick={() => onSelect?.(p.index)}
                         className={`cursor-pointer rounded transition ${
                           isSelected

@@ -62,27 +62,44 @@ export function CompareView({ paragraphs, onClose }: Props) {
           renderFootnotes: false,
           debug: false,
         }).then(() => {
-          // 渲染完成后自动滚动跳过封面/声明页，定位到第一个识别段落
-          if (!leftPanel) return;
-          const sorted = [...paragraphs].sort((a, b) => a.index - b.index);
-          const firstPara = sorted.find((p) => p.text.trim().length >= 2);
-          if (!firstPara) return;
-          const needle = firstPara.text.trim().replace(/\s+/g, "").slice(0, 5);
-          if (!needle) return;
-          const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
-          let node: Node | null;
-          while ((node = walker.nextNode())) {
-            const txt = ((node as Text).textContent || "").replace(/\s+/g, "");
-            if (txt.includes(needle)) {
-              const el = (node as Text).parentElement;
-              if (el) {
-                const panelRect = leftPanel.getBoundingClientRect();
-                const elRect = el.getBoundingClientRect();
-                leftPanel.scrollTop = Math.max(0, leftPanel.scrollTop + elRect.top - panelRect.top - 16);
+          // 等待浏览器完成 layout reflow 后再读坐标
+          requestAnimationFrame(() => {
+            if (!leftPanel) return;
+            const sorted = [...paragraphs].sort((a, b) => a.index - b.index);
+            // 找前5段中长度 ≥ 4 字的第一段作为锚点
+            const firstPara = sorted.find((p) => p.text.trim().replace(/\s+/g, "").length >= 4);
+            let scrolled = false;
+
+            if (firstPara) {
+              const needle = firstPara.text.trim().replace(/\s+/g, "").slice(0, 6);
+              const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+              let node: Node | null;
+              while ((node = walker.nextNode())) {
+                const txt = ((node as Text).textContent || "").replace(/\s+/g, "");
+                if (txt.includes(needle)) {
+                  const el = (node as Text).parentElement;
+                  if (el) {
+                    const panelRect = leftPanel.getBoundingClientRect();
+                    const elRect = el.getBoundingClientRect();
+                    leftPanel.scrollTop = Math.max(0, leftPanel.scrollTop + elRect.top - panelRect.top - 24);
+                    scrolled = true;
+                  }
+                  break;
+                }
               }
-              break;
             }
-          }
+
+            // 兜底：找 docx-preview 渲染的 section 页面，跳过前两页（封面+声明）
+            if (!scrolled) {
+              const sections = container.querySelectorAll("section");
+              const target = sections.length >= 3 ? sections[2] : sections[sections.length - 1];
+              if (target) {
+                const panelRect = leftPanel.getBoundingClientRect();
+                const elRect = (target as HTMLElement).getBoundingClientRect();
+                leftPanel.scrollTop = Math.max(0, leftPanel.scrollTop + elRect.top - panelRect.top - 24);
+              }
+            }
+          });
         })
       )
       .catch((err) => {
