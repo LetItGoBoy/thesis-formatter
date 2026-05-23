@@ -152,6 +152,11 @@ def _seg_system_prompt() -> str:
         "2. 正文必须按【章】切开：每一章是一个独立的块，type 写 body_ch1 / body_ch2 / "
         "body_ch3 …… 按出现顺序连续编号（见上面 body_chN 的说明）。每个 body_chN 块"
         "应当从该章的章标题那一段开始，到下一章标题前一段结束。",
+        "2.5 【目录是一整块·切忌拆成正文】目录里会列出'第X章 …''2.1 …'等条目，"
+        "它们【长得很像正文章标题】，但目录条目【行尾都有页码数字】（如'2.1 系统设计  5'、"
+        "'第3章 系统硬件设计  15'），而真正的正文章标题【行尾没有页码】。只要一段行尾是"
+        "页码、且这种带页码的条目连续成片，它们【全部属于 toc 这一个块】，绝不能切成 "
+        "body_chN。目录从第一条带页码条目开始，到最后一条带页码条目结束，中间不许拆开。",
         "3. 区间必须连续且完整覆盖：所有大块的 [start,end] 拼起来必须恰好等于"
         "[0, 最大index]，不重叠、不留空隙、不遗漏任何一段。",
         "4. 缺失的大块直接不输出（例如没有英文摘要就没有 abstract_en）。",
@@ -214,7 +219,62 @@ def segment_document(raw_items: list[dict], tier: str | None) -> list[dict]:
     if not blocks:
         raise AIFatalError("切块未返回任何有效区间")
 
-    return _repair_coverage(blocks, raw_items)
+    blocks = _repair_coverage(blocks, raw_items)
+    blocks = _merge_toc_runover(blocks, raw_items)
+    return blocks
+
+
+# 目录条目特征：较短、行尾是页码（可带前导点线/空格）。正文章标题不带行尾页码。
+_TOC_LINE_RE = re.compile(r"\S.*?[\s.．。…·\-_]+\d{1,4}\s*$")
+# 这些块一旦出现就说明目录已结束，不再向后吸收
+_TOC_STOP_BLOCKS = {"abstract_cn", "abstract_en", "conclusion", "references",
+                    "acknowledgement", "appendix", "cover", "declaration"}
+
+
+def _looks_like_toc_line(text: str) -> bool:
+    t = (text or "").strip()
+    if not t or len(t) > 50:   # 目录条目都很短；成段正文不是目录
+        return False
+    return bool(_TOC_LINE_RE.search(t))
+
+
+def _merge_toc_runover(blocks: list[dict], raw_items: list[dict]) -> list[dict]:
+    """修复 AI 把目录后半截误切成 body_chN 的常见错误。
+    目录条目行尾都带页码（如 '2.1 系统设计  5'），正文章标题不带。
+    若 toc 块后面紧跟的块整体仍是「带页码的目录条目」，把它们并回目录。"""
+    by_index = {it["index"]: it for it in raw_items}
+
+    def seg_text(i: int) -> str:
+        it = by_index.get(i)
+        if not it or it.get("kind") in ("table", "image"):
+            return ""
+        return (it.get("text") or "").strip()
+
+    ti = next((k for k, b in enumerate(blocks) if b["type"] == "toc"), None)
+    if ti is None:
+        return blocks
+
+    last = ti
+    for k in range(ti + 1, len(blocks)):
+        b = blocks[k]
+        if b["type"] in _TOC_STOP_BLOCKS:
+            break
+        lines = [t for i in range(b["start"], b["end"] + 1) if (t := seg_text(i))]
+        if not lines:
+            break
+        toc_like = sum(1 for l in lines if _looks_like_toc_line(l))
+        if toc_like >= max(1, len(lines) * 0.6):
+            last = k          # 整体仍是目录条目 -> 吸收
+        else:
+            break             # 出现真正的正文 -> 目录到此为止
+
+    if last == ti:
+        return blocks
+    blocks[ti]["end"] = blocks[last]["end"]
+    merged = blocks[:ti + 1] + blocks[last + 1:]
+    logger.info("TOC 修复：将误判为正文的 %d 个块并回目录 -> toc[%d-%d]",
+                last - ti, blocks[ti]["start"], blocks[ti]["end"])
+    return merged
 
 
 def _coerce_to_array(resp: str) -> str:
