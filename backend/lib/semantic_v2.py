@@ -44,6 +44,16 @@ SEG_PASSTHROUGH = {"acknowledgement", "appendix"}  # 识别但不重排
 # 「第X章」单独成段（其后无章名），用于合并被拆开的章标题
 _BARE_CHAPTER_RE = re.compile(r"^第[一二三四五六七八九十百零\d]+章[\s　]*$")
 
+# h2：两级编号（1.1 / 3.7 / 1.1xxx），负前瞻排除三级；h3：三级编号（1.1.1 / 3.7.2xxx）
+_H3_NUM_RE = re.compile(r"^\d+\.\d+\.\d+")
+_H2_NUM_RE = re.compile(r"^\d+\.\d+(?!\.\d)")
+
+# 结论章标题：「结论」/「总结」/「结语」可选带章号前缀和「与…」后缀
+_CONCLUSION_TITLE_RE = re.compile(
+    r"^(?:第[一二三四五六七八九十百零\d]+章[　\s]*)?(总结|结论|结语|结束语)"
+    r"(?:[　\s]*[与及和].*)?[　\s]*$"
+)
+
 # 切块 type -> 前端五大块（toc/abstract/body/conclusion/references）
 SEG_TO_FINAL = {
     "toc": "toc",
@@ -66,7 +76,9 @@ SEG_BLOCK_DESC = {
                 "甚至直接是章名'绪论'而没有任何章号。判断依据是语义：它开启了一段"
                 "包含 1.1 / 1.2 等小节的正文内容，而不是靠是否出现'第X章'字样。",
     "conclusion": "总结 / 结论（全文末尾的总结性章节，不带 1.1/1.2 小节，"
-                  "不属于编号正文章节；可能写作'总结''结论''结语'）",
+                  "是对全文的整体回顾；可能写作'总结''结论''结语'，"
+                  "也可能写作'第X章 结论''第X章 总结'等带章号形式——"
+                  "只要没有 X.1/X.2 小节且是全文性回顾，就属于 conclusion，不是 body_chN）",
     "references": "参考文献（'参考文献'/'REFERENCES' 标题及其下的文献条目）",
     "acknowledgement": "致谢（向师长亲友致谢的一段话，通常很短）",
     "appendix": "附录（'附录A''附录1'等，常含代码/表格/问卷等附加材料）",
@@ -161,8 +173,9 @@ def _seg_system_prompt() -> str:
         "[0, 最大index]，不重叠、不留空隙、不遗漏任何一段。",
         "4. 缺失的大块直接不输出（例如没有英文摘要就没有 abstract_en）。",
         "5. cover / declaration 即使存在也要切出来（后续会丢弃，但切块阶段要标出）。",
-        "6. 区分'总结'与正文末章：总结/结论不含 1.1/1.2 小节、是全文性回顾；"
-        "若末章仍是带小节的普通章节，它属于 body_chN 而不是 conclusion。",
+        "6. 区分'总结'与正文末章：总结/结论不含 1.1/1.2 小节、是全文性回顾。"
+        "即使写成'第X章 结论''第6章 总结''第X章 结语'，只要没有编号小节、"
+        "是全文性总结，就归 conclusion；若末章仍有 X.1/X.2 小节，才是 body_chN。",
         "7. 【边界对齐·极重要】每个块必须从它的标题/起始行开始：章标题（'第X章 …'、"
         "'绪论'、单独成行的'第X章'等）是其所在 body_chN 的【第一段】；'总结'/'结论'"
         "标题是 conclusion 的【第一段】；'参考文献'标题是 references 的【第一段】；"
@@ -221,6 +234,8 @@ def segment_document(raw_items: list[dict], tier: str | None) -> list[dict]:
 
     blocks = _repair_coverage(blocks, raw_items)
     blocks = _merge_toc_runover(blocks, raw_items)
+    by_idx = {it["index"]: it for it in raw_items}
+    blocks = _reclassify_conclusion_chapter(blocks, by_idx)
     return blocks
 
 
@@ -275,6 +290,28 @@ def _merge_toc_runover(blocks: list[dict], raw_items: list[dict]) -> list[dict]:
     logger.info("TOC 修复：将误判为正文的 %d 个块并回目录 -> toc[%d-%d]",
                 last - ti, blocks[ti]["start"], blocks[ti]["end"])
     return merged
+
+
+def _reclassify_conclusion_chapter(blocks: list[dict], by_index: dict) -> list[dict]:
+    """把写成「第X章 结论/总结/结语」的 body_chN 重归类为 conclusion。
+    仅检测每个 body_ch 块的首个文本段：若完全匹配结论章标题模式则重分类。"""
+    result = []
+    for b in blocks:
+        nb = dict(b)
+        if b["type"].startswith("body_ch"):
+            for i in range(b["start"], b["end"] + 1):
+                it = by_index.get(i)
+                if not it or it.get("kind") in ("table", "image"):
+                    continue
+                text = (it.get("text") or "").strip()
+                if not text:
+                    continue
+                if len(text) <= 20 and _CONCLUSION_TITLE_RE.match(text):
+                    nb["type"] = "conclusion"
+                    logger.info("结论修复：%s -> conclusion（首段='%s'）", b["type"], text)
+                break
+        result.append(nb)
+    return result
 
 
 def _coerce_to_array(resp: str) -> str:
@@ -470,6 +507,17 @@ def recognize_v2(raw_items: list[dict], tier: str | None = None) -> list[dict]:
                     raise
                 except Exception as e:
                     logger.warning("块[%s]识别失败: %s", ckey, e)
+
+    # 确定性修正 h2/h3：按文本数字层级覆盖 AI 判断。
+    # '3.7 xxx'（两级编号）-> h2；'3.7.1 xxx'（三级编号）-> h3，无编号的不动。
+    for idx, ptype in list(type_map.items()):
+        if ptype not in ("h2", "h3"):
+            continue
+        text = ((by_index.get(idx) or {}).get("text") or "").strip()
+        if _H3_NUM_RE.match(text):
+            type_map[idx] = "h3"
+        elif _H2_NUM_RE.match(text):
+            type_map[idx] = "h2"
 
     # 切块已判定每个 body_chN 的起点就是该章章标题，强制其首个文本段为 h1，
     # 与切块决策保持一致（避免章标题被块内分类误判成 h2/h3/body）。
