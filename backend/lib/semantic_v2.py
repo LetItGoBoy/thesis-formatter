@@ -19,6 +19,7 @@ backend/lib/semantic_v2.py
 通过环境变量 RECOGNIZER=semantic_v2 启用；默认仍走 v1（parser 原路径）。
 """
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .ai_client import (
@@ -39,6 +40,9 @@ logger = logging.getLogger("thesis.ai.v2")
 # ============================================================
 SEG_DISCARD = {"cover", "declaration"}            # 整块丢弃
 SEG_PASSTHROUGH = {"acknowledgement", "appendix"}  # 识别但不重排
+
+# 「第X章」单独成段（其后无章名），用于合并被拆开的章标题
+_BARE_CHAPTER_RE = re.compile(r"^第[一二三四五六七八九十百零\d]+章[\s　]*$")
 
 # 切块 type -> 前端五大块（toc/abstract/body/conclusion/references）
 SEG_TO_FINAL = {
@@ -154,6 +158,13 @@ def _seg_system_prompt() -> str:
         "5. cover / declaration 即使存在也要切出来（后续会丢弃，但切块阶段要标出）。",
         "6. 区分'总结'与正文末章：总结/结论不含 1.1/1.2 小节、是全文性回顾；"
         "若末章仍是带小节的普通章节，它属于 body_chN 而不是 conclusion。",
+        "7. 【边界对齐·极重要】每个块必须从它的标题/起始行开始：章标题（'第X章 …'、"
+        "'绪论'、单独成行的'第X章'等）是其所在 body_chN 的【第一段】；'总结'/'结论'"
+        "标题是 conclusion 的【第一段】；'参考文献'标题是 references 的【第一段】；"
+        "'目录''摘要''Abstract''致谢''附录'同理。这些标题行绝不能划到上一块的末尾——"
+        "宁可让上一块早一段结束，也要让标题行成为新块的开头。",
+        "8. 章标题可能被学生拆成相邻两段（如一段只有'第5章'、下一段是'系统实现'）。"
+        "这种情况两段都要划入【同一个】新章 body_chN 的开头，不要把'第5章'留在上一章。",
         "",
         "输出规则：",
         "- 只输出 JSON，不要 markdown 标记、不要解释。",
@@ -400,6 +411,31 @@ def recognize_v2(raw_items: list[dict], tier: str | None = None) -> list[dict]:
                 except Exception as e:
                     logger.warning("块[%s]识别失败: %s", ckey, e)
 
+    # 切块已判定每个 body_chN 的起点就是该章章标题，强制其首个文本段为 h1，
+    # 与切块决策保持一致（避免章标题被块内分类误判成 h2/h3/body）。
+    # 若章标题被学生拆成「第X章」+「章名」两段，合并成单个 h1，避免章号丢失。
+    forced_h1: set[int] = set()           # 强制为 h1 的段 index
+    merged_h1_text: dict[int, str] = {}    # h1 段 index -> 合并后文本
+    merged_skip: set[int] = set()          # 被并入上一段、不再单独输出的 index
+    for seg in segments:
+        if not seg["type"].startswith("body_ch"):
+            continue
+        text_idxs = [i for i in range(seg["start"], seg["end"] + 1)
+                     if (it := by_index.get(i)) is not None
+                     and it.get("kind") not in ("table", "image")
+                     and (it.get("text") or "").strip()]
+        if not text_idxs:
+            continue
+        first = text_idxs[0]
+        forced_h1.add(first)
+        first_text = (by_index[first].get("text") or "").strip()
+        # 「第X章」单独成段（其后无章名）：把下一文本段并入作为章名
+        if _BARE_CHAPTER_RE.match(first_text) and len(text_idxs) >= 2:
+            nxt = text_idxs[1]
+            nxt_text = (by_index[nxt].get("text") or "").strip()
+            merged_h1_text[first] = f"{first_text} {nxt_text}"
+            merged_skip.add(nxt)
+
     # 组装最终结果
     results = []
     for seg in segments:
@@ -410,7 +446,7 @@ def recognize_v2(raw_items: list[dict], tier: str | None = None) -> list[dict]:
         final_block = _final_block(seg_type)
         for i in range(seg["start"], seg["end"] + 1):
             it = by_index.get(i)
-            if it is None:
+            if it is None or i in merged_skip:
                 continue
             kind = it.get("kind")
             if kind == "table":
@@ -436,11 +472,18 @@ def recognize_v2(raw_items: list[dict], tier: str | None = None) -> list[dict]:
                 })
                 continue
             ckey = _classify_key(seg_type)
-            ptype = type_map.get(i, V2_BLOCK_DEFAULT.get(ckey, "body"))
+            if i in forced_h1:
+                ptype = "h1"
+                text = merged_h1_text.get(i, it.get("text", ""))
+                reason = f"V2 章首段强制 h1（{seg_type}）"
+            else:
+                ptype = type_map.get(i, V2_BLOCK_DEFAULT.get(ckey, "body"))
+                text = it.get("text", "")
+                reason = f"V2 块内识别（{seg_type}）"
             results.append({
-                "index": i, "text": it.get("text", ""), "type": ptype,
-                "confidence": compute_rule_confidence(it.get("text", ""), ptype),
-                "reason": f"V2 块内识别（{seg_type}）",
+                "index": i, "text": text, "type": ptype,
+                "confidence": compute_rule_confidence(text, ptype),
+                "reason": reason,
                 "block": final_block, "orig_style": it.get("orig_style"),
             })
 
