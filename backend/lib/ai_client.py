@@ -176,7 +176,7 @@ MODEL_TIERS = {
     },
     "standard": {
         "provider": os.environ.get("TIER_STANDARD_PROVIDER", "moonshot"),
-        "model": os.environ.get("TIER_STANDARD_MODEL", "moonshot-v1-32k"),
+        "model": os.environ.get("TIER_STANDARD_MODEL", "moonshot-v1-128k"),
     },
     "flagship": {
         "provider": os.environ.get("TIER_FLAGSHIP_PROVIDER", "moonshot"),
@@ -336,6 +336,11 @@ _RE_END_PUNCT = re.compile(r"[。！？!?.]$")
 _RE_SENT_PUNCT = re.compile(r"[。，；！？]")
 _RE_PAGENUM_END = re.compile(r"\d{1,4}$")
 _RE_DOT_LEADER = re.compile(r"[.．·。…]{2,}")
+_RE_TOC_TITLE_WITH_PAGENUM = re.compile(r"^(.+?)\s+\d{1,4}$")
+_TOC_H1_FIXED_NAMES = frozenset({
+    "总结", "结论", "参考文献", "references",
+    "附录", "致谢", "摘要", "abstract",
+})
 
 _FIXED_TITLE = {
     "toc_title": ("目录",),
@@ -500,6 +505,16 @@ def _is_toc_like(text: str) -> bool:
     return bool(_RE_DOT_LEADER.search(t) or _RE_PAGENUM_END.search(t))
 
 
+def _is_short_heading(text: str) -> bool:
+    """短行 + 无句末/句中标点：用于把 1.1 / 1.1.1 这类编号标题与
+    "1.5倍行距，…""10.1%的准确率。"这类数字开头的正文长句区分开。
+    正文长句更长且含 。，；！？ 标点，会被排除。"""
+    t = _clean_text(text)
+    if not t or len(t) > 30:
+        return False
+    return not _RE_SENT_PUNCT.search(t)
+
+
 def direct_rule_type(text: str, block: str | None = None) -> str | None:
     """
     高确定性规则直判。返回 None 表示交给 AI。
@@ -564,12 +579,24 @@ def direct_rule_type(text: str, block: str | None = None) -> str | None:
             return "toc_h2"
         if _RE_CHAPTER.match(t) and "toc_h1" in allowed:
             return "toc_h1"
+        # 固定节标题 + 尾部页码，如"总结 33"、"参考文献 34"——是目录条目而非正文标题。
+        m_toc = _RE_TOC_TITLE_WITH_PAGENUM.match(t)
+        if m_toc and _compact(m_toc.group(1)) in _TOC_H1_FIXED_NAMES and "toc_h1" in allowed:
+            return "toc_h1"
+        # 在目录 block 内，无页码的固定节名（如单独的"总结"、"参考文献"）也归 toc_h1。
+        if block == "toc" and c in _TOC_H1_FIXED_NAMES and "toc_h1" in allowed:
+            return "toc_h1"
 
-    # 正文标题：仅 h1 直判（"第X章"锚点可靠）。
-    # h2/h3 因易与"1.5倍""10.1%"等数字开头正文句混淆，一律交 AI 判断。
+    # 正文标题。h1 用"第X章"锚点直判；h2/h3 仅在"短行 + 无句末标点"时直判，
+    # 以排除"1.5倍行距，…""10.1%的准确率。"等数字开头的正文长句。
     if block in (None, "body"):
         if _RE_CHAPTER.match(t) and "h1" in allowed:
             return "h1"
+        if _is_short_heading(t):
+            if _RE_H3.match(t) and "h3" in allowed:
+                return "h3"
+            if _RE_H2.match(t) and "h2" in allowed:
+                return "h2"
 
     # 总结、参考文献 block 规则（只判标题，条目交 AI）
     if block == "conclusion" and c in {"总结", "结论"} and "conclusion_title" in allowed:
@@ -594,6 +621,11 @@ def apply_pattern_override(text: str, ptype: str, block: str | None = None) -> s
     rule_t = direct_rule_type(t, block)
     if rule_t and rule_t in allowed:
         return rule_t
+
+    # 长且含句末标点的段落几乎不可能是标题：纠正 AI 把正文长句误判成 h1/h2/h3。
+    if ptype in ("h1", "h2", "h3") and len(t) > 40 and _RE_SENT_PUNCT.search(t):
+        if "body" in allowed:
+            return "body"
 
     # 题注兜底：AI 常把图/表题注误判为标题/正文。
     if len(t) <= 80:
@@ -948,6 +980,89 @@ def _split_into_batches(paragraphs: list[dict], batch_size: int) -> list[tuple[s
     return tasks
 
 
+# ============================================================
+# 旗舰版：全文语义识别（不走强规则，整篇投喂 AI）
+# ============================================================
+FLAGSHIP_CHUNK_SIZE = int(os.environ.get("AI_FLAGSHIP_CHUNK", 150))
+
+
+def _build_full_doc_user_message(paragraphs: list[dict]) -> str:
+    """旗舰版：将所有段落按顺序列出，让 AI 基于整体结构做语义识别。"""
+    lines = [
+        "请对下列论文全文段落全部分类。这是论文的所有段落，按原始顺序排列。",
+        "请根据整体文档结构、段落在全文中的位置和语义，判断每个段落的类型。",
+        "只输出 JSON 数组，不要解释。",
+        "",
+    ]
+    for p in paragraphs:
+        text = _clip_text(p.get("text", "") or "", PARA_TEXT_TRUNC)
+        lines.append(f"[{p['index']}] {text}")
+    lines += ["", "输出格式：", '[{"index":N,"type":"xxx"}, ...]']
+    return "\n".join(lines)
+
+
+def _classify_full_doc(client: BaseAIClient, paragraphs: list[dict]) -> list[dict]:
+    """
+    旗舰版全文语义识别：跳过所有强规则，把所有段落发给 AI 做整体语义分类。
+    若段落数超过 FLAGSHIP_CHUNK_SIZE，按顺序分块（每块仍用全文提示词）。
+    块内覆盖不足时递归二分重试。
+    """
+    if not paragraphs:
+        return []
+
+    allowed = set(VALID_TYPES)
+
+    def _process_arr(arr: list, chunk: list[dict]) -> list[dict]:
+        text_by_idx = {p["index"]: p.get("text", "") for p in chunk}
+        results: dict[int, dict] = {}
+        for entry in arr:
+            if not isinstance(entry, dict):
+                continue
+            idx = entry.get("index")
+            if not isinstance(idx, int) or idx not in text_by_idx:
+                continue
+            ptype = entry.get("type", "body")
+            if ptype not in allowed:
+                ptype = "body"
+            txt = text_by_idx[idx]
+            ptype = apply_pattern_override(txt, ptype, None)
+            if ptype not in allowed:
+                ptype = "body"
+            results[idx] = {
+                "index": idx,
+                "type": ptype,
+                "confidence": compute_rule_confidence(txt, ptype),
+                "reason": "flagship_full_doc",
+            }
+        for p in chunk:
+            if p["index"] not in results:
+                results[p["index"]] = _fallback_item(p, None, "旗舰版AI未返回该段")
+        return [results[p["index"]] for p in chunk]
+
+    def _call_chunk(chunk: list[dict], depth: int = 0) -> list[dict]:
+        user_msg = _build_full_doc_user_message(chunk)
+        arr = None
+        try:
+            resp = _chat_with_retry(client, _WHOLE_DOC_SYSTEM_PROMPT, user_msg)
+            arr = _extract_json_array(resp)
+        except Exception as e:
+            logger.warning("旗舰版识别批失败 (depth=%d): %s", depth, e)
+        if arr and _coverage(arr, chunk) >= len(chunk) * 0.80:
+            return _process_arr(arr, chunk)
+        if len(chunk) > 3 and depth < 3:
+            mid = len(chunk) // 2
+            logger.warning("旗舰版覆盖不足，二分重试（%d 段，depth=%d）", len(chunk), depth)
+            return _call_chunk(chunk[:mid], depth + 1) + _call_chunk(chunk[mid:], depth + 1)
+        return [_fallback_item(p, None, "旗舰版识别覆盖不足") for p in chunk]
+
+    logger.info("旗舰版全文语义识别：%d 段，块大小 %d（无强规则）", len(paragraphs), FLAGSHIP_CHUNK_SIZE)
+    results: list[dict] = []
+    for i in range(0, len(paragraphs), FLAGSHIP_CHUNK_SIZE):
+        chunk = paragraphs[i:i + FLAGSHIP_CHUNK_SIZE]
+        results.extend(_call_chunk(chunk))
+    return results
+
+
 def classify_paragraphs_batch(paragraphs: list[dict], batch_size: int | None = None,
                               tier: str | None = None) -> list[dict]:
     """
@@ -965,6 +1080,11 @@ def classify_paragraphs_batch(paragraphs: list[dict], batch_size: int | None = N
     """
     if not paragraphs:
         return []
+
+    # 旗舰版：跳过所有强规则，整篇投喂 AI 做语义识别。
+    if tier == "flagship":
+        client = get_ai_client(tier)
+        return _classify_full_doc(client, paragraphs)
 
     # 先看是否全部可由强规则解决；如果是，则完全不初始化 AI client，避免没配 API key 时失败。
     all_direct = True
