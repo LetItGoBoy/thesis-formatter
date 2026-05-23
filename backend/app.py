@@ -78,9 +78,11 @@ def api_parse():
         return jsonify({"error": "仅支持.docx文件"}), 400
 
     file_bytes = file.read()
-    logger.info("收到 /api/parse: file=%s size=%dB", file.filename, len(file_bytes))
+    tier = (request.form.get("tier") or "").strip() or None
+    logger.info("收到 /api/parse: file=%s size=%dB tier=%s",
+                file.filename, len(file_bytes), tier)
 
-    future = _parse_executor.submit(parse_docx, file_bytes)
+    future = _parse_executor.submit(parse_docx, file_bytes, tier)
     try:
         paragraphs = future.result(timeout=PARSE_TIMEOUT_SEC)
         logger.info("解析成功: %d 段", len(paragraphs))

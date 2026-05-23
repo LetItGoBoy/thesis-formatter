@@ -31,9 +31,10 @@ export interface ParseResponse {
   paragraphs: Paragraph[];
 }
 
-export async function parseDocx(file: File): Promise<ParseResponse> {
+export async function parseDocx(file: File, tier?: string): Promise<ParseResponse> {
   const form = new FormData();
   form.append("file", file);
+  if (tier) form.append("tier", tier);
   const res = await fetch(`${API_BASE}/api/parse`, { method: "POST", body: form });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));

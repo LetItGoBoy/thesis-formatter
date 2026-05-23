@@ -271,9 +271,10 @@ def extract_blocks(file_bytes: bytes) -> list[dict]:
     return items
 
 
-def parse_docx(file_bytes: bytes) -> list[dict]:
+def parse_docx(file_bytes: bytes, tier: str | None = None) -> list[dict]:
     """
     解析 .docx 并批量识别。
+    tier: 模型档位（economy/standard/flagship），透传给 AI 识别层。
     返回带 block 标签的完整段落列表（表格段附带 cells）。
     """
     try:
@@ -302,7 +303,7 @@ def parse_docx(file_bytes: bytes) -> list[dict]:
     if text_items:
         t0 = time.monotonic()
         try:
-            classified = classify_paragraphs_batch(text_items)
+            classified = classify_paragraphs_batch(text_items, tier=tier)
         except AIFatalError as e:
             logger.error("致命错误，中止: %s", e)
             raise ParseError(str(e)) from e

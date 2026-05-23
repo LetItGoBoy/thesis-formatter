@@ -79,6 +79,40 @@ export const BLOCKS: BlockDef[] = [
   },
 ];
 
+// ============================================================
+// 模型档位（首页选择，价格仅展示，暂不实际扣费）
+// value 需与后端 ai_client.MODEL_TIERS 的 key 一致
+// ============================================================
+export interface ModelTier {
+  value: string;
+  label: string;
+  price: string;
+  desc: string;
+  recommended?: boolean;
+}
+
+export const MODEL_TIERS: ModelTier[] = [
+  {
+    value: "economy",
+    label: "经济版",
+    price: "¥0.01/篇",
+    desc: "速度快，适合排版规整的论文",
+  },
+  {
+    value: "standard",
+    label: "标准版",
+    price: "¥0.05/篇",
+    desc: "识别更准，推荐多数论文",
+    recommended: true,
+  },
+  {
+    value: "flagship",
+    label: "旗舰版",
+    price: "¥0.20/篇",
+    desc: "整篇通读，复杂排版最稳",
+  },
+];
+
 export interface TypeOption {
   value: string;
   label: string;
@@ -193,8 +227,10 @@ interface ThesisState {
   paragraphs: Paragraph[];
   outputBlob: Blob | null;
   template: string;
+  tier: string;
 
   setTemplate: (template: string) => void;
+  setTier: (tier: string) => void;
   setSource: (fileName: string, docxBase64: string, paragraphs: Paragraph[]) => void;
   updateParagraph: (index: number, patch: Partial<Paragraph>) => void;
   confirmParagraph: (index: number) => void;
@@ -214,8 +250,10 @@ export const useThesisStore = create<ThesisState>((set) => ({
   paragraphs: [],
   outputBlob: null,
   template: "hulunbeier_univ",
+  tier: "standard",
 
   setTemplate: (template) => set({ template }),
+  setTier: (tier) => set({ tier }),
 
   setSource: (fileName, docxBase64, paragraphs) =>
     set({

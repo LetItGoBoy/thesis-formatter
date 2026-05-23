@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Logo } from "@/components/Logo";
-import { useThesisStore } from "@/lib/store";
+import { useThesisStore, MODEL_TIERS } from "@/lib/store";
 import { parseDocx } from "@/lib/api";
 
 // 学院 → 格式模板。后续接入其他学院时在此追加 available 项。
@@ -20,6 +20,8 @@ export default function UploadPage() {
   const setSource = useThesisStore((s) => s.setSource);
   const template = useThesisStore((s) => s.template);
   const setTemplate = useThesisStore((s) => s.setTemplate);
+  const tier = useThesisStore((s) => s.tier);
+  const setTier = useThesisStore((s) => s.setTier);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -60,7 +62,7 @@ export default function UploadPage() {
       setProgress(18);
       setProgressText("AI 正在通读全文，批量识别每段类型...");
       startCreep();
-      const data = await parseDocx(file);
+      const data = await parseDocx(file, tier);
       if (timerRef.current) clearInterval(timerRef.current);
       setProgress(100);
       setProgressText("识别完成，正在进入分块确认...");
@@ -135,6 +137,49 @@ export default function UploadPage() {
                 ))}
               </optgroup>
             </Select>
+          </div>
+
+          {/* 识别模型档位（价格仅展示，暂不扣费） */}
+          <div className="mb-5">
+            <div className="mb-2 flex items-center justify-center gap-2 text-sm font-medium text-slate-600">
+              识别模型
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-normal text-slate-400">
+                价格仅展示，当前免费试用
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {MODEL_TIERS.map((m) => {
+                const active = tier === m.value;
+                return (
+                  <button
+                    key={m.value}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => setTier(m.value)}
+                    className={`
+                      relative rounded-2xl border-2 p-3 text-left transition
+                      ${active
+                        ? "border-indigo-500 bg-indigo-50/80 shadow-sm"
+                        : "border-slate-200 bg-white/70 hover:border-indigo-300"}
+                      ${loading ? "cursor-not-allowed opacity-60" : "cursor-pointer"}
+                    `}
+                  >
+                    {m.recommended && (
+                      <span className="absolute -top-2 right-3 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
+                        推荐
+                      </span>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-slate-700">{m.label}</span>
+                      <span className={`text-xs font-medium ${active ? "text-indigo-600" : "text-slate-400"}`}>
+                        {m.price}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs leading-snug text-slate-400">{m.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* 上传区 */}
