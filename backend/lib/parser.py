@@ -8,6 +8,7 @@ backend/lib/parser.py
    table 并携带单元格网格（cells），不送AI、格式化时重建为真正的三线表。
 """
 import io
+import os
 import re
 import base64
 import logging
@@ -286,6 +287,22 @@ def parse_docx(file_bytes: bytes, tier: str | None = None) -> list[dict]:
     logger.info("python-docx 提取：%d 块（其中表格 %d）", len(raw_items), n_tbl)
     if not raw_items:
         return []
+
+    # V2 识别器：纯 AI 语义切块 + 块内专属 prompt（RECOGNIZER=semantic_v2 启用）。
+    # 不做规则跳封面/声明，整篇交 AI 切块；v1 路径完全不受影响。
+    if os.environ.get("RECOGNIZER", "").strip() == "semantic_v2":
+        from .semantic_v2 import recognize_v2
+        t0 = time.monotonic()
+        try:
+            results = recognize_v2(raw_items, tier=tier)
+        except AIFatalError as e:
+            logger.error("V2 致命错误，中止: %s", e)
+            raise ParseError(str(e)) from e
+        except Exception as e:
+            logger.exception("V2 识别失败")
+            raise ParseError(f"V2 识别失败: {e}") from e
+        logger.info("V2 识别完成，用时 %.1fs，输出 %d 段", time.monotonic() - t0, len(results))
+        return results
 
     # 预扫描：跳过封面、整体移除原创性声明区域（含签名/日期手写图片），
     # 其余整片送AI（block=None 不约束）。目录无论在声明前后都保留。
