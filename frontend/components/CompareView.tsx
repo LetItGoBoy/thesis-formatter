@@ -63,8 +63,9 @@ export function CompareView({ paragraphs, onClose }: Props) {
           renderFootnotes: false,
           debug: false,
         }).then(() => {
-          // 等待浏览器完成 layout reflow 后再读坐标
-          requestAnimationFrame(() => {
+          // docx-preview 插入 DOM 后还需浏览器完成完整 reflow/paint，
+          // 单个 RAF 不够（大文档尤其如此），setTimeout 400ms 确保坐标稳定再滚动。
+          setTimeout(() => {
             if (!leftPanel) return;
             const sorted = [...paragraphs].sort((a, b) => a.index - b.index);
             // 找前5段中长度 ≥ 4 字的第一段作为锚点
@@ -100,7 +101,7 @@ export function CompareView({ paragraphs, onClose }: Props) {
                 leftPanel.scrollTop = Math.max(0, leftPanel.scrollTop + elRect.top - panelRect.top - 24);
               }
             }
-          });
+          }, 400);
         })
       )
       .catch((err) => {
