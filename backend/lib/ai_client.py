@@ -129,6 +129,14 @@ class OpenAIClient(_OpenAICompatClient):
     default_model = "gpt-4o-mini"
 
 
+class DoubaoClient(_OpenAICompatClient):
+    """字节跳动豆包（Ark 平台）—— OpenAI 兼容，旗舰档默认使用。"""
+    base_url = "https://ark.cn-beijing.volces.com/api/v3"
+    api_key_env = "DOUBAO_API_KEY"
+    model_env = "DOUBAO_MODEL"
+    default_model = "doubao-seed-2-0-pro-260215"
+
+
 class ClaudeClient(BaseAIClient):
     def __init__(self):
         import anthropic
@@ -187,8 +195,8 @@ MODEL_TIERS = {
         "model": os.environ.get("TIER_STANDARD_MODEL", "moonshot-v1-128k"),
     },
     "flagship": {
-        "provider": os.environ.get("TIER_FLAGSHIP_PROVIDER", "moonshot"),
-        "model": os.environ.get("TIER_FLAGSHIP_MODEL", "moonshot-v1-128k"),
+        "provider": os.environ.get("TIER_FLAGSHIP_PROVIDER", "doubao"),
+        "model": os.environ.get("TIER_FLAGSHIP_MODEL", "doubao-seed-2-0-pro-260215"),
     },
 }
 DEFAULT_TIER = os.environ.get("DEFAULT_TIER", "standard")
@@ -196,7 +204,7 @@ DEFAULT_TIER = os.environ.get("DEFAULT_TIER", "standard")
 _AI_CLIENTS = {
     "deepseek": DeepSeekClient, "qwen": QwenClient,
     "zhipu": ZhipuClient, "moonshot": MoonshotClient,
-    "claude": ClaudeClient, "openai": OpenAIClient,
+    "claude": ClaudeClient, "openai": OpenAIClient, "doubao": DoubaoClient,
 }
 
 

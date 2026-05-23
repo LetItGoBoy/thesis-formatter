@@ -111,14 +111,14 @@ export const MODEL_TIERS: ModelTier[] = [
     value: "standard",
     label: "标准版",
     price: "¥0.05/篇",
-    desc: "识别更准，推荐多数论文",
+    desc: "Moonshot · 识别更准，推荐多数论文",
     recommended: true,
   },
   {
     value: "flagship",
     label: "旗舰版",
     price: "¥0.20/篇",
-    desc: "整篇通读，复杂排版最稳",
+    desc: "豆包 · 整篇通读，复杂排版最稳",
   },
 ];
 
