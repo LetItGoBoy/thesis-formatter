@@ -19,7 +19,7 @@ from copy import deepcopy
 from docx import Document
 from docx.shared import Pt, Cm, Emu
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
-from docx.enum.table import WD_ALIGN_VERTICAL
+from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from docx.oxml.shape import CT_Inline
@@ -212,21 +212,6 @@ def _apply_mixed_font(paragraph, chinese_font, ascii_font, pt, bold):
         for off, nr in enumerate(new_rs):
             parent.insert(idx + off, nr)
         parent.remove(r_el)
-
-
-def _approx_width_pt(text: str, pt: float) -> float:
-    """Approximate rendered width of text in pt.
-    CJK / full-width chars ≈ pt wide; half-width space ≈ 0.5 pt; other ASCII ≈ 0.55 pt.
-    Used for computing instructor left-indent to align with centered author line."""
-    w = 0.0
-    for ch in text:
-        if CHINESE_RE.match(ch) or ch == "　":
-            w += pt
-        elif ch == " ":
-            w += pt * 0.5
-        else:
-            w += pt * 0.55
-    return w
 
 
 # ============================================================
@@ -480,6 +465,38 @@ def _add_table(doc, cells):
     return table
 
 
+def _set_table_autofit(table):
+    """让表格按内容自适应到最小合理宽度（不强制占满版心），并整体居中。"""
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.autofit = True
+    table.allow_autofit = True
+    tblPr = table._tbl.tblPr
+    for tag in ("w:tblW", "w:tblLayout"):
+        old = tblPr.find(qn(tag))
+        if old is not None:
+            tblPr.remove(old)
+    tblW = OxmlElement("w:tblW")
+    tblW.set(qn("w:w"), "0")
+    tblW.set(qn("w:type"), "auto")
+    tblPr.append(tblW)
+    layout = OxmlElement("w:tblLayout")
+    layout.set(qn("w:type"), "autofit")
+    tblPr.append(layout)
+    # 清除固定列宽与固定行高，交给 Word 按内容重算到最小合理尺寸
+    for row in table.rows:
+        trPr = row._tr.get_or_add_trPr()
+        for h in trPr.findall(qn("w:trHeight")):
+            trPr.remove(h)
+        for cell in row.cells:
+            tcPr = cell._tc.get_or_add_tcPr()
+            tcW = tcPr.find(qn("w:tcW"))
+            if tcW is None:
+                tcW = OxmlElement("w:tcW")
+                tcPr.append(tcW)
+            tcW.set(qn("w:w"), "0")
+            tcW.set(qn("w:type"), "auto")
+
+
 def _format_tables(doc, table_cfg):
     cant_split = bool(table_cfg.get("cant_split", True))
     tl = table_cfg.get("three_line", {})
@@ -522,7 +539,14 @@ def _format_tables(doc, table_cfg):
                 for para in cell.paragraphs:
                     disable_snap_to_grid(para)
                     para.alignment = ALIGNMENT_MAP["center"]
+                    # 单元格内零段距 + 单倍行距，使行高收缩到内容本身高度
+                    pf = para.paragraph_format
+                    pf.space_before = Pt(0)
+                    pf.space_after = Pt(0)
+                    pf.line_spacing = 1.0
+                    pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
                     _apply_mixed_font(para, zh, en, sz, False)
+        _set_table_autofit(table)
 
 
 # ============================================================
@@ -628,11 +652,8 @@ def format_docx(paragraphs, format_config, source_bytes=None):
     _auto_num_h1 = bool(_h1_items) and _ch_found < len(_h1_items) / 2
     _h1_seq = 0
 
-    # 作者/指导老师首字对齐：缓存 author_line 居中后的左起点，供 instructor 使用
-    _author_left_pt: float | None = None
-    _text_w_pt = _text_w_cm * 28.35  # cm → pt
-
     last_block = None
+    prev_ptype = None  # 上一段类型：用于「同类型连续段落不重复插空行」
     for p in ordered:
         ptype = p.get("type", "body")
         style = styles.get(ptype) or styles.get("body", {})
@@ -648,11 +669,13 @@ def format_docx(paragraphs, format_config, source_bytes=None):
                 brk = doc.add_paragraph()
                 brk.paragraph_format.page_break_before = True
             _add_table(doc, p["cells"])
+            prev_ptype = ptype
             continue
 
         # 图片：从原文按 image_index 取出原图，居中插回（题注按文档顺序自然位于其下方）
         if ptype == "figure":
             _add_image_paragraph(doc, p, _images, _max_img_emu, need_page_break)
+            prev_ptype = ptype
             continue
 
         raw_text = p.get("text", "")
@@ -667,15 +690,13 @@ def format_docx(paragraphs, format_config, source_bytes=None):
             _ref_seq += 1
             text = f"[{_ref_seq}] {text}"
 
-        # 作者/指导老师首字对齐
-        # author_line 居中后缓存其左起点 = (正文宽 - 行宽) / 2
-        if ptype == "author_line":
-            _pt = float(style.get("font_size_pt", 12))
-            _author_left_pt = (_text_w_pt - _approx_width_pt(text, _pt)) / 2.0
-
         # 前置真实空行（blank_lines_before）。若本段要另起一页，则把分页放到第一个
         # 空行上，使空行落在新页顶部、正文随后；否则空行就在当前位置之前。
+        # 仅在「与上一段类型不同」时插入：使其语义为「与上一部分空一行」，
+        # 避免多段总结正文（conclusion_body）彼此之间也被插入空行。
         n_blank = int(style.get("blank_lines_before", 0))
+        if ptype == prev_ptype:
+            n_blank = 0
         page_break_consumed = False
         for i in range(n_blank):
             blank = doc.add_paragraph()
@@ -709,10 +730,7 @@ def format_docx(paragraphs, format_config, source_bytes=None):
         if ptype in _OUTLINE_LEVEL:
             _set_outline_level(para, _OUTLINE_LEVEL[ptype])
 
-        # instructor 左缩进 = author_line 居中后的左起点，首字与作者行对齐
-        if ptype == "instructor" and _author_left_pt is not None and _author_left_pt > 0:
-            para.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            para.paragraph_format.left_indent = Pt(_author_left_pt)
+        prev_ptype = ptype
 
     _format_tables(doc, format_config.get("table_format", {}))
 
