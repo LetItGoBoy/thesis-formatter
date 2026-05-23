@@ -337,7 +337,10 @@ _RE_SENT_PUNCT = re.compile(r"[。，；！？]")
 _RE_PAGENUM_END = re.compile(r"\d{1,4}$")
 _RE_DOT_LEADER = re.compile(r"[.．·。…]{2,}")
 _RE_TOC_TITLE_WITH_PAGENUM = re.compile(r"^(.+?)\s+\d{1,4}$")
-_TOC_H1_FIXED_NAMES = frozenset({"总结", "结论", "参考文献", "references", "附录", "致谢"})
+_TOC_H1_FIXED_NAMES = frozenset({
+    "总结", "结论", "参考文献", "references",
+    "附录", "致谢", "摘要", "abstract",
+})
 
 _FIXED_TITLE = {
     "toc_title": ("目录",),
@@ -502,6 +505,16 @@ def _is_toc_like(text: str) -> bool:
     return bool(_RE_DOT_LEADER.search(t) or _RE_PAGENUM_END.search(t))
 
 
+def _is_short_heading(text: str) -> bool:
+    """短行 + 无句末/句中标点：用于把 1.1 / 1.1.1 这类编号标题与
+    "1.5倍行距，…""10.1%的准确率。"这类数字开头的正文长句区分开。
+    正文长句更长且含 。，；！？ 标点，会被排除。"""
+    t = _clean_text(text)
+    if not t or len(t) > 30:
+        return False
+    return not _RE_SENT_PUNCT.search(t)
+
+
 def direct_rule_type(text: str, block: str | None = None) -> str | None:
     """
     高确定性规则直判。返回 None 表示交给 AI。
@@ -574,11 +587,16 @@ def direct_rule_type(text: str, block: str | None = None) -> str | None:
         if block == "toc" and c in _TOC_H1_FIXED_NAMES and "toc_h1" in allowed:
             return "toc_h1"
 
-    # 正文标题：仅 h1 直判（"第X章"锚点可靠）。
-    # h2/h3 因易与"1.5倍""10.1%"等数字开头正文句混淆，一律交 AI 判断。
+    # 正文标题。h1 用"第X章"锚点直判；h2/h3 仅在"短行 + 无句末标点"时直判，
+    # 以排除"1.5倍行距，…""10.1%的准确率。"等数字开头的正文长句。
     if block in (None, "body"):
         if _RE_CHAPTER.match(t) and "h1" in allowed:
             return "h1"
+        if _is_short_heading(t):
+            if _RE_H3.match(t) and "h3" in allowed:
+                return "h3"
+            if _RE_H2.match(t) and "h2" in allowed:
+                return "h2"
 
     # 总结、参考文献 block 规则（只判标题，条目交 AI）
     if block == "conclusion" and c in {"总结", "结论"} and "conclusion_title" in allowed:
@@ -603,6 +621,11 @@ def apply_pattern_override(text: str, ptype: str, block: str | None = None) -> s
     rule_t = direct_rule_type(t, block)
     if rule_t and rule_t in allowed:
         return rule_t
+
+    # 长且含句末标点的段落几乎不可能是标题：纠正 AI 把正文长句误判成 h1/h2/h3。
+    if ptype in ("h1", "h2", "h3") and len(t) > 40 and _RE_SENT_PUNCT.search(t):
+        if "body" in allowed:
+            return "body"
 
     # 题注兜底：AI 常把图/表题注误判为标题/正文。
     if len(t) <= 80:
