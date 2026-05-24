@@ -73,6 +73,25 @@ def init_db() -> None:
                 token    TEXT PRIMARY KEY,
                 used_at  TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS users (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                phone         TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at    TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS sms_codes (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                phone       TEXT NOT NULL,
+                code        TEXT NOT NULL,
+                created_at  TEXT NOT NULL,
+                expires_at  TEXT NOT NULL,
+                used        INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_sms_codes_phone
+                ON sms_codes(phone, created_at);
             """
         )
         conn.commit()
@@ -208,6 +227,119 @@ def consume_free(ip: str, limit: int = FREE_DAILY_LIMIT) -> bool:
             "ON CONFLICT(ip, day) DO UPDATE SET count = count + 1",
             (ip, _today()),
         )
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
+# ============================================================
+# 用户账号（手机号唯一，一号一户）
+# ============================================================
+_SMS_EXPIRE_SEC = 300       # 验证码有效期 5 分钟
+_SMS_COOLDOWN_SEC = 60      # 同一手机号两次发送最短间隔
+_SMS_DAY_LIMIT = 10         # 同一手机号每天最多发送次数
+
+
+def create_user(phone: str, password_hash: str) -> dict:
+    """
+    新建用户。若手机号已存在抛出 ValueError（调用方捕获）。
+    phone UNIQUE 约束由数据库强制：即使并发也只有一个注册能成功。
+    """
+    created_at = _now()
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            "INSERT INTO users (phone, password_hash, created_at) VALUES (?, ?, ?)",
+            (phone, password_hash, created_at),
+        )
+        conn.commit()
+        return {"id": cur.lastrowid, "phone": phone, "created_at": created_at}
+    except sqlite3.IntegrityError:
+        raise ValueError("该手机号已注册")
+    finally:
+        conn.close()
+
+
+def get_user_by_phone(phone: str) -> dict | None:
+    conn = get_conn()
+    try:
+        row = conn.execute("SELECT * FROM users WHERE phone = ?", (phone,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+# ============================================================
+# 短信验证码
+# ============================================================
+def can_send_sms(phone: str) -> tuple[bool, str]:
+    """
+    检查是否允许发送验证码。返回 (ok, reason)。
+    - 冷却期内（60秒）：拒绝
+    - 当日超限（10次）：拒绝
+    """
+    conn = get_conn()
+    try:
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone.utc)
+        cooldown_since = (now - timedelta(seconds=_SMS_COOLDOWN_SEC)).isoformat()
+        day_since = (now - timedelta(hours=24)).isoformat()
+
+        recent = conn.execute(
+            "SELECT COUNT(*) FROM sms_codes WHERE phone = ? AND created_at > ?",
+            (phone, cooldown_since),
+        ).fetchone()[0]
+        if recent > 0:
+            return False, f"操作太频繁，请 {_SMS_COOLDOWN_SEC} 秒后再试"
+
+        today_count = conn.execute(
+            "SELECT COUNT(*) FROM sms_codes WHERE phone = ? AND created_at > ?",
+            (phone, day_since),
+        ).fetchone()[0]
+        if today_count >= _SMS_DAY_LIMIT:
+            return False, "今日验证码发送次数已达上限"
+
+        return True, ""
+    finally:
+        conn.close()
+
+
+def save_sms_code(phone: str, code: str) -> None:
+    """存储验证码（不自动删旧码；verify_sms_code 已处理过期逻辑）。"""
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    expires_at = (now + timedelta(seconds=_SMS_EXPIRE_SEC)).isoformat()
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO sms_codes (phone, code, created_at, expires_at, used) "
+            "VALUES (?, ?, ?, ?, 0)",
+            (phone, code, now.isoformat(), expires_at),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def verify_sms_code(phone: str, code: str) -> bool:
+    """
+    校验验证码：找到最近一条未使用且未过期的匹配记录，标记为已用。
+    用 used=1 防止重放攻击。
+    """
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT id FROM sms_codes "
+            "WHERE phone = ? AND code = ? AND used = 0 AND expires_at > ? "
+            "ORDER BY created_at DESC LIMIT 1",
+            (phone, code, now),
+        ).fetchone()
+        if row is None:
+            return False
+        conn.execute("UPDATE sms_codes SET used = 1 WHERE id = ?", (row["id"],))
         conn.commit()
         return True
     finally:

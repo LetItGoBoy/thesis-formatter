@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthSync } from "@/components/AuthSync";
 
 export const metadata: Metadata = {
   title: "论文格式化工具 - 呼伦贝尔学院",
@@ -14,6 +15,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="antialiased min-h-screen bg-slate-50 text-slate-900">
+        <AuthSync />
         {children}
       </body>
     </html>

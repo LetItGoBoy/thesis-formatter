@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Logo } from "@/components/Logo";
 import { useThesisStore, MODEL_TIERS } from "@/lib/store";
 import { parseDocx } from "@/lib/api";
+import { useAuthStore, maskPhone } from "@/lib/auth-store";
 
 // 学院 → 格式模板。后续接入其他学院时在此追加 available 项。
 const COLLEGES = [
@@ -17,6 +18,7 @@ const COMING_SOON = ["文学院", "经济管理学院", "教育科学学院", "�
 
 export default function UploadPage() {
   const router = useRouter();
+  const { phone, logout } = useAuthStore();
   const setSource = useThesisStore((s) => s.setSource);
   const template = useThesisStore((s) => s.template);
   const setTemplate = useThesisStore((s) => s.setTemplate);
@@ -95,7 +97,19 @@ export default function UploadPage() {
       {/* 顶栏品牌 */}
       <nav className="flex items-center justify-between px-6 py-4 md:px-10">
         <Logo />
-        <span className="hidden text-xs text-slate-400 sm:block">论文格式自动化平台</span>
+        <div className="flex items-center gap-3">
+          {phone && (
+            <span className="hidden text-xs text-slate-500 sm:block">
+              {maskPhone(phone)}
+            </span>
+          )}
+          <button
+            onClick={() => { logout(); router.push("/login"); }}
+            className="rounded-lg border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500 transition hover:border-red-200 hover:text-red-500"
+          >
+            退出登录
+          </button>
+        </div>
       </nav>
 
       <div className="flex flex-col items-center px-6 pb-16 pt-6 md:pt-12">

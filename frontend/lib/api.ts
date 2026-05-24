@@ -4,7 +4,14 @@
  * 后端地址从环境变量 NEXT_PUBLIC_API_URL 读取。
  */
 
+import { getToken } from "./auth-store";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+function authHeader(): HeadersInit {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export interface Paragraph {
   index: number;
@@ -35,7 +42,11 @@ export async function parseDocx(file: File, tier?: string): Promise<ParseRespons
   const form = new FormData();
   form.append("file", file);
   if (tier) form.append("tier", tier);
-  const res = await fetch(`${API_BASE}/api/parse`, { method: "POST", body: form });
+  const res = await fetch(`${API_BASE}/api/parse`, {
+    method: "POST",
+    headers: authHeader(),
+    body: form,
+  });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || `解析失败 (HTTP ${res.status})`);
@@ -50,7 +61,7 @@ export async function formatDocx(
 ): Promise<Blob> {
   const res = await fetch(`${API_BASE}/api/format`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify({
       paragraphs: paragraphs.map((p) => ({
         index: p.index,
@@ -74,4 +85,44 @@ export async function checkHealth(): Promise<{ status: string; ai_provider: stri
   const res = await fetch(`${API_BASE}/api/health`);
   if (!res.ok) throw new Error("后端不可用");
   return res.json();
+}
+
+// ============================================================
+// 认证接口
+// ============================================================
+
+async function _authPost(path: string, body: object): Promise<{ token: string; phone: string }> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({ error: res.statusText }));
+  if (!res.ok) throw new Error(data.error || `请求失败 (HTTP ${res.status})`);
+  return data;
+}
+
+export async function sendCode(phone: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/auth/send-code`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone }),
+  });
+  const data = await res.json().catch(() => ({ error: res.statusText }));
+  if (!res.ok) throw new Error(data.error || "发送失败");
+}
+
+export async function registerUser(
+  phone: string,
+  code: string,
+  password: string
+): Promise<{ token: string; phone: string }> {
+  return _authPost("/api/auth/register", { phone, code, password });
+}
+
+export async function loginUser(
+  phone: string,
+  password: string
+): Promise<{ token: string; phone: string }> {
+  return _authPost("/api/auth/login", { phone, password });
 }

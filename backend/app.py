@@ -23,6 +23,8 @@ from dotenv import load_dotenv
 from lib.parser import parse_docx, ParseError
 from lib.formatter import format_docx
 from lib import db
+from lib.auth import require_auth, sign_jwt, hash_password, verify_password
+from lib.sms import send_verification_code
 
 load_dotenv()
 
@@ -58,6 +60,84 @@ def _load_template(template: str) -> dict | None:
         return json.load(f)
 
 
+import re
+_PHONE_RE = re.compile(r"^1[3-9]\d{9}$")
+
+
+# ============================================================
+# 认证接口
+# ============================================================
+
+@app.route("/api/auth/send-code", methods=["POST"])
+def auth_send_code():
+    data = request.get_json(silent=True) or {}
+    phone = (data.get("phone") or "").strip()
+    if not _PHONE_RE.match(phone):
+        return jsonify({"error": "手机号格式不正确"}), 400
+
+    ok, reason = db.can_send_sms(phone)
+    if not ok:
+        return jsonify({"error": reason}), 429
+
+    try:
+        code = send_verification_code(phone)
+        db.save_sms_code(phone, code)
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.error("发送短信失败: %s", e)
+        return jsonify({"error": f"短信发送失败: {e}"}), 500
+
+
+@app.route("/api/auth/register", methods=["POST"])
+def auth_register():
+    data = request.get_json(silent=True) or {}
+    phone = (data.get("phone") or "").strip()
+    code = (data.get("code") or "").strip()
+    password = data.get("password") or ""
+
+    if not _PHONE_RE.match(phone):
+        return jsonify({"error": "手机号格式不正确"}), 400
+    if not code or len(code) != 6:
+        return jsonify({"error": "请输入6位验证码"}), 400
+    if len(password) < 6:
+        return jsonify({"error": "密码不少于6位"}), 400
+
+    if not db.verify_sms_code(phone, code):
+        return jsonify({"error": "验证码错误或已过期"}), 400
+
+    try:
+        user = db.create_user(phone, hash_password(password))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 409  # 409 Conflict = 手机号已注册
+
+    token = sign_jwt(user["id"], phone)
+    logger.info("新用户注册: phone=%s***%s uid=%s", phone[:3], phone[-4:], user["id"])
+    return jsonify({"token": token, "phone": phone})
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def auth_login():
+    data = request.get_json(silent=True) or {}
+    phone = (data.get("phone") or "").strip()
+    password = data.get("password") or ""
+
+    if not _PHONE_RE.match(phone):
+        return jsonify({"error": "手机号格式不正确"}), 400
+
+    user = db.get_user_by_phone(phone)
+    if not user or not verify_password(password, user["password_hash"]):
+        return jsonify({"error": "手机号或密码错误"}), 401
+
+    token = sign_jwt(user["id"], phone)
+    return jsonify({"token": token, "phone": phone})
+
+
+@app.route("/api/auth/me", methods=["GET"])
+@require_auth
+def auth_me():
+    return jsonify(request.current_user)
+
+
 @app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({
@@ -68,6 +148,7 @@ def health():
 
 
 @app.route("/api/parse", methods=["POST"])
+@require_auth
 def api_parse():
     if "file" not in request.files:
         return jsonify({"error": "缺少file字段"}), 400
@@ -105,6 +186,7 @@ def api_parse():
 
 
 @app.route("/api/format", methods=["POST"])
+@require_auth
 def api_format():
     data = request.get_json(silent=True)
     if not data:
