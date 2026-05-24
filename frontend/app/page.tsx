@@ -169,6 +169,11 @@ export default function UploadPage() {
                         推荐
                       </span>
                     )}
+                    {m.value === "economy" && (
+                      <span className="absolute -top-2 right-3 rounded-full bg-orange-400 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
+                        低精度
+                      </span>
+                    )}
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-slate-700">{m.label}</span>
                       <span className={`text-xs font-medium ${active ? "text-indigo-600" : "text-slate-400"}`}>
@@ -180,6 +185,12 @@ export default function UploadPage() {
                 );
               })}
             </div>
+            {tier === "economy" && (
+              <div className="mt-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700">
+                ⚠️ 经济版使用规则识别，无需联网，但识别率约 60%，需在确认页面较多手动纠错。
+                如论文排版复杂，建议改用标准版或旗舰版。
+              </div>
+            )}
           </div>
 
           {/* 上传区 */}

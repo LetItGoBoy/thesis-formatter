@@ -461,6 +461,165 @@ def classify_block(client, block: str, items: list[dict]) -> dict[int, str]:
 
 
 # ============================================================
+# 经济版：纯规则识别，不调用 AI
+# ============================================================
+_ECON_TOC_TITLE_RE = re.compile(r"^目\s*录$")
+_ECON_ABS_CN_RE = re.compile(r"^摘\s*要$")
+_ECON_ABS_EN_RE = re.compile(r"^abstract$", re.IGNORECASE)
+_ECON_REFS_TITLE_RE = re.compile(r"^参\s*考\s*文\s*献$")
+_ECON_ACK_RE = re.compile(r"^(?:致\s*谢|附\s*录)")
+_ECON_KW_CN_RE = re.compile(r"^(?:关键词|关键字)\s*[:：]")
+_ECON_KW_EN_RE = re.compile(r"^keywords?\s*[:：]", re.IGNORECASE)
+_ECON_CHAPTER_RE = re.compile(r"^第[一二三四五六七八九十百零\d]+章")
+_ECON_INSTR_RE = re.compile(r"指导(老师|教师|教授)|Supervisor|导师")
+_ECON_AUTHOR_RE = re.compile(r"^(?:作者|学生)[:：]?|学号[:：]|专业[:：]|姓名[:：]")
+
+
+def recognize_economy(raw_items: list[dict]) -> list[dict]:
+    """
+    纯规则识别，不调用 AI，供经济版使用。精度约 60%，速度极快。
+    通过关键词/数字模式状态机推断段落类型，不受 token 限制。
+    """
+    from .parser import select_content_items
+
+    kept = select_content_items(raw_items)
+    block = "pre"  # pre / toc / abstract_cn / abstract_en / body / conclusion / references / extra
+    results: list[dict] = []
+
+    def _append(it, ptype, conf, reason, blk):
+        entry = {
+            "index": it["index"], "text": (it.get("text") or "").strip(),
+            "type": ptype, "confidence": conf, "reason": reason, "block": blk,
+        }
+        if it.get("orig_style"):
+            entry["orig_style"] = it["orig_style"]
+        results.append(entry)
+
+    for it in kept:
+        kind = it.get("kind")
+        raw_text = it.get("text") or ""
+        text = raw_text.strip()
+        nt = re.sub(r"\s+", "", text)
+        orig = it.get("orig_style") or {}
+
+        if kind == "table":
+            results.append({
+                "index": it["index"], "text": raw_text, "type": "table",
+                "confidence": 1.0, "reason": "规则识别:表格", "block": "body",
+                "cells": it.get("cells"),
+            })
+            continue
+        if kind == "image":
+            results.append({
+                "index": it["index"], "text": raw_text, "type": "figure",
+                "confidence": 1.0, "reason": "规则识别:图片", "block": "body",
+                "image_index": it.get("image_index"), "image_b64": it.get("image_b64"),
+            })
+            continue
+        if not text:
+            continue
+
+        # ── Block transition anchors ──
+        if _ECON_TOC_TITLE_RE.match(nt) and block in ("pre", "abstract_cn", "abstract_en"):
+            block = "toc"
+            _append(it, "toc_title", 0.95, "规则:目录标题", "toc")
+            continue
+        if _ECON_ABS_CN_RE.match(nt) and block in ("pre", "toc"):
+            block = "abstract_cn"
+            _append(it, "abstract_title_cn", 0.95, "规则:中文摘要标题", "abstract")
+            continue
+        if _ECON_ABS_EN_RE.match(nt) and block not in ("body", "conclusion", "references", "extra"):
+            block = "abstract_en"
+            _append(it, "abstract_title_en", 0.95, "规则:英文摘要标题", "abstract")
+            continue
+        if _CONCLUSION_TITLE_RE.match(nt) and block not in ("references", "extra"):
+            block = "conclusion"
+            _append(it, "conclusion_title", 0.9, "规则:总结标题", "conclusion")
+            continue
+        if _ECON_REFS_TITLE_RE.match(nt):
+            block = "references"
+            _append(it, "references_title", 0.95, "规则:参考文献标题", "references")
+            continue
+        if _ECON_ACK_RE.match(nt):
+            block = "extra"
+            _append(it, "passthrough", 1.0, "规则:致谢/附录", "extra")
+            continue
+        if _ECON_CHAPTER_RE.match(text) and block not in ("references", "extra"):
+            block = "body"
+            _append(it, "h1", 0.9, "规则:一级标题(章)", "body")
+            continue
+
+        # ── Within-block classification ──
+        if block == "toc":
+            lstripped = text.lstrip()
+            lead = len(text) - len(lstripped)
+            if _H3_NUM_RE.match(lstripped):
+                ptype = "toc_h3"
+            elif _H2_NUM_RE.match(lstripped):
+                ptype = "toc_h2"
+            elif lead >= 4:
+                ptype = "toc_h3"
+            elif lead >= 2:
+                ptype = "toc_h2"
+            else:
+                ptype = "toc_h1"
+            _append(it, ptype, 0.7, "规则:目录条目", "toc")
+
+        elif block == "abstract_cn":
+            if _ECON_KW_CN_RE.match(text):
+                _append(it, "keywords_cn", 0.95, "规则:中文关键词", "abstract")
+            elif _ECON_INSTR_RE.search(text):
+                _append(it, "instructor", 0.85, "规则:指导老师", "abstract")
+            elif _ECON_AUTHOR_RE.match(text):
+                _append(it, "author_line", 0.8, "规则:作者", "abstract")
+            else:
+                _append(it, "abstract_body_cn", 0.7, "规则:中文摘要正文", "abstract")
+
+        elif block == "abstract_en":
+            if _ECON_KW_EN_RE.match(text):
+                _append(it, "keywords_en", 0.95, "规则:英文关键词", "abstract")
+            else:
+                _append(it, "abstract_body_en", 0.7, "规则:英文摘要正文", "abstract")
+
+        elif block == "body":
+            if _H3_NUM_RE.match(text):
+                _append(it, "h3", 0.85, "规则:三级标题", "body")
+            elif _H2_NUM_RE.match(text):
+                _append(it, "h2", 0.85, "规则:二级标题", "body")
+            else:
+                _append(it, "body", 0.7, "规则:正文", "body")
+
+        elif block == "conclusion":
+            _append(it, "conclusion_body", 0.8, "规则:总结正文", "conclusion")
+
+        elif block == "references":
+            _append(it, "reference_item", 0.85, "规则:参考文献条目", "references")
+
+        elif block == "extra":
+            _append(it, "passthrough", 1.0, "规则:致谢/附录", "extra")
+
+        else:  # "pre" - title page content before any anchor
+            font_size = orig.get("font_size_pt", 12)
+            align = orig.get("alignment", "left")
+            is_bold = orig.get("is_bold", False)
+            if font_size >= 16 and align == "center":
+                _append(it, "paper_title", 0.7, "规则:论文题目(大字居中)", "abstract")
+            elif align == "center" and is_bold and len(text) <= 50:
+                _append(it, "paper_title", 0.65, "规则:论文题目(粗体居中)", "abstract")
+            elif _ECON_INSTR_RE.search(text):
+                _append(it, "instructor", 0.8, "规则:指导老师", "abstract")
+            elif _ECON_AUTHOR_RE.match(text):
+                _append(it, "author_line", 0.75, "规则:作者", "abstract")
+            else:
+                block = "abstract_cn"
+                _append(it, "abstract_body_cn", 0.5, "规则:摘要区(兜底)", "abstract")
+
+    results.sort(key=lambda r: r["index"])
+    logger.info("经济版规则识别完成，输出 %d 段", len(results))
+    return results
+
+
+# ============================================================
 # 总入口
 # ============================================================
 def recognize_v2(raw_items: list[dict], tier: str | None = None) -> list[dict]:
@@ -473,6 +632,11 @@ def recognize_v2(raw_items: list[dict], tier: str | None = None) -> list[dict]:
     """
     if not raw_items:
         return []
+
+    # 经济版：纯规则识别，不调用 AI，避免 8k context 卡死
+    if tier == "economy":
+        logger.info("经济版：使用纯规则识别（不调用AI）")
+        return recognize_economy(raw_items)
 
     by_index = {it["index"]: it for it in raw_items}
 
