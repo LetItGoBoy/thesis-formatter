@@ -105,20 +105,20 @@ export const MODEL_TIERS: ModelTier[] = [
     value: "economy",
     label: "经济版",
     price: "免费",
-    desc: "规则识别 · 速度极快，识别率约60%，需手动纠错较多",
+    desc: "规则识别 · 速度极快，识别率约70%，需手动纠错较多",
   },
   {
     value: "standard",
     label: "标准版",
     price: "¥0.05/篇",
-    desc: "Moonshot · 识别率约85%，推荐多数论文",
+    desc: "Moonshot · 识别率约90%，推荐多数论文",
     recommended: true,
   },
   {
     value: "flagship",
     label: "旗舰版",
     price: "¥0.20/篇",
-    desc: "豆包 · 识别率最高，复杂排版最稳",
+    desc: "豆包 · 识别率约95%，复杂排版最稳",
   },
 ];
 
