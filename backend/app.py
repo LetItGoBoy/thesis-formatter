@@ -44,7 +44,10 @@ db.init_db()
 FLASK_PORT = int(os.environ.get("FLASK_PORT", 5000))
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", 20))
 PARSE_TIMEOUT_SEC = float(os.environ.get("PARSE_TIMEOUT", 60))
-app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+# 格式化接口要发回 docx_base64（≈原文件 ×1.33）+ 段落数据，用更大的上限
+# MAX_UPLOAD_MB 控制上传文件大小，MAX_CONTENT_MB 控制所有请求体上限
+MAX_CONTENT_MB = int(os.environ.get("MAX_CONTENT_MB", 100))
+app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_MB * 1024 * 1024
 
 # 格式规则只从 config/formats/ 下的 JSON 读取，不硬编码
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "config", "formats")
