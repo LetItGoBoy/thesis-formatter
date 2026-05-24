@@ -98,17 +98,26 @@ export default function UploadPage() {
       <nav className="flex items-center justify-between px-6 py-4 md:px-10">
         <Logo />
         <div className="flex items-center gap-3">
-          {phone && (
-            <span className="hidden text-xs text-slate-500 sm:block">
-              {maskPhone(phone)}
-            </span>
+          {phone ? (
+            <>
+              <span className="hidden text-xs text-slate-500 sm:block">
+                {maskPhone(phone)}
+              </span>
+              <button
+                onClick={() => logout()}
+                className="rounded-lg border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500 transition hover:border-red-200 hover:text-red-500"
+              >
+                退出登录
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => router.push("/login")}
+              className="rounded-lg border border-indigo-200 bg-white/70 px-3 py-1.5 text-xs text-indigo-600 transition hover:bg-indigo-50"
+            >
+              登录 / 注册
+            </button>
           )}
-          <button
-            onClick={() => { logout(); router.push("/login"); }}
-            className="rounded-lg border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500 transition hover:border-red-200 hover:text-red-500"
-          >
-            退出登录
-          </button>
         </div>
       </nav>
 

@@ -148,7 +148,6 @@ def health():
 
 
 @app.route("/api/parse", methods=["POST"])
-@require_auth
 def api_parse():
     if "file" not in request.files:
         return jsonify({"error": "缺少file字段"}), 400
@@ -186,7 +185,6 @@ def api_parse():
 
 
 @app.route("/api/format", methods=["POST"])
-@require_auth
 def api_format():
     data = request.get_json(silent=True)
     if not data:
