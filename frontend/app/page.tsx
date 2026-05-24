@@ -210,7 +210,7 @@ export default function UploadPage() {
             </div>
             {tier === "economy" && (
               <div className="mt-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700">
-                ⚠️ 经济版使用规则识别，无需联网，但识别率约 60%，需在确认页面较多手动纠错。
+                ⚠️ 经济版使用规则识别，无需联网，但识别率约 70%，需在确认页面较多手动纠错。
                 如论文排版复杂，建议改用标准版或旗舰版。
               </div>
             )}
