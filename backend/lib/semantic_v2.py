@@ -519,6 +519,27 @@ def recognize_economy(raw_items: list[dict]) -> list[dict]:
         if not text:
             continue
 
+        # 目录是一整块：目录条目「第X章…3」「2.1 …5」长得像正文章标题，但行尾都带页码。
+        # 在目录块内，只要本行还带页码就继续算目录条目，绝不触发正文/章节跳转；
+        # 直到出现一行【不带页码】（真正的章标题/摘要标题等），才退出目录块重新判定。
+        if block == "toc":
+            if _ECON_TOC_TITLE_RE.match(nt) or _TOC_LINE_RE.search(text):
+                lstripped = text.lstrip()
+                lead = len(text) - len(lstripped)
+                if _H3_NUM_RE.match(lstripped):
+                    ptype = "toc_h3"
+                elif _H2_NUM_RE.match(lstripped):
+                    ptype = "toc_h2"
+                elif lead >= 4:
+                    ptype = "toc_h3"
+                elif lead >= 2:
+                    ptype = "toc_h2"
+                else:
+                    ptype = "toc_h1"
+                _append(it, ptype, 0.7, "规则:目录条目", "toc")
+                continue
+            block = "pre"  # 目录结束，下面重新判定本行属于哪个块
+
         # ── Block transition anchors ──
         if _ECON_TOC_TITLE_RE.match(nt) and block in ("pre", "abstract_cn", "abstract_en"):
             block = "toc"
@@ -550,22 +571,7 @@ def recognize_economy(raw_items: list[dict]) -> list[dict]:
             continue
 
         # ── Within-block classification ──
-        if block == "toc":
-            lstripped = text.lstrip()
-            lead = len(text) - len(lstripped)
-            if _H3_NUM_RE.match(lstripped):
-                ptype = "toc_h3"
-            elif _H2_NUM_RE.match(lstripped):
-                ptype = "toc_h2"
-            elif lead >= 4:
-                ptype = "toc_h3"
-            elif lead >= 2:
-                ptype = "toc_h2"
-            else:
-                ptype = "toc_h1"
-            _append(it, ptype, 0.7, "规则:目录条目", "toc")
-
-        elif block == "abstract_cn":
+        if block == "abstract_cn":
             if _ECON_KW_CN_RE.match(text):
                 _append(it, "keywords_cn", 0.95, "规则:中文关键词", "abstract")
             elif _ECON_INSTR_RE.search(text):
