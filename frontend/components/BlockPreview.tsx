@@ -312,9 +312,8 @@ export function AuthorInstructorBlock({
   const st = STYLES["author_line"];
   const fontFamily = `"Times New Roman", ${CN_FONT_CSS[st.chineseFont] || "serif"}`;
   return (
-    // outer div: centers the shrink-wrap block
+    // outer div: centers the shrink-wrap block（作/指首字已通过 inline-block 左对齐）
     <div style={{ textAlign: "center" }}>
-      {/* inner div: shrinks to widest line; all lines left-align within it */}
       <div style={{ display: "inline-block", textAlign: "left" }}>
         {ps.map((p) => {
           const text = normalizeText(p.text, p.type);

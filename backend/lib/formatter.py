@@ -248,7 +248,7 @@ def _normalize_text(text, ptype, style):
         joined = FULL_WIDTH_SPACE.join(parts)
         return f"{prefix}{FULL_WIDTH_SPACE}{joined}" if prefix else joined
 
-    # 作者行：将"作者"补全角空格，使其与"指导教师"等宽，居中时视觉对齐
+    # 作者行："作者"补全角空格与"指导教师"等宽（均4字），冒号对齐
     if ptype == "author_line":
         text = re.sub(r"^(作)\s*(者)", r"作　　者", text)
         return text
