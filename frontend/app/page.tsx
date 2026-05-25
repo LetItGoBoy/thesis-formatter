@@ -95,7 +95,7 @@ export default function UploadPage() {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 via-indigo-50 to-cyan-50">
-      {/* 纸飞机盘旋（气动滑翔，纯装饰） */}
+      {/* 纸飞机在景深中滑翔（3D 透视，时远时近，纯装饰） */}
       <PaperPlanes />
 
       {/* 顶栏品牌 */}
