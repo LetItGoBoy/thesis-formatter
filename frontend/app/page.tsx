@@ -9,7 +9,6 @@ import { Logo } from "@/components/Logo";
 import { useThesisStore, MODEL_TIERS } from "@/lib/store";
 import { parseDocx } from "@/lib/api";
 import { useAuthStore, maskPhone } from "@/lib/auth-store";
-import { PaperPlanes } from "@/components/PaperPlanes";
 
 // 学院 → 格式模板。后续接入其他学院时在此追加 available 项。
 const COLLEGES = [
@@ -95,13 +94,16 @@ export default function UploadPage() {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 via-indigo-50 to-cyan-50">
-      {/* 纸飞机在景深中滑翔（3D 透视，时远时近，纯装饰） */}
-      <PaperPlanes />
-
       {/* 顶栏品牌 */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-4 md:px-10">
         <Logo />
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push("/curriculum")}
+            className="rounded-lg border border-emerald-200 bg-white/70 px-3 py-1.5 text-xs text-emerald-700 transition hover:bg-emerald-50"
+          >
+            课程体系
+          </button>
           {phone ? (
             <>
               <span className="hidden text-xs text-slate-500 sm:block">
