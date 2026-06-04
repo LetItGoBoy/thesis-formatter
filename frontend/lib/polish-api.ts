@@ -20,6 +20,14 @@ export type PolishAction =
   | "expand"
   | "logic_optimize";
 
+export interface PolishStyle {
+  align: "" | "left" | "center" | "right" | "justify";
+  first_line_cm: number;
+  left_cm: number;
+  bold: boolean;
+  size_pt: number | null;
+}
+
 export interface PolishBlock {
   id: string;
   index: number;
@@ -30,6 +38,7 @@ export interface PolishBlock {
   editable: boolean;
   changed?: boolean;
   cells?: string[][]; // 仅 kind==="table"：只读展示用的单元格网格
+  style?: PolishStyle; // 仅 kind==="paragraph"：原始段落样式，用于还原 Word 观感
 }
 
 export interface PolishStats {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, ChangeEvent, DragEvent } from "react";
+import { useState, useRef, useEffect, useCallback, ChangeEvent, CSSProperties, DragEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -344,9 +344,22 @@ export default function PolishPage() {
                 );
               }
 
+              // 用原始段落样式还原 Word 观感（对齐/加粗/字号/缩进）
+              const st = b.style;
+              const sizePt = st?.size_pt ?? 12;
+              const pstyle: CSSProperties = {
+                textAlign: (st?.align || "left") as CSSProperties["textAlign"],
+                fontWeight: st?.bold ? 700 : 400,
+                fontSize: `${sizePt}pt`,
+                textIndent: st?.first_line_cm ? `${st.first_line_cm}cm` : 0,
+                marginLeft: st?.left_cm ? `${st.left_cm}cm` : 0,
+                lineHeight: 1.7,
+                marginBottom: "0.35em",
+              };
+
               if (!b.text) {
-                // 空段落：呈现为空行，不可选
-                return <p key={b.id} className="min-h-[1.6em] leading-loose" />;
+                // 空段落：呈现为空行（按本段字号占位），不可选
+                return <p key={b.id} style={{ fontSize: `${sizePt}pt`, lineHeight: 1.7 }}>&nbsp;</p>;
               }
 
               const isSel = selection?.blockId === b.id;
@@ -355,10 +368,10 @@ export default function PolishPage() {
                   key={b.id}
                   data-block-id={b.id}
                   data-editable="true"
-                  className={`whitespace-pre-wrap text-justify text-[16px] leading-loose text-slate-800 transition-colors ${
+                  className={`whitespace-pre-wrap text-slate-800 transition-colors ${
                     b.changed ? "bg-emerald-50" : ""
-                  } ${isSel ? "ring-1 ring-indigo-200" : ""}`}
-                  style={{ textIndent: "2em", marginBottom: "0.4em" }}
+                  } ${isSel ? "rounded-sm ring-1 ring-indigo-200" : ""}`}
+                  style={pstyle}
                 >
                   {b.text}
                 </p>
