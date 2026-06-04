@@ -29,6 +29,7 @@ export interface PolishBlock {
   html?: string;
   editable: boolean;
   changed?: boolean;
+  cells?: string[][]; // 仅 kind==="table"：只读展示用的单元格网格
 }
 
 export interface PolishStats {
