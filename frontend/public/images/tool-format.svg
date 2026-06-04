@@ -1,0 +1,45 @@
+<svg viewBox="0 0 480 320" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="格式对齐">
+  <defs>
+    <linearGradient id="fm-bg" x1="0" y1="0" x2="480" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F5F3FF"/><stop offset="1" stop-color="#EDE9FE"/>
+    </linearGradient>
+    <linearGradient id="fm-acc" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#A78BFA"/><stop offset="1" stop-color="#6366F1"/>
+    </linearGradient>
+    <filter id="fm-sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#6366F1" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <rect width="480" height="320" rx="24" fill="url(#fm-bg)"/>
+  <!-- ruler -->
+  <rect x="120" y="40" width="240" height="18" rx="6" fill="#FFFFFF"/>
+  <g stroke="#C4B5FD" stroke-width="2" stroke-linecap="round">
+    <path d="M140 44v10"/><path d="M160 46v8"/><path d="M180 46v8"/><path d="M200 44v10"/><path d="M220 46v8"/><path d="M240 46v8"/><path d="M260 44v10"/><path d="M280 46v8"/><path d="M300 46v8"/><path d="M320 44v10"/><path d="M340 46v8"/>
+  </g>
+  <!-- page -->
+  <g filter="url(#fm-sh)">
+    <rect x="120" y="74" width="240" height="208" rx="16" fill="#FFFFFF"/>
+  </g>
+  <!-- alignment guide -->
+  <path d="M150 92v172" stroke="#C4B5FD" stroke-width="2" stroke-dasharray="5 6"/>
+  <!-- centered title -->
+  <rect x="190" y="100" width="100" height="14" rx="7" fill="url(#fm-acc)"/>
+  <!-- justified body lines (left aligned to guide) -->
+  <g fill="#E2E8F0">
+    <rect x="150" y="138" width="180" height="9" rx="4.5"/>
+    <rect x="150" y="158" width="180" height="9" rx="4.5"/>
+    <rect x="150" y="178" width="180" height="9" rx="4.5"/>
+    <rect x="166" y="200" width="164" height="9" rx="4.5"/>
+    <rect x="150" y="220" width="180" height="9" rx="4.5"/>
+    <rect x="150" y="240" width="120" height="9" rx="4.5"/>
+  </g>
+  <!-- first-line indent marker -->
+  <path d="M150 204h12" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- alignment badge -->
+  <g filter="url(#fm-sh)">
+    <circle cx="338" cy="246" r="30" fill="url(#fm-acc)"/>
+    <g stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+      <path d="M326 240h24"/><path d="M326 248h16"/><path d="M326 256h24"/>
+    </g>
+  </g>
+</svg>
