@@ -19,8 +19,89 @@ from docx.table import Table as DocxTable
 from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.oxml.table import CT_Tbl
 from docx.oxml.text.paragraph import CT_P
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 logger = logging.getLogger("thesis.polish.parser")
+
+_ALIGN_MAP = {
+    WD_ALIGN_PARAGRAPH.CENTER: "center",
+    WD_ALIGN_PARAGRAPH.RIGHT: "right",
+    WD_ALIGN_PARAGRAPH.JUSTIFY: "justify",
+    WD_ALIGN_PARAGRAPH.LEFT: "left",
+    WD_ALIGN_PARAGRAPH.DISTRIBUTE: "justify",
+}
+
+
+def _style_chain(p: DocxParagraph):
+    """段落自身样式 + 其继承的 base_style 链（用于读取有效格式）。"""
+    chain = []
+    st = p.style
+    seen = set()
+    while st is not None and id(st) not in seen:
+        seen.add(id(st))
+        chain.append(st)
+        st = getattr(st, "base_style", None)
+    return chain
+
+
+def _capture_style(p: DocxParagraph) -> dict:
+    """
+    抽取段落「有效」显示样式，供前端文档视图尽量还原 Word 观感：
+    对齐 / 首行缩进 / 左缩进 / 加粗 / 字号。直接属性缺省时回溯样式继承链。
+    """
+    fmt = p.paragraph_format
+    chain = _style_chain(p)
+
+    # 对齐
+    align = fmt.alignment
+    if align is None:
+        for st in chain:
+            if st.paragraph_format.alignment is not None:
+                align = st.paragraph_format.alignment
+                break
+    alignment = _ALIGN_MAP.get(align, "")
+
+    # 首行缩进 / 左缩进（cm）
+    def _eff_indent(attr: str):
+        v = getattr(fmt, attr)
+        if v is None:
+            for st in chain:
+                v = getattr(st.paragraph_format, attr)
+                if v is not None:
+                    break
+        return round(v.cm, 2) if v is not None else 0.0
+
+    first_line_cm = _eff_indent("first_line_indent")
+    left_cm = _eff_indent("left_indent")
+
+    # 加粗：取首个有文字的 run；缺省回溯样式 font.bold
+    bold = None
+    size_pt = None
+    for run in p.runs:
+        if run.text.strip():
+            if run.bold is not None:
+                bold = bool(run.bold)
+            if run.font.size is not None:
+                size_pt = round(run.font.size.pt, 1)
+            break
+    if bold is None:
+        for st in chain:
+            if st.font.bold is not None:
+                bold = bool(st.font.bold)
+                break
+    if size_pt is None:
+        for st in chain:
+            if st.font.size is not None:
+                size_pt = round(st.font.size.pt, 1)
+                break
+
+    return {
+        "align": alignment,
+        "first_line_cm": first_line_cm,
+        "left_cm": left_cm,
+        "bold": bool(bold),
+        "size_pt": size_pt,  # 可能为 None，前端用默认值
+    }
 
 
 def _table_to_cells(table: DocxTable) -> list[list[str]]:
@@ -104,6 +185,7 @@ def import_docx_as_blocks(file_bytes: bytes) -> dict:
             "text": text,
             "html": f"<p>{safe}</p>" if text else "<p></p>",
             "editable": editable,
+            "style": _capture_style(blk),
         })
         idx += 1
 
