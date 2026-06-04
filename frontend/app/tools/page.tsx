@@ -24,18 +24,21 @@ const PAPER_TOOL_MODULES = [
     status: "规划中",
     desc: "先识别结构、摘要、关键词与规范风险。",
     icon: ClipboardCheck,
+    href: "",
   },
   {
     title: "AI 表达优化",
-    status: "规划中",
-    desc: "降低模板化表达，让语言更自然具体。",
+    status: "已开放",
+    desc: "按段落进行学术润色、压缩、扩写和逻辑优化。",
     icon: ListChecks,
+    href: "/polish",
   },
   {
     title: "格式对齐",
     status: "已开放",
     desc: "最后统一版式、段落、目录与导出规则。",
     icon: FileText,
+    href: "",
   },
 ];
 
@@ -178,9 +181,10 @@ export default function UploadPage() {
               return (
                 <div
                   key={tool.title}
+                  onClick={() => tool.href && router.push(tool.href)}
                   className={`rounded-2xl border bg-white/75 p-4 shadow-sm backdrop-blur ${
                     active ? "border-indigo-200" : "border-slate-200 opacity-75"
-                  }`}
+                  } ${tool.href ? "cursor-pointer transition hover:border-indigo-400 hover:shadow-md" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-white">

@@ -36,9 +36,9 @@ const toolProducts: ToolProduct[] = [
   },
   {
     title: "AI 表达优化",
-    badge: "规划中",
-    desc: "降低模板化表达和空泛语气，让文字回到自然、具体、学术的状态。",
-    href: "/tools",
+    badge: "已开放",
+    desc: "按段落进行学术润色、压缩、扩写和逻辑优化，让文字回到自然、具体、学术的状态。",
+    href: "/polish",
     icon: CheckCircle2,
     image: "/images/paper-ai-expression.png",
   },
