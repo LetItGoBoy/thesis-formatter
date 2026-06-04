@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import { MusicPlayer } from "@/components/MusicPlayer";
-import { CheckCircle2, Download, FileText, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import { CheckCircle2, Download, FileText, Loader2, MousePointerClick, RotateCcw, Sparkles } from "lucide-react";
 import { usePolishStore, type PolishSelection } from "@/lib/polish-store";
 import {
   importPolishDocx,
@@ -32,6 +32,35 @@ function closestBlock(node: Node | null): HTMLElement | null {
   }
   return null;
 }
+
+// 各润色操作的配色（侧栏按钮 + 浮动工具条）
+const ACTION_STYLE: Record<PolishAction, { idle: string; active: string; ink: string }> = {
+  academic_polish: {
+    idle: "border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100",
+    active: "border-transparent bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow",
+    ink: "text-indigo-600 hover:bg-indigo-50",
+  },
+  make_specific: {
+    idle: "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100",
+    active: "border-transparent bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow",
+    ink: "text-sky-600 hover:bg-sky-50",
+  },
+  shorten: {
+    idle: "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100",
+    active: "border-transparent bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow",
+    ink: "text-amber-600 hover:bg-amber-50",
+  },
+  expand: {
+    idle: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+    active: "border-transparent bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow",
+    ink: "text-emerald-600 hover:bg-emerald-50",
+  },
+  logic_optimize: {
+    idle: "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100",
+    active: "border-transparent bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow",
+    ink: "text-violet-600 hover:bg-violet-50",
+  },
+};
 
 export default function PolishPage() {
   const router = useRouter();
@@ -382,10 +411,16 @@ export default function PolishPage() {
 
         {/* 右侧：结果 / 操作栏 */}
         <div className="lg:sticky lg:top-20 lg:self-start">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-lg shadow-indigo-100/60">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-500 px-5 py-3 text-sm font-semibold text-white">
+              <Sparkles size={16} /> 表达润色工作台
+            </div>
+            <div className="p-5">
             {!selection ? (
               <div className="py-12 text-center text-sm leading-relaxed text-slate-400">
-                <Sparkles className="mx-auto mb-3 text-slate-300" size={24} />
+                <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-100 to-cyan-100 text-indigo-500">
+                  <MousePointerClick size={22} />
+                </span>
                 用鼠标选中文档里的任意文字，
                 <br />
                 即可对选中部分进行润色。
@@ -408,22 +443,24 @@ export default function PolishPage() {
                   选择润色方式
                 </div>
                 <div className="mb-4 grid grid-cols-2 gap-2">
-                  {POLISH_ACTIONS.map((a) => (
-                    <button
-                      key={a.value}
-                      type="button"
-                      disabled={rewriteLoading}
-                      onClick={() => runRewrite(a.value, selection)}
-                      title={a.desc}
-                      className={`rounded-lg border px-3 py-2 text-sm font-medium transition disabled:opacity-50 ${
-                        lastAction === a.value && rewriteLoading
-                          ? "border-indigo-400 bg-indigo-50 text-indigo-600"
-                          : "border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50/50"
-                      }`}
-                    >
-                      {a.label}
-                    </button>
-                  ))}
+                  {POLISH_ACTIONS.map((a) => {
+                    const cs = ACTION_STYLE[a.value];
+                    const isActive = lastAction === a.value && rewriteLoading;
+                    return (
+                      <button
+                        key={a.value}
+                        type="button"
+                        disabled={rewriteLoading}
+                        onClick={() => runRewrite(a.value, selection)}
+                        title={a.desc}
+                        className={`rounded-lg border px-3 py-2 text-sm font-semibold transition disabled:opacity-60 ${
+                          isActive ? cs.active : cs.idle
+                        }`}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {rewriteLoading && (
@@ -499,6 +536,7 @@ export default function PolishPage() {
                 )}
               </>
             )}
+            </div>
           </div>
         </div>
       </div>
@@ -506,7 +544,7 @@ export default function PolishPage() {
       {/* 浮动工具条：拖选文字后出现 */}
       {toolbar && selection && !selection.whole && (
         <div
-          className="fixed z-40 flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+          className="fixed z-40 flex items-center gap-0.5 rounded-xl border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-black/5"
           style={{ top: toolbar.top, left: toolbar.left }}
           onMouseDown={(e) => e.preventDefault()} // 防止点击按钮时清空选区
         >
@@ -516,7 +554,7 @@ export default function PolishPage() {
               type="button"
               title={a.desc}
               onClick={() => runRewrite(a.value, selection)}
-              className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-600"
+              className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${ACTION_STYLE[a.value].ink}`}
             >
               {a.label}
             </button>
