@@ -82,13 +82,13 @@ class _OpenAICompatClient(BaseAIClient):
         self.client = OpenAI(**kwargs)
         self.model = os.environ.get(self.model_env, self.default_model)
 
-    def chat(self, system_prompt, user_message):
+    def chat(self, system_prompt, user_message, temperature=0.1, max_tokens=None):
         r = self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "system", "content": system_prompt},
                       {"role": "user", "content": user_message}],
-            temperature=0.1,
-            max_tokens=AI_MAX_TOKENS,
+            temperature=temperature,
+            max_tokens=max_tokens or AI_MAX_TOKENS,
             timeout=AI_TIMEOUT,
         )
         return r.choices[0].message.content
@@ -147,9 +147,10 @@ class ClaudeClient(BaseAIClient):
         )
         self.model = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
 
-    def chat(self, system_prompt, user_message):
+    def chat(self, system_prompt, user_message, temperature=0.1, max_tokens=None):
         m = self.client.messages.create(
-            model=self.model, max_tokens=AI_MAX_TOKENS,
+            model=self.model, max_tokens=max_tokens or AI_MAX_TOKENS,
+            temperature=temperature,
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
             timeout=AI_TIMEOUT,
@@ -218,6 +219,22 @@ def get_ai_client(tier: str | None = None) -> BaseAIClient:
         provider = os.environ.get("AI_PROVIDER", "deepseek").lower()
     if provider not in _AI_CLIENTS:
         raise ValueError(f"不支持的AI提供商: {provider}，可选: {list(_AI_CLIENTS.keys())}")
+    client = _AI_CLIENTS[provider]()
+    if model_override:
+        client.model = model_override
+    return client
+
+
+def get_polish_client() -> BaseAIClient:
+    """
+    返回「论文表达润色」模块专用客户端，独立于 get_ai_client(tier)。
+    读取 POLISH_PROVIDER / POLISH_MODEL，默认 moonshot + moonshot-v1-32k。
+    复用现有 provider 的 KEY（如 moonshot 复用 MOONSHOT_API_KEY），不影响识别流程。
+    """
+    provider = os.environ.get("POLISH_PROVIDER", "moonshot").lower().strip()
+    model_override = os.environ.get("POLISH_MODEL", "moonshot-v1-32k").strip()
+    if provider not in _AI_CLIENTS:
+        raise ValueError(f"不支持的润色提供商: {provider}，可选: {list(_AI_CLIENTS.keys())}")
     client = _AI_CLIENTS[provider]()
     if model_override:
         client.model = model_override

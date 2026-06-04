@@ -22,6 +22,9 @@ from dotenv import load_dotenv
 
 from lib.parser import parse_docx, ParseError
 from lib.formatter import format_docx
+from lib.polish_parser import import_docx_as_blocks
+from lib.polish_rewriter import rewrite_text, SUPPORTED_ACTIONS, PolishError
+from lib.polish_export import export_polished_docx
 from lib import db
 from lib.auth import require_auth, sign_jwt, hash_password, verify_password
 from lib.sms import send_verification_code
@@ -216,6 +219,91 @@ def api_format():
     except Exception as e:
         logger.error("格式化失败: %s\n%s", e, traceback.format_exc())
         return jsonify({"error": f"格式化失败: {e}"}), 500
+
+
+# ============================================================
+# 论文表达润色（第二个模块，独立于格式化流程）
+#   不调用 parse_docx / format_docx / semantic_v2，不做结构识别。
+#   /api/polish/import  上传 docx -> 顺序抽取 blocks（不调用 AI）
+#   /api/polish/rewrite 单段润色（点击按钮时才调 AI）
+#   /api/polish/export  基于原始 docx 回写修改过的段落 -> polished.docx
+# ============================================================
+
+@app.route("/api/polish/import", methods=["POST"])
+def api_polish_import():
+    if "file" not in request.files:
+        return jsonify({"error": "缺少file字段"}), 400
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": "文件名为空"}), 400
+    if not file.filename.lower().endswith(".docx"):
+        return jsonify({"error": "仅支持.docx文件"}), 400
+
+    file_bytes = file.read()
+    logger.info("收到 /api/polish/import: file=%s size=%dB", file.filename, len(file_bytes))
+    try:
+        result = import_docx_as_blocks(file_bytes)
+    except Exception as e:
+        logger.error("润色解析失败: %s\n%s", e, traceback.format_exc())
+        return jsonify({"error": f".docx解析失败，可能已损坏: {e}"}), 500
+
+    # 第一版不做后端状态管理：直接把原始 docx 以 base64 回传给前端，
+    # 导出时再传回来，减少服务端临时存储。
+    docx_b64 = base64.b64encode(file_bytes).decode("ascii")
+    return jsonify({
+        "docx_base64": docx_b64,
+        "file_name": file.filename,
+        "blocks": result["blocks"],
+        "stats": result["stats"],
+    })
+
+
+@app.route("/api/polish/rewrite", methods=["POST"])
+def api_polish_rewrite():
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()
+    action = (data.get("action") or "").strip()
+
+    if not text:
+        return jsonify({"error": "原文为空，无法润色"}), 400
+    if action not in SUPPORTED_ACTIONS:
+        return jsonify({"error": f"不支持的润色操作: {action}"}), 400
+
+    try:
+        result = rewrite_text(text, action)
+        return jsonify(result)
+    except PolishError as e:
+        logger.warning("润色失败: %s", e)
+        return jsonify({"error": str(e)}), 422
+    except Exception as e:
+        logger.error("润色未知异常: %s\n%s", e, traceback.format_exc())
+        return jsonify({"error": f"润色失败: {e}"}), 500
+
+
+@app.route("/api/polish/export", methods=["POST"])
+def api_polish_export():
+    data = request.get_json(silent=True) or {}
+    docx_b64 = data.get("docx_base64")
+    blocks = data.get("blocks")
+
+    if not docx_b64:
+        return jsonify({"error": "缺少docx_base64字段"}), 400
+    if not isinstance(blocks, list):
+        return jsonify({"error": "缺少blocks字段"}), 400
+
+    try:
+        source_bytes = base64.b64decode(docx_b64)
+        output_stream = export_polished_docx(source_bytes, blocks)
+        output_stream.seek(0)
+        return send_file(
+            output_stream,
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            as_attachment=True,
+            download_name="polished.docx",
+        )
+    except Exception as e:
+        logger.error("润色导出失败: %s\n%s", e, traceback.format_exc())
+        return jsonify({"error": f"导出失败: {e}"}), 500
 
 
 if __name__ == "__main__":
