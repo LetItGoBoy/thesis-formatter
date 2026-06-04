@@ -1,16 +1,10 @@
 "use client";
-/**
- * 登录 / 注册页面
- * frontend/app/login/page.tsx
- *
- * 注册流程：手机号 → 发送短信验证码（60s 冷却）→ 输入验证码 + 设置密码 → 注册
- * 登录流程：手机号 + 密码 → 登录
- * 同一手机号只能注册一次（后端 UNIQUE 约束强制）。
- */
-import { useState, useEffect, useRef } from "react";
+
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LockKeyhole, Phone, Sparkles } from "lucide-react";
+import { loginUser, registerUser } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { sendCode, registerUser, loginUser } from "@/lib/api";
 
 type Tab = "login" | "register";
 
@@ -20,24 +14,57 @@ function PhoneInput({
   disabled,
 }: {
   value: string;
-  onChange: (v: string) => void;
+  onChange: (value: string) => void;
   disabled?: boolean;
 }) {
   return (
-    <div className="relative">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm select-none">
-        +86
-      </span>
-      <input
-        type="tel"
-        maxLength={11}
-        placeholder="请输入手机号"
-        value={value}
-        onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
-        disabled={disabled}
-        className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:opacity-60"
-      />
-    </div>
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-medium text-slate-500">手机号</span>
+      <div className="relative">
+        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+        <span className="absolute left-10 top-1/2 -translate-y-1/2 select-none text-sm text-slate-400">
+          +86
+        </span>
+        <input
+          type="tel"
+          maxLength={11}
+          placeholder="请输入 11 位手机号"
+          value={value}
+          onChange={(event) => onChange(event.target.value.replace(/\D/g, ""))}
+          disabled={disabled}
+          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-20 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-300 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100 disabled:opacity-60"
+        />
+      </div>
+    </label>
+  );
+}
+
+function PasswordInput({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-medium text-slate-500">{label}</span>
+      <div className="relative">
+        <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+        <input
+          type="password"
+          placeholder="不少于 6 位"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          disabled={disabled}
+          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-300 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100 disabled:opacity-60"
+        />
+      </div>
+    </label>
   );
 }
 
@@ -45,222 +72,128 @@ export default function LoginPage() {
   const router = useRouter();
   const { token, setAuth } = useAuthStore();
   const [tab, setTab] = useState<Tab>("login");
-
-  // login state
-  const [lPhone, setLPhone] = useState("");
-  const [lPass, setLPass] = useState("");
-  const [lLoading, setLLoading] = useState(false);
-  const [lError, setLError] = useState("");
-
-  // register state
-  const [rPhone, setRPhone] = useState("");
-  const [rCode, setRCode] = useState("");
-  const [rPass, setRPass] = useState("");
-  const [rPass2, setRPass2] = useState("");
-  const [rLoading, setRLoading] = useState(false);
-  const [rError, setRError] = useState("");
-  const [codeSent, setCodeSent] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (token) router.replace("/");
-  }, [token, router]);
+    if (token) router.replace("/dashboard");
+  }, [router, token]);
 
-  useEffect(() => {
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
-
-  function startCountdown() {
-    setCountdown(60);
-    timerRef.current = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) { clearInterval(timerRef.current!); return 0; }
-        return c - 1;
-      });
-    }, 1000);
+  function switchTab(next: Tab) {
+    setTab(next);
+    setError("");
+    setPassword("");
+    setPassword2("");
   }
 
-  async function handleSendCode() {
-    if (!/^1[3-9]\d{9}$/.test(rPhone)) {
-      setRError("请输入正确的11位手机号");
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      setError("请输入正确的 11 位手机号");
       return;
     }
-    setRError("");
-    setRLoading(true);
+    if (password.length < 6) {
+      setError("密码不少于 6 位");
+      return;
+    }
+    if (tab === "register" && password !== password2) {
+      setError("两次密码输入不一致");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
     try {
-      await sendCode(rPhone);
-      setCodeSent(true);
-      startCountdown();
-    } catch (e: unknown) {
-      setRError(e instanceof Error ? e.message : "发送失败");
+      const result =
+        tab === "login"
+          ? await loginUser(phone, password)
+          : await registerUser(phone, password);
+      setAuth(result.token, result.phone);
+      router.replace("/dashboard");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : tab === "login" ? "登录失败" : "注册失败");
     } finally {
-      setRLoading(false);
+      setLoading(false);
     }
   }
-
-  async function handleRegister(e: React.FormEvent) {
-    e.preventDefault();
-    if (!/^1[3-9]\d{9}$/.test(rPhone)) { setRError("手机号格式不正确"); return; }
-    if (rCode.length !== 6) { setRError("请输入6位验证码"); return; }
-    if (rPass.length < 6) { setRError("密码不少于6位"); return; }
-    if (rPass !== rPass2) { setRError("两次密码输入不一致"); return; }
-    setRError("");
-    setRLoading(true);
-    try {
-      const { token, phone } = await registerUser(rPhone, rCode, rPass);
-      setAuth(token, phone);
-      router.replace("/");
-    } catch (e: unknown) {
-      setRError(e instanceof Error ? e.message : "注册失败");
-    } finally {
-      setRLoading(false);
-    }
-  }
-
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!/^1[3-9]\d{9}$/.test(lPhone)) { setLError("手机号格式不正确"); return; }
-    if (!lPass) { setLError("请输入密码"); return; }
-    setLError("");
-    setLLoading(true);
-    try {
-      const { token, phone } = await loginUser(lPhone, lPass);
-      setAuth(token, phone);
-      router.replace("/");
-    } catch (e: unknown) {
-      setLError(e instanceof Error ? e.message : "登录失败");
-    } finally {
-      setLLoading(false);
-    }
-  }
-
-  const inputCls =
-    "w-full rounded-xl border border-slate-200 bg-white py-3 px-4 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:opacity-60";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-cyan-50/30 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-2xl shadow-lg shadow-indigo-200">
-            📄
+    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_15%_10%,#dff7ef_0,transparent_32%),linear-gradient(135deg,#f8fafc_0%,#edf8ff_48%,#f7fbf8_100%)] p-5">
+      <section className="w-full max-w-md">
+        <div className="mb-7 text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-xl shadow-slate-300">
+            <Sparkles size={24} />
           </div>
-          <h1 className="text-xl font-bold text-slate-800">论文格式化工具</h1>
-          <p className="mt-1 text-xs text-slate-400">呼伦贝尔学院本科论文格式助手</p>
+          <h1 className="text-2xl font-black text-slate-900">同乐科技学生工作台</h1>
+          <p className="mt-2 text-sm text-slate-500">先用手机号和密码进入，验证码功能之后再接。</p>
         </div>
 
-        <div className="rounded-3xl bg-white/80 shadow-xl shadow-slate-200/60 backdrop-blur p-6">
-          {/* Tabs */}
-          <div className="mb-6 flex rounded-xl bg-slate-100 p-1">
-            {(["login", "register"] as Tab[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => { setTab(t); setLError(""); setRError(""); }}
-                className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-                  tab === t
-                    ? "bg-white text-indigo-600 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                {t === "login" ? "登录" : "注册"}
-              </button>
-            ))}
+        <div className="rounded-[2rem] border border-white/80 bg-white/86 p-6 shadow-xl shadow-slate-200/70 backdrop-blur">
+          <div className="mb-6 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => switchTab("login")}
+              className={`rounded-xl py-2.5 text-sm font-semibold transition ${
+                tab === "login" ? "bg-white text-cyan-700 shadow-sm" : "text-slate-500"
+              }`}
+            >
+              登录
+            </button>
+            <button
+              type="button"
+              onClick={() => switchTab("register")}
+              className={`rounded-xl py-2.5 text-sm font-semibold transition ${
+                tab === "register" ? "bg-white text-cyan-700 shadow-sm" : "text-slate-500"
+              }`}
+            >
+              注册
+            </button>
           </div>
 
-          {/* Login form */}
-          {tab === "login" && (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <PhoneInput value={lPhone} onChange={setLPhone} disabled={lLoading} />
-              <input
-                type="password"
-                placeholder="密码"
-                value={lPass}
-                onChange={(e) => setLPass(e.target.value)}
-                disabled={lLoading}
-                className={inputCls}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <PhoneInput value={phone} onChange={setPhone} disabled={loading} />
+            <PasswordInput label="密码" value={password} onChange={setPassword} disabled={loading} />
+            {tab === "register" && (
+              <PasswordInput
+                label="确认密码"
+                value={password2}
+                onChange={setPassword2}
+                disabled={loading}
               />
-              {lError && <p className="text-xs text-red-500">{lError}</p>}
-              <button
-                type="submit"
-                disabled={lLoading}
-                className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 py-3 text-sm font-semibold text-white shadow shadow-indigo-200 transition hover:opacity-90 disabled:opacity-60"
-              >
-                {lLoading ? "登录中…" : "登录"}
-              </button>
-              <p className="text-center text-xs text-slate-400">
-                还没有账号？
-                <button type="button" onClick={() => setTab("register")} className="text-indigo-500 hover:underline ml-1">
-                  立即注册
-                </button>
-              </p>
-            </form>
-          )}
+            )}
 
-          {/* Register form */}
-          {tab === "register" && (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <PhoneInput value={rPhone} onChange={setRPhone} disabled={rLoading || codeSent} />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSendCode}
-                  disabled={rLoading || countdown > 0}
-                  className="shrink-0 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-xs font-medium text-indigo-600 transition hover:bg-indigo-100 disabled:opacity-50 whitespace-nowrap"
-                >
-                  {countdown > 0 ? `${countdown}s` : "发送验证码"}
-                </button>
+            {error && (
+              <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
               </div>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                placeholder="6位短信验证码"
-                value={rCode}
-                onChange={(e) => setRCode(e.target.value.replace(/\D/g, ""))}
-                disabled={rLoading}
-                className={inputCls}
-              />
-              <input
-                type="password"
-                placeholder="设置密码（不少于6位）"
-                value={rPass}
-                onChange={(e) => setRPass(e.target.value)}
-                disabled={rLoading}
-                className={inputCls}
-              />
-              <input
-                type="password"
-                placeholder="确认密码"
-                value={rPass2}
-                onChange={(e) => setRPass2(e.target.value)}
-                disabled={rLoading}
-                className={inputCls}
-              />
-              {rError && <p className="text-xs text-red-500">{rError}</p>}
-              <button
-                type="submit"
-                disabled={rLoading}
-                className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 py-3 text-sm font-semibold text-white shadow shadow-indigo-200 transition hover:opacity-90 disabled:opacity-60"
-              >
-                {rLoading ? "注册中…" : "注册"}
-              </button>
-              <p className="text-center text-xs text-slate-400">
-                已有账号？
-                <button type="button" onClick={() => setTab("login")} className="text-indigo-500 hover:underline ml-1">
-                  去登录
-                </button>
-              </p>
-            </form>
-          )}
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-2xl bg-slate-900 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "处理中..." : tab === "login" ? "登录并进入工作台" : "注册并进入工作台"}
+            </button>
+          </form>
+
+          <p className="mt-5 text-center text-xs text-slate-400">
+            {tab === "login" ? "还没有账号？" : "已有账号？"}
+            <button
+              type="button"
+              onClick={() => switchTab(tab === "login" ? "register" : "login")}
+              className="ml-1 font-semibold text-cyan-700 hover:underline"
+            >
+              {tab === "login" ? "去注册" : "去登录"}
+            </button>
+          </p>
         </div>
 
-        <p className="mt-4 text-center text-xs text-slate-400">
-          每个手机号只能注册一次账号
-        </p>
-      </div>
-    </div>
+        <p className="mt-4 text-center text-xs text-slate-400">当前阶段每个手机号只能注册一次。</p>
+      </section>
+    </main>
   );
 }

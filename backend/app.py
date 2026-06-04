@@ -95,18 +95,13 @@ def auth_send_code():
 def auth_register():
     data = request.get_json(silent=True) or {}
     phone = (data.get("phone") or "").strip()
-    code = (data.get("code") or "").strip()
     password = data.get("password") or ""
 
     if not _PHONE_RE.match(phone):
         return jsonify({"error": "手机号格式不正确"}), 400
-    if not code or len(code) != 6:
-        return jsonify({"error": "请输入6位验证码"}), 400
     if len(password) < 6:
         return jsonify({"error": "密码不少于6位"}), 400
 
-    if not db.verify_sms_code(phone, code):
-        return jsonify({"error": "验证码错误或已过期"}), 400
 
     try:
         user = db.create_user(phone, hash_password(password))

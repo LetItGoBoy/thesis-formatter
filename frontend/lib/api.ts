@@ -114,10 +114,9 @@ export async function sendCode(phone: string): Promise<void> {
 
 export async function registerUser(
   phone: string,
-  code: string,
   password: string
 ): Promise<{ token: string; phone: string }> {
-  return _authPost("/api/auth/register", { phone, code, password });
+  return _authPost("/api/auth/register", { phone, password });
 }
 
 export async function loginUser(
