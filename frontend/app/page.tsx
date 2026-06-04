@@ -38,7 +38,7 @@ const toolProducts: ToolProduct[] = [
     desc: "上传后先识别结构、摘要、关键词与规范风险，明确修改优先级。",
     href: "/tools",
     icon: ClipboardCheck,
-    image: "/images/paper-precheck.png",
+    image: "/images/tool-checkup.svg",
     glow: "from-amber-400/30 to-orange-500/10 group-hover:ring-amber-400/60",
     chip: "bg-gradient-to-br from-amber-400 to-orange-500",
   },
@@ -48,7 +48,7 @@ const toolProducts: ToolProduct[] = [
     desc: "像在线文档一样选中任意文字，做学术润色、压缩、扩写与逻辑优化。",
     href: "/polish",
     icon: CheckCircle2,
-    image: "/images/paper-ai-expression.png",
+    image: "/images/tool-polish.svg",
     glow: "from-cyan-400/30 to-sky-500/10 group-hover:ring-cyan-400/60",
     chip: "bg-gradient-to-br from-cyan-400 to-sky-500",
   },
@@ -58,7 +58,7 @@ const toolProducts: ToolProduct[] = [
     desc: "统一版式、段落、目录与导出规则，中英混排、三线表一键规范。",
     href: "/tools",
     icon: FileText,
-    image: "/images/paper-format-align.png",
+    image: "/images/tool-format.svg",
     glow: "from-violet-400/30 to-indigo-500/10 group-hover:ring-violet-400/60",
     chip: "bg-gradient-to-br from-violet-400 to-indigo-500",
   },
@@ -216,17 +216,15 @@ export default function HomePage() {
                 className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-2 text-left ring-1 ring-transparent backdrop-blur transition hover:-translate-y-1 hover:bg-white/[0.06]"
               >
                 {/* 顶部图片 + 光晕 */}
-                <div className="relative overflow-hidden rounded-2xl">
+                <div className="relative overflow-hidden rounded-2xl ring-1 ring-white/10">
                   <div
-                    className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${product.glow} opacity-80`}
+                    className={`pointer-events-none absolute inset-0 z-10 bg-gradient-to-br ${product.glow} opacity-40`}
                   />
-                  <div className="relative flex h-48 items-center justify-center p-4">
-                    <img
-                      src={product.image}
-                      alt={`${product.title}示意图`}
-                      className="h-full w-full rounded-xl bg-white/90 object-contain p-2 shadow-2xl"
-                    />
-                  </div>
+                  <img
+                    src={product.image}
+                    alt={`${product.title}示意图`}
+                    className="h-48 w-full object-cover"
+                  />
                 </div>
                 <div className="p-5">
                   <div className="flex items-center justify-between gap-3">
