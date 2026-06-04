@@ -29,13 +29,15 @@ export function LogoMark({ size = 44 }: { size?: number }) {
   );
 }
 
-export function Logo({ size = 44 }: { size?: number }) {
+export function Logo({ size = 44, dark = false }: { size?: number; dark?: boolean }) {
   return (
     <div className="flex items-center gap-3">
       <LogoMark size={size} />
       <div className="leading-tight">
-        <div className="text-xl font-bold tracking-tight text-slate-800">同乐科技</div>
-        <div className="text-[10px] font-semibold tracking-[0.25em] text-slate-400">
+        <div className={`text-xl font-bold tracking-tight ${dark ? "text-white" : "text-slate-800"}`}>
+          同乐科技
+        </div>
+        <div className={`text-[10px] font-semibold tracking-[0.25em] ${dark ? "text-slate-400" : "text-slate-400"}`}>
           TONGLE&nbsp;TECH
         </div>
       </div>
