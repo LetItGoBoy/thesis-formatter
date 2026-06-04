@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef, ChangeEvent, DragEvent } from "react";
+import { useState, useRef, useEffect, useCallback, ChangeEvent, DragEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { CheckCircle2, Download, FileText, Loader2, RotateCcw, Sparkles } from "lucide-react";
-import { usePolishStore } from "@/lib/polish-store";
+import { usePolishStore, type PolishSelection } from "@/lib/polish-store";
 import {
   importPolishDocx,
   rewritePolishText,
@@ -16,18 +16,35 @@ import {
   type PolishAction,
 } from "@/lib/polish-api";
 
+// 计算 (node, offset) 相对某个块元素起点的字符下标（兼容多文本节点）
+function offsetWithin(blockEl: Element, node: Node, offset: number): number {
+  const range = document.createRange();
+  range.selectNodeContents(blockEl);
+  range.setEnd(node, offset);
+  return range.toString().length;
+}
+
+function closestBlock(node: Node | null): HTMLElement | null {
+  let el: Node | null = node;
+  while (el && el !== document.body) {
+    if (el instanceof HTMLElement && el.dataset.blockId) return el;
+    el = el.parentNode;
+  }
+  return null;
+}
+
 export default function PolishPage() {
   const router = useRouter();
   const {
     fileName,
     docxBase64,
     blocks,
-    selectedBlockId,
+    selection,
     pendingRewrite,
     rewriteLoading,
     rewriteError,
     setSource,
-    selectBlock,
+    setSelection,
     setRewriteLoading,
     setRewriteError,
     setPendingRewrite,
@@ -36,15 +53,79 @@ export default function PolishPage() {
   } = usePolishStore();
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const docRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [lastAction, setLastAction] = useState<PolishAction | null>(null);
+  const [toolbar, setToolbar] = useState<{ top: number; left: number } | null>(null);
 
   const hasDoc = blocks.length > 0;
-  const selected = blocks.find((b) => b.id === selectedBlockId) || null;
   const changedCount = blocks.filter((b) => b.changed).length;
+  const selectedBlock = selection ? blocks.find((b) => b.id === selection.blockId) : null;
+
+  // ---------------- 选区捕获 ----------------
+  const captureSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !docRef.current) return;
+    const range = sel.getRangeAt(0);
+    const startEl = closestBlock(range.startContainer);
+    if (!startEl || !docRef.current.contains(startEl)) {
+      return; // 选区不在文档内，保持当前状态
+    }
+    const blockId = startEl.dataset.blockId!;
+    const editable = startEl.dataset.editable === "true";
+
+    // 折叠（单击）：选中整段
+    if (sel.isCollapsed) {
+      if (!editable) {
+        setSelection(null);
+        setToolbar(null);
+        return;
+      }
+      const text = startEl.textContent ?? "";
+      setSelection({ blockId, start: 0, end: text.length, text, whole: true });
+      setToolbar(null);
+      return;
+    }
+
+    const endEl = closestBlock(range.endContainer);
+    if (endEl !== startEl) {
+      setSelection(null);
+      setToolbar(null);
+      setRewriteError("暂只支持在同一段落内选择文字，请缩小选择范围");
+      return;
+    }
+    if (!editable) {
+      setSelection(null);
+      setToolbar(null);
+      return;
+    }
+    const start = offsetWithin(startEl, range.startContainer, range.startOffset);
+    const end = offsetWithin(startEl, range.endContainer, range.endOffset);
+    const full = startEl.textContent ?? "";
+    const text = full.slice(start, end);
+    if (!text.trim()) {
+      setToolbar(null);
+      return;
+    }
+    setSelection({ blockId, start, end, text, whole: false });
+
+    // 浮动工具条定位在选区上方
+    const rect = range.getBoundingClientRect();
+    const top = rect.top > 60 ? rect.top - 48 : rect.bottom + 8;
+    const left = Math.min(Math.max(rect.left, 12), window.innerWidth - 360);
+    setToolbar({ top, left });
+  }, [setSelection, setRewriteError]);
+
+  // 滚动时隐藏浮动工具条（fixed 定位会错位）
+  useEffect(() => {
+    if (!toolbar) return;
+    const onScroll = () => setToolbar(null);
+    window.addEventListener("scroll", onScroll, true);
+    return () => window.removeEventListener("scroll", onScroll, true);
+  }, [toolbar]);
 
   async function handleFile(file: File) {
     setUploadError("");
@@ -76,15 +157,22 @@ export default function PolishPage() {
     if (file) handleFile(file);
   }
 
-  async function runRewrite(action: PolishAction) {
-    if (!selected) return;
+  async function runRewrite(action: PolishAction, sel: PolishSelection | null) {
+    if (!sel || !sel.text.trim()) return;
     setLastAction(action);
+    setToolbar(null);
     setRewriteError("");
     setPendingRewrite(null);
     setRewriteLoading(true);
     try {
-      const res = await rewritePolishText(selected.text, action);
-      setPendingRewrite({ ...res, blockId: selected.id });
+      const res = await rewritePolishText(sel.text, action);
+      setPendingRewrite({
+        ...res,
+        blockId: sel.blockId,
+        start: sel.start,
+        end: sel.end,
+        selectedText: sel.text,
+      });
     } catch (e: unknown) {
       setRewriteError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -132,13 +220,13 @@ export default function PolishPage() {
             <header className="mb-8 text-center">
               <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-indigo-600 shadow-sm ring-1 ring-indigo-100">
                 <Sparkles size={14} />
-                论文表达润色 · 逐段可控
+                论文表达润色 · 选中即改
               </div>
               <h1 className="bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent">
                 论文表达润色
               </h1>
               <p className="mt-3 text-slate-500">
-                上传 Word 论文，按段落进行学术润色、压缩、扩写和逻辑优化，支持修改前后确认并导出 Word。
+                上传 Word 论文，像在线文档一样阅读全文，选中任意文字进行学术润色、压缩、扩写和逻辑优化，确认后导出 Word。
               </p>
             </header>
 
@@ -187,11 +275,11 @@ export default function PolishPage() {
   }
 
   // ============================================================
-  // 编辑页
+  // 编辑页：左侧连续文档 + 右侧结果栏 + 浮动工具条
   // ============================================================
   return (
-    <main className="relative min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-cyan-50">
-      <nav className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur md:px-8">
+    <main className="relative min-h-screen bg-slate-100">
+      <nav className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur md:px-8">
         <div className="flex items-center gap-3">
           <Logo />
           <span className="hidden items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600 md:inline-flex">
@@ -214,69 +302,93 @@ export default function PolishPage() {
         </div>
       </nav>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-6 md:grid-cols-[1fr_400px] md:px-8">
-        {/* 左侧：全文 blocks */}
-        <div className="space-y-3">
-          {blocks.map((b) => {
-            if (b.kind === "table") {
-              return (
-                <div
-                  key={b.id}
-                  className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-400"
-                >
-                  📊 表格内容暂不支持在线润色，导出时会保留原表格
-                </div>
-              );
-            }
-            const isSelected = b.id === selectedBlockId;
-            const isEmpty = !b.text;
-            return (
-              <div
-                key={b.id}
-                onClick={() => b.editable && selectBlock(b.id)}
-                className={`rounded-xl border bg-white px-4 py-3 text-sm leading-relaxed shadow-sm transition ${
-                  isEmpty
-                    ? "cursor-default border-slate-100 text-slate-300"
-                    : "cursor-pointer text-slate-700"
-                } ${
-                  isSelected
-                    ? "border-indigo-400 ring-2 ring-indigo-200"
-                    : b.editable
-                    ? "border-slate-200 hover:border-indigo-300"
-                    : ""
-                } ${b.changed ? "border-l-4 border-l-emerald-400" : ""}`}
-              >
-                {isEmpty ? (
-                  <span className="italic">（空段落）</span>
-                ) : (
-                  <>
-                    <div className="whitespace-pre-wrap">{b.text}</div>
-                    {b.changed && (
-                      <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">
-                        <CheckCircle2 size={12} /> 已修改
-                      </span>
+      <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[1fr_360px] lg:px-8">
+        {/* 左侧：连续文档（A4 纸张观感） */}
+        <div className="flex justify-center">
+          <div
+            ref={docRef}
+            onMouseUp={captureSelection}
+            className="w-full max-w-[820px] rounded-sm bg-white px-[8%] py-16 shadow-md"
+            style={{ fontFamily: '"Songti SC", "SimSun", "Noto Serif SC", serif' }}
+          >
+            {blocks.map((b) => {
+              if (b.kind === "table") {
+                return (
+                  <div key={b.id} className="my-4 select-none">
+                    {b.cells && b.cells.length > 0 ? (
+                      <table className="w-full border-collapse text-[13px] text-slate-600">
+                        <tbody>
+                          {b.cells.map((row, ri) => (
+                            <tr key={ri}>
+                              {row.map((c, ci) => (
+                                <td
+                                  key={ci}
+                                  className="border border-slate-300 px-2 py-1 align-middle"
+                                >
+                                  {c}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="rounded border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-center text-xs text-slate-400">
+                        ［表格］
+                      </div>
                     )}
-                  </>
-                )}
-              </div>
-            );
-          })}
+                    <div className="mt-1 text-center text-[11px] text-slate-300">
+                      表格不参与在线润色，导出时原样保留
+                    </div>
+                  </div>
+                );
+              }
+
+              if (!b.text) {
+                // 空段落：呈现为空行，不可选
+                return <p key={b.id} className="min-h-[1.6em] leading-loose" />;
+              }
+
+              const isSel = selection?.blockId === b.id;
+              return (
+                <p
+                  key={b.id}
+                  data-block-id={b.id}
+                  data-editable="true"
+                  className={`whitespace-pre-wrap text-justify text-[16px] leading-loose text-slate-800 transition-colors ${
+                    b.changed ? "bg-emerald-50" : ""
+                  } ${isSel ? "ring-1 ring-indigo-200" : ""}`}
+                  style={{ textIndent: "2em", marginBottom: "0.4em" }}
+                >
+                  {b.text}
+                </p>
+              );
+            })}
+          </div>
         </div>
 
-        {/* 右侧：操作面板 */}
-        <div className="md:sticky md:top-20 md:self-start">
+        {/* 右侧：结果 / 操作栏 */}
+        <div className="lg:sticky lg:top-20 lg:self-start">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            {!selected ? (
-              <div className="py-12 text-center text-sm text-slate-400">
-                ← 点击左侧任意段落开始润色
+            {!selection ? (
+              <div className="py-12 text-center text-sm leading-relaxed text-slate-400">
+                <Sparkles className="mx-auto mb-3 text-slate-300" size={24} />
+                用鼠标选中文档里的任意文字，
+                <br />
+                即可对选中部分进行润色。
+                <br />
+                <span className="text-xs text-slate-300">（单击某段可选中整段）</span>
               </div>
             ) : (
               <>
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  当前段落原文
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    {selection.whole ? "当前整段" : "选中的文字"}
+                  </span>
+                  <span className="text-xs text-slate-300">{selection.text.length} 字</span>
                 </div>
-                <div className="mb-4 max-h-40 overflow-y-auto rounded-lg bg-slate-50 px-3 py-2 text-sm leading-relaxed text-slate-600">
-                  {selected.text}
+                <div className="mb-4 max-h-32 overflow-y-auto rounded-lg bg-slate-50 px-3 py-2 text-sm leading-relaxed text-slate-600">
+                  {selection.text}
                 </div>
 
                 <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -288,7 +400,7 @@ export default function PolishPage() {
                       key={a.value}
                       type="button"
                       disabled={rewriteLoading}
-                      onClick={() => runRewrite(a.value)}
+                      onClick={() => runRewrite(a.value, selection)}
                       title={a.desc}
                       className={`rounded-lg border px-3 py-2 text-sm font-medium transition disabled:opacity-50 ${
                         lastAction === a.value && rewriteLoading
@@ -313,7 +425,7 @@ export default function PolishPage() {
                   </div>
                 )}
 
-                {pendingRewrite && pendingRewrite.blockId === selected.id && !rewriteLoading && (
+                {pendingRewrite && !rewriteLoading && (
                   <div className="mt-1 space-y-3">
                     <div>
                       <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -336,36 +448,39 @@ export default function PolishPage() {
                     <div className="flex flex-wrap gap-2">
                       <Button
                         size="sm"
-                        onClick={() => applyRewrite(selected.id, pendingRewrite.rewritten_text)}
+                        onClick={() =>
+                          applyRewrite(
+                            pendingRewrite.blockId,
+                            pendingRewrite.start,
+                            pendingRewrite.end,
+                            pendingRewrite.rewritten_text
+                          )
+                        }
                       >
                         <CheckCircle2 className="mr-1.5" size={15} /> 接受修改
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => runRewrite(pendingRewrite.action)}
+                        onClick={() => runRewrite(pendingRewrite.action, selection)}
                       >
                         <RotateCcw className="mr-1.5" size={15} /> 重新生成
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setPendingRewrite(null)}
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => setPendingRewrite(null)}>
                         取消
                       </Button>
                     </div>
                   </div>
                 )}
 
-                {selected.changed && (
+                {selectedBlock?.changed && (
                   <div className="mt-4 border-t border-slate-100 pt-3">
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => restoreBlock(selected.id)}
+                      onClick={() => restoreBlock(selection.blockId)}
                     >
-                      <RotateCcw className="mr-1.5" size={15} /> 还原原文
+                      <RotateCcw className="mr-1.5" size={15} /> 还原本段原文
                     </Button>
                   </div>
                 )}
@@ -374,6 +489,27 @@ export default function PolishPage() {
           </div>
         </div>
       </div>
+
+      {/* 浮动工具条：拖选文字后出现 */}
+      {toolbar && selection && !selection.whole && (
+        <div
+          className="fixed z-40 flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+          style={{ top: toolbar.top, left: toolbar.left }}
+          onMouseDown={(e) => e.preventDefault()} // 防止点击按钮时清空选区
+        >
+          {POLISH_ACTIONS.map((a) => (
+            <button
+              key={a.value}
+              type="button"
+              title={a.desc}
+              onClick={() => runRewrite(a.value, selection)}
+              className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-600"
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
+      )}
       <MusicPlayer />
     </main>
   );

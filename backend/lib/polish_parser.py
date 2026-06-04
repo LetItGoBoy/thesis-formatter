@@ -10,6 +10,7 @@ backend/lib/polish_parser.py
 - 每个 block 有稳定 index，与导出时回写顺序严格一致
 """
 import io
+import re
 import html
 import logging
 
@@ -20,6 +21,26 @@ from docx.oxml.table import CT_Tbl
 from docx.oxml.text.paragraph import CT_P
 
 logger = logging.getLogger("thesis.polish.parser")
+
+
+def _table_to_cells(table: DocxTable) -> list[list[str]]:
+    """抽取表格为二维文本网格（仅供前端只读展示，合并格延续位留空）。"""
+    grid = []
+    above: dict[int, int] = {}  # 列 -> 上一行该列的 tc id
+    for row in table.rows:
+        line = []
+        prev_tc = None
+        for col, cell in enumerate(row.cells):
+            tc_id = id(cell._tc)
+            if tc_id == prev_tc or above.get(col) == tc_id:
+                text = ""  # 横向/纵向合并的延续格
+            else:
+                text = re.sub(r"\s*\n\s*", " ", (cell.text or "").strip())
+            above[col] = tc_id
+            prev_tc = tc_id
+            line.append(text)
+        grid.append(line)
+    return grid
 
 
 def _iter_block_items(doc: DocxDocument):
@@ -53,6 +74,7 @@ def import_docx_as_blocks(file_bytes: bytes) -> dict:
     for blk in _iter_block_items(doc):
         if isinstance(blk, DocxTable):
             table_count += 1
+            cells = _table_to_cells(blk)
             blocks.append({
                 "id": f"block_{idx}",
                 "index": idx,
@@ -63,6 +85,7 @@ def import_docx_as_blocks(file_bytes: bytes) -> dict:
                     "表格内容暂不支持在线润色，导出时会保留原表格</div>"
                 ),
                 "editable": False,
+                "cells": cells,
             })
             idx += 1
             continue
