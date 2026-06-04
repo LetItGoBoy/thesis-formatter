@@ -7,68 +7,82 @@ import {
   CheckCircle2,
   ClipboardCheck,
   FileText,
-  Languages,
   LayoutDashboard,
   LogIn,
   LogOut,
-  MousePointerClick,
-  ShieldCheck,
-  Sparkles,
-  Table2,
 } from "lucide-react";
-import { Logo } from "@/components/Logo";
+import { Logo, LogoMark } from "@/components/Logo";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { maskPhone, useAuthStore } from "@/lib/auth-store";
 
-type ToolProduct = {
+type Tool = {
   title: string;
   badge: string;
   desc: string;
   href: string;
   icon: typeof FileText;
-  image: string;
-  glow: string; // 卡片光晕 + 描边主色
-  chip: string; // 图标底色
 };
 
-const toolProducts: ToolProduct[] = [
+const tools: Tool[] = [
   {
     title: "提交前体检",
     badge: "规划中",
-    desc: "上传后先识别结构、摘要、关键词与规范风险，明确修改优先级。",
+    desc: "上传后先识别结构、摘要、关键词与规范风险，明确修改优先级，避免最后阶段反复返工。",
     href: "/tools",
     icon: ClipboardCheck,
-    image: "/images/tool-checkup.svg",
-    glow: "from-amber-400/30 to-orange-500/10 group-hover:ring-amber-400/60",
-    chip: "bg-gradient-to-br from-amber-400 to-orange-500",
   },
   {
     title: "AI 表达优化",
     badge: "已开放",
-    desc: "像在线文档一样选中任意文字，做学术润色、压缩、扩写与逻辑优化。",
+    desc: "像在线文档一样选中任意文字，做学术润色、压缩、扩写与逻辑优化，逐段确认后导出。",
     href: "/polish",
     icon: CheckCircle2,
-    image: "/images/tool-polish.svg",
-    glow: "from-cyan-400/30 to-sky-500/10 group-hover:ring-cyan-400/60",
-    chip: "bg-gradient-to-br from-cyan-400 to-sky-500",
   },
   {
     title: "格式对齐",
     badge: "已开放",
-    desc: "统一版式、段落、目录与导出规则，中英混排、三线表一键规范。",
+    desc: "统一版式、段落、目录与导出规则，中英混排、三线表、分页一键规范化收尾。",
     href: "/tools",
     icon: FileText,
-    image: "/images/tool-format.svg",
-    glow: "from-violet-400/30 to-indigo-500/10 group-hover:ring-violet-400/60",
-    chip: "bg-gradient-to-br from-violet-400 to-indigo-500",
   },
 ];
 
-const features = [
-  { icon: MousePointerClick, title: "逐段可控", desc: "选中即改，接受/还原随时可逆" },
-  { icon: Languages, title: "中英混排", desc: "数字与英文自动 Times New Roman" },
-  { icon: Table2, title: "三线表规范", desc: "上下 1.5 磅、中间 1 磅自动重建" },
-  { icon: ShieldCheck, title: "数据不留存", desc: "文件仅用于本次处理，不长期保存" },
+type FeatureRow = {
+  eyebrow: string;
+  title: string;
+  highlight: string;
+  desc: string;
+  image: string;
+  cta: { label: string; href: string };
+  flip?: boolean;
+};
+
+const featureRows: FeatureRow[] = [
+  {
+    eyebrow: "AI 表达优化",
+    title: "像在线文档一样，",
+    highlight: "选中即改。",
+    desc: "全文按原顺序呈现，用鼠标选中任意一段或几句，即可进行学术润色、压缩精简、适当扩写与逻辑优化。改写结果先确认、可还原，绝不擅自替换。",
+    image: "/images/tool-polish.svg",
+    cta: { label: "开始润色", href: "/polish" },
+  },
+  {
+    eyebrow: "格式对齐",
+    title: "一次对齐，",
+    highlight: "全文规范。",
+    desc: "依托呼伦贝尔学院本科论文标准，自动处理中英文混排、三线表、首行缩进、目录与分页，导出可直接提交的标准 Word。",
+    image: "/images/tool-format.svg",
+    cta: { label: "查看格式工具", href: "/tools" },
+    flip: true,
+  },
+  {
+    eyebrow: "提交前体检",
+    title: "先发现问题，",
+    highlight: "再动手修改。",
+    desc: "在动笔修改前，先识别结构完整性、摘要与关键词、图表与引用规范等常见风险，给出一份清晰的修改优先级清单。",
+    image: "/images/tool-checkup.svg",
+    cta: { label: "了解体检", href: "/tools" },
+  },
 ];
 
 export default function HomePage() {
@@ -80,39 +94,23 @@ export default function HomePage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#070b16] text-slate-100">
-      {/* 背景光晕 */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-sky-500/20 blur-[140px]" />
-        <div className="absolute -top-20 right-[-10rem] h-[28rem] w-[28rem] rounded-full bg-amber-500/15 blur-[130px]" />
-        <div className="absolute top-[40rem] left-[-12rem] h-[30rem] w-[30rem] rounded-full bg-indigo-600/15 blur-[140px]" />
-        <div
-          className="absolute inset-0 opacity-[0.18]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px)",
-            backgroundSize: "44px 44px",
-            maskImage: "radial-gradient(ellipse 80% 50% at 50% 0%, black 40%, transparent 100%)",
-          }}
-        />
-      </div>
-
+    <main className="min-h-screen bg-white text-slate-900">
       {/* 顶栏 */}
-      <nav className="sticky top-0 z-30 border-b border-white/10 bg-[#070b16]/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-          <Logo dark />
-          <div className="flex items-center gap-2.5">
+      <nav className="sticky top-0 z-30 border-b border-slate-100 bg-white/85 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+          <Logo />
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => router.push("/tools")}
-              className="rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition hover:brightness-110"
+              className="hidden rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:text-blue-600 sm:inline-flex"
             >
               论文工具
             </button>
             <button
               type="button"
               onClick={goCourseWorkspace}
-              className="hidden rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10 sm:inline-flex"
+              className="hidden rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:text-blue-600 sm:inline-flex"
             >
               课程工作台
             </button>
@@ -124,187 +122,288 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => logout()}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-slate-300 transition hover:text-red-400"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition hover:text-red-500"
                   aria-label="退出登录"
                 >
-                  <LogOut size={17} />
+                  <LogOut size={18} />
                 </button>
               </>
             ) : (
               <button
                 type="button"
                 onClick={() => router.push("/login")}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:text-blue-600"
               >
                 <LogIn size={16} />
                 登录
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => router.push("/tools")}
+              className="ml-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
+              开始使用
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative z-10 mx-auto max-w-5xl px-5 pb-20 pt-20 text-center md:pt-28">
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-slate-300 backdrop-blur">
-          <Sparkles size={15} className="text-amber-400" />
-          论文一站式辅助 · Academic Tool Suite
-        </div>
-        <h1 className="mx-auto mt-8 max-w-4xl text-4xl font-extrabold leading-[1.1] tracking-tight md:text-6xl">
-          从内容检查到格式规范，
-          <span className="mt-2 block bg-gradient-to-r from-sky-400 via-cyan-300 to-amber-300 bg-clip-text text-transparent">
-            一站式完成论文交付。
-          </span>
-        </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-slate-300 md:text-lg">
-          面向本科论文提交前的关键环节：先发现问题，再优化表达，最后完成格式对齐。
-          全程逐段可控、可逆，导出标准 Word。
-        </p>
-        <div className="mt-9 flex flex-wrap justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.push("/tools")}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 px-7 py-3.5 text-sm font-semibold text-white shadow-xl shadow-sky-500/30 transition hover:brightness-110"
-          >
-            进入论文工具
-            <ArrowRight size={17} />
-          </button>
-          <button
-            type="button"
-            onClick={goCourseWorkspace}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-semibold text-slate-100 backdrop-blur transition hover:bg-white/10"
-          >
-            <LayoutDashboard size={17} />
-            课程工作台
-          </button>
-        </div>
+      {/* Hero：左文右产品 */}
+      <section className="border-b border-slate-100 bg-gradient-to-b from-slate-50/60 to-white">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 md:py-24 lg:grid-cols-2">
+          <div>
+            <h1 className="text-4xl font-extrabold leading-[1.12] tracking-tight md:text-5xl">
+              更聪明的论文工具。
+              <span className="mt-1 block text-blue-600">为规范交付而生。</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-base leading-7 text-slate-600">
+              从提交前体检到表达优化，再到格式对齐，覆盖本科论文交付的关键环节。
+              逐段可控、可逆，最终导出可直接提交的标准 Word。
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => router.push("/tools")}
+                className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              >
+                进入论文工具
+                <ArrowRight size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={goCourseWorkspace}
+                className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+              >
+                <LayoutDashboard size={16} />
+                课程工作台
+              </button>
+            </div>
+          </div>
 
-        {/* 信任条 */}
-        <div className="mx-auto mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-slate-400">
-          <span className="inline-flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-400" /> 呼伦贝尔学院本科论文标准
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-400" /> 上传不长期保存
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-400" /> 导出标准 .docx
-          </span>
+          {/* 产品截图：润色编辑器示意 */}
+          <AppMock />
         </div>
       </section>
 
-      {/* 工具卡片 */}
-      <section className="relative z-10 mx-auto max-w-6xl px-5 pb-24">
-        <div className="mb-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-cyan-400">Our Tools</p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">提交前的三步质量闭环</h2>
-          </div>
-          <p className="max-w-md text-sm leading-6 text-slate-400">
-            体检、表达优化、格式对齐按顺序完成，避免最后阶段反复返工。
+      {/* 三个工具卡片 */}
+      <section className="border-b border-slate-100">
+        <div className="mx-auto max-w-6xl px-5 py-16">
+          <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
+            提交前，给论文一个<span className="text-blue-600">完整闭环。</span>
+          </h2>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
+            体检、表达优化、格式对齐三步衔接，按顺序完成，少走弯路。
           </p>
-        </div>
-        <div className="grid gap-5 md:grid-cols-3">
-          {toolProducts.map((product) => {
-            const Icon = product.icon;
-            const open = product.badge === "已开放";
-            return (
-              <button
-                key={product.title}
-                type="button"
-                onClick={() => router.push(product.href)}
-                className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-2 text-left ring-1 ring-transparent backdrop-blur transition hover:-translate-y-1 hover:bg-white/[0.06]"
-              >
-                {/* 顶部图片 + 光晕 */}
-                <div className="relative overflow-hidden rounded-2xl ring-1 ring-white/10">
-                  <div
-                    className={`pointer-events-none absolute inset-0 z-10 bg-gradient-to-br ${product.glow} opacity-40`}
-                  />
-                  <img
-                    src={product.image}
-                    alt={`${product.title}示意图`}
-                    className="h-48 w-full object-cover"
-                  />
-                </div>
-                <div className="p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <span
-                      className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-lg ${product.chip}`}
-                    >
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {tools.map((t) => {
+              const Icon = t.icon;
+              const open = t.badge === "已开放";
+              return (
+                <button
+                  key={t.title}
+                  type="button"
+                  onClick={() => router.push(t.href)}
+                  className="group rounded-xl border border-slate-200 bg-white p-6 text-left transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-slate-900 text-white">
                       <Icon size={20} />
                     </span>
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        open
-                          ? "bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/30"
-                          : "bg-white/5 text-slate-400 ring-1 ring-white/10"
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        open ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-500"
                       }`}
                     >
-                      {product.badge}
+                      {t.badge}
                     </span>
                   </div>
-                  <h3 className="mt-5 text-xl font-bold tracking-tight text-white">{product.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">{product.desc}</p>
-                  <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-cyan-300">
+                  <h3 className="mt-5 text-lg font-bold tracking-tight">{t.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{t.desc}</p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-600">
                     {open ? "立即使用" : "查看详情"}
                     <ArrowRight size={15} className="transition group-hover:translate-x-0.5" />
                   </span>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {/* 特性条 */}
-      <section className="relative z-10 mx-auto max-w-6xl px-5 pb-24">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((f) => {
-            const Icon = f.icon;
-            return (
-              <div
-                key={f.title}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur transition hover:border-white/20"
+      {/* 交替特性行 */}
+      {featureRows.map((row, i) => (
+        <section key={row.title} className={i % 2 === 1 ? "bg-slate-50" : "bg-white"}>
+          <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-16 lg:grid-cols-2 lg:py-20">
+            <div className={row.flip ? "lg:order-2" : ""}>
+              <p className="text-sm font-semibold text-blue-600">{row.eyebrow}</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">
+                {row.title}
+                <span className="text-blue-600">{row.highlight}</span>
+              </h2>
+              <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">{row.desc}</p>
+              <button
+                type="button"
+                onClick={() => router.push(row.cta.href)}
+                className="mt-6 inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/30 to-cyan-500/20 text-cyan-300 ring-1 ring-cyan-400/30">
-                  <Icon size={18} />
-                </span>
-                <div className="mt-4 text-base font-semibold text-white">{f.title}</div>
-                <p className="mt-1 text-sm leading-6 text-slate-400">{f.desc}</p>
+                {row.cta.label}
+                <ArrowRight size={15} />
+              </button>
+            </div>
+            <div className={row.flip ? "lg:order-1" : ""}>
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <img src={row.image} alt={row.eyebrow} className="h-full w-full object-cover" />
               </div>
-            );
-          })}
-        </div>
-      </section>
+            </div>
+          </div>
+        </section>
+      ))}
 
       {/* 课程工作台 CTA */}
-      <section className="relative z-10 mx-auto max-w-6xl px-5 pb-24">
-        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-indigo-600/30 via-sky-600/20 to-amber-500/20 p-8 backdrop-blur md:flex md:items-center md:justify-between md:p-10">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-60 w-60 rounded-full bg-amber-400/20 blur-3xl" />
-          <div className="relative">
-            <p className="text-sm font-semibold text-amber-300">Course Studio</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">
-              把课程学习设计成一条可抵达的路径。
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-              以数据结构、数据库原理为起点，将资料、训练、项目和学习反馈沉淀到同一个课程空间。
-            </p>
+      <section className="border-t border-slate-100 bg-white">
+        <div className="mx-auto max-w-6xl px-5 py-16">
+          <div className="rounded-2xl bg-slate-900 p-8 md:flex md:items-center md:justify-between md:p-10">
+            <div>
+              <p className="text-sm font-semibold text-blue-400">Course Studio</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">
+                把课程学习设计成一条可抵达的路径。
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
+                以数据结构、数据库原理为起点，将资料、训练、项目和学习反馈沉淀到同一个课程空间。
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={goCourseWorkspace}
+              className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 md:mt-0"
+            >
+              <BookOpen size={16} />
+              进入课程工作台
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={goCourseWorkspace}
-            className="relative mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-slate-900 shadow-xl transition hover:brightness-95 md:mt-0"
-          >
-            <BookOpen size={17} />
-            进入课程工作台
-          </button>
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-white/10 py-8 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} 同乐科技 · TONGLE TECH · 论文一站式辅助
+      {/* 深色页脚 */}
+      <footer className="bg-slate-950 text-slate-400">
+        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 sm:grid-cols-2 md:grid-cols-4">
+          <div className="sm:col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2.5">
+              <LogoMark size={32} />
+              <span className="text-base font-bold text-white">同乐科技</span>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-500">
+              论文一站式辅助 · 提交前体检 · 表达优化 · 格式对齐
+            </p>
+          </div>
+          <FooterCol
+            title="论文工具"
+            links={[
+              { label: "提交前体检", href: "/tools" },
+              { label: "AI 表达优化", href: "/polish" },
+              { label: "格式对齐", href: "/tools" },
+            ]}
+            onNav={(h) => router.push(h)}
+          />
+          <FooterCol
+            title="课程空间"
+            links={[
+              { label: "课程工作台", href: token ? "/dashboard" : "/login" },
+              { label: "课程列表", href: "/curriculum" },
+            ]}
+            onNav={(h) => router.push(h)}
+          />
+          <FooterCol
+            title="账户"
+            links={[
+              { label: token ? "我的工作台" : "登录 / 注册", href: token ? "/dashboard" : "/login" },
+              { label: "论文工具", href: "/tools" },
+            ]}
+            onNav={(h) => router.push(h)}
+          />
+        </div>
+        <div className="border-t border-white/10 py-6 text-center text-xs text-slate-500">
+          © {new Date().getFullYear()} 同乐科技 · TONGLE TECH · 论文一站式辅助
+        </div>
       </footer>
       <MusicPlayer />
     </main>
+  );
+}
+
+function FooterCol({
+  title,
+  links,
+  onNav,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+  onNav: (href: string) => void;
+}) {
+  return (
+    <div>
+      <div className="text-sm font-semibold text-white">{title}</div>
+      <ul className="mt-3 space-y-2">
+        {links.map((l) => (
+          <li key={l.label}>
+            <button
+              type="button"
+              onClick={() => onNav(l.href)}
+              className="text-sm text-slate-400 transition hover:text-white"
+            >
+              {l.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Hero 右侧：模拟「论文表达润色」编辑器的产品截图 */
+function AppMock() {
+  return (
+    <div className="relative">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-300/40">
+        {/* 窗口标题栏 */}
+        <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2.5">
+          <span className="h-3 w-3 rounded-full bg-red-400" />
+          <span className="h-3 w-3 rounded-full bg-amber-400" />
+          <span className="h-3 w-3 rounded-full bg-emerald-400" />
+          <span className="ml-2 text-xs font-medium text-slate-400">论文表达润色</span>
+        </div>
+        {/* 文档体 */}
+        <div className="relative p-6">
+          <div className="space-y-2.5">
+            <div className="h-3 w-2/5 rounded bg-slate-300" />
+            <div className="h-2.5 w-full rounded bg-slate-100" />
+            <div className="h-2.5 w-11/12 rounded bg-slate-100" />
+            {/* 选中行 */}
+            <div className="relative">
+              <div className="h-2.5 w-3/4 rounded bg-blue-200/70 ring-2 ring-blue-300" />
+              {/* 浮动工具条 */}
+              <div className="absolute -top-9 left-2 flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-1 py-1 shadow-lg">
+                <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600">学术润色</span>
+                <span className="rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-600">更具体</span>
+                <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">精简</span>
+                <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600">扩写</span>
+              </div>
+            </div>
+            <div className="h-2.5 w-full rounded bg-slate-100" />
+            <div className="h-2.5 w-5/6 rounded bg-slate-100" />
+            <div className="h-2.5 w-full rounded bg-slate-100" />
+            <div className="h-2.5 w-2/3 rounded bg-slate-100" />
+          </div>
+          {/* 已修改标记 */}
+          <div className="mt-5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600">
+            <CheckCircle2 size={12} /> 已接受改写
+          </div>
+        </div>
+      </div>
+      {/* 装饰光斑 */}
+      <div className="pointer-events-none absolute -right-6 -top-6 -z-10 h-40 w-40 rounded-full bg-blue-200/40 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-6 -left-6 -z-10 h-40 w-40 rounded-full bg-amber-200/40 blur-3xl" />
+    </div>
   );
 }
