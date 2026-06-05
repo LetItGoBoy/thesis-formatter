@@ -181,8 +181,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 产品截图：润色编辑器示意 */}
-          <AppMock />
+          {/* 实拍：手持红笔批改论文 */}
+          <HeroPhoto />
         </div>
       </section>
 
@@ -362,44 +362,16 @@ function FooterCol({
 }
 
 /** Hero 右侧：模拟「论文表达润色」编辑器的产品截图 */
-function AppMock() {
+function HeroPhoto() {
   return (
     <div className="relative">
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-300/40">
-        {/* 窗口标题栏 */}
-        <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2.5">
-          <span className="h-3 w-3 rounded-full bg-red-400" />
-          <span className="h-3 w-3 rounded-full bg-amber-400" />
-          <span className="h-3 w-3 rounded-full bg-emerald-400" />
-          <span className="ml-2 text-xs font-medium text-slate-400">论文表达润色</span>
-        </div>
-        {/* 文档体 */}
-        <div className="relative p-6">
-          <div className="space-y-2.5">
-            <div className="h-3 w-2/5 rounded bg-slate-300" />
-            <div className="h-2.5 w-full rounded bg-slate-100" />
-            <div className="h-2.5 w-11/12 rounded bg-slate-100" />
-            {/* 选中行 */}
-            <div className="relative">
-              <div className="h-2.5 w-3/4 rounded bg-blue-200/70 ring-2 ring-blue-300" />
-              {/* 浮动工具条 */}
-              <div className="absolute -top-9 left-2 flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-1 py-1 shadow-lg">
-                <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600">学术润色</span>
-                <span className="rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-600">更具体</span>
-                <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">精简</span>
-                <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600">扩写</span>
-              </div>
-            </div>
-            <div className="h-2.5 w-full rounded bg-slate-100" />
-            <div className="h-2.5 w-5/6 rounded bg-slate-100" />
-            <div className="h-2.5 w-full rounded bg-slate-100" />
-            <div className="h-2.5 w-2/3 rounded bg-slate-100" />
-          </div>
-          {/* 已修改标记 */}
-          <div className="mt-5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600">
-            <CheckCircle2 size={12} /> 已接受改写
-          </div>
-        </div>
+      <div className="overflow-hidden rounded-2xl shadow-2xl shadow-slate-300/50 ring-1 ring-slate-200">
+        <img
+          src="/images/hero-editing.svg"
+          alt="手持红笔批改论文"
+          className="block w-full object-cover"
+          style={{ aspectRatio: "4/3" }}
+        />
       </div>
       {/* 装饰光斑 */}
       <div className="pointer-events-none absolute -right-6 -top-6 -z-10 h-40 w-40 rounded-full bg-blue-200/40 blur-3xl" />
