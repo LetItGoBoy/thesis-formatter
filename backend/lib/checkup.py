@@ -289,6 +289,128 @@ def _first_not_none(*vals):
 
 
 # ============================================================
+# 结构检测（基于 AI parse 的带类型段落）
+# 复用「解析一次」的产物：直接读 type/block，边界比正则可靠得多。
+# 输出与 detect_structure 完全相同的 schema，规则函数无需改动。
+# ============================================================
+def detect_structure_from_paragraphs(paragraphs: list[dict]) -> dict:
+    """
+    paragraphs: parse_docx 输出，[{index, text, type, block, cells?...}, ...]
+    """
+    def texts_of(*types):
+        return [(p.get("index"), (p.get("text") or "").strip())
+                for p in paragraphs if p.get("type") in types]
+
+    def first_index(*types):
+        for p in paragraphs:
+            if p.get("type") in types:
+                return p.get("index")
+        return None
+
+    # 摘要 / 关键词
+    abstract_cn = "".join(t for _, t in texts_of("abstract_body_cn"))
+    abstract_en = " ".join(t for _, t in texts_of("abstract_body_en"))
+    keywords_cn, keywords_en = [], []
+    kw_cn = texts_of("keywords_cn")
+    kw_en = texts_of("keywords_en")
+    if kw_cn:
+        keywords_cn = _split_keywords(" ".join(t for _, t in kw_cn))
+    if kw_en:
+        keywords_en = _split_keywords(" ".join(t for _, t in kw_en))
+
+    # 章节标题
+    chapters, headings = [], []
+    for p in paragraphs:
+        ptype = p.get("type")
+        t = (p.get("text") or "").strip()
+        if not t:
+            continue
+        if ptype == "h1":
+            m = re.match(rf"^第\s*([{_CH_NUM}\d]+)\s*章", t)
+            num = _cn_or_digit_to_int(m.group(1)) if m else None
+            chapters.append({"index": p.get("index"), "num": num, "text": t})
+            headings.append({"index": p.get("index"), "level": 1, "text": t})
+        elif ptype == "h2":
+            headings.append({"index": p.get("index"), "level": 2, "text": t})
+        elif ptype == "h3":
+            headings.append({"index": p.get("index"), "level": 3, "text": t})
+
+    # 绪论正文：第一章 h1 与第二章 h1 之间的正文/编号段
+    intro_text = ""
+    if chapters:
+        lo = chapters[0]["index"]
+        hi = chapters[1]["index"] if len(chapters) >= 2 else None
+        parts = []
+        for p in paragraphs:
+            idx = p.get("index")
+            if idx is None or idx <= lo:
+                continue
+            if hi is not None and idx >= hi:
+                continue
+            if p.get("type") in ("body", "numbered_item"):
+                parts.append((p.get("text") or "").strip())
+        intro_text = "".join(parts)
+
+    # 总结
+    conclusion_text = "".join(t for _, t in texts_of("conclusion_body"))
+
+    # 参考文献
+    references = []
+    for idx, t in texts_of("reference_item", "ref"):
+        m = _RE_REF_ITEM.match(t)
+        num = int(m.group(1) or m.group(2)) if m else None
+        references.append({"index": idx, "num": num, "text": t})
+
+    # 图表
+    tables = [p for p in paragraphs if p.get("type") == "table"]
+    figures = [p for p in paragraphs if p.get("type") == "figure"]
+    table_cap_count = len(texts_of("table_caption"))
+    figure_cap_count = len([1 for _, t in texts_of("figure_caption", "caption")
+                            if _RE_FIG_CAP.match(t)])
+
+    # 正文全文（用于语言/图表引用/引文统计）
+    body_text = "\n".join(
+        (p.get("text") or "").strip() for p in paragraphs
+        if p.get("block") == "body" and p.get("type") not in ("table", "figure")
+    )
+    citations = sorted({int(m) for m in _RE_CITATION.findall(body_text)})
+
+    anchors = {
+        "abstract_cn": first_index("abstract_body_cn", "abstract_title_cn"),
+        "keywords_cn": first_index("keywords_cn"),
+        "abstract_en": first_index("abstract_body_en", "abstract_title_en"),
+        "keywords_en": first_index("keywords_en"),
+        "toc": first_index("toc_title", "toc_h1", "toc_h2", "toc_h3"),
+        "first_chapter": chapters[0]["index"] if chapters else None,
+        "conclusion": first_index("conclusion_title", "conclusion_body"),
+        "references": first_index("references_title", "reference_item", "ref"),
+    }
+
+    return {
+        "anchors": anchors,
+        "abstract_cn": abstract_cn,
+        "abstract_cn_chars": len(abstract_cn),
+        "abstract_en": abstract_en,
+        "abstract_en_words": len(re.findall(r"[A-Za-z]+", abstract_en)),
+        "keywords_cn": keywords_cn,
+        "keywords_en": keywords_en,
+        "has_toc": anchors["toc"] is not None,
+        "headings": headings,
+        "chapters": chapters,
+        "intro_text": intro_text,
+        "conclusion_text": conclusion_text,
+        "conclusion_chars": len(conclusion_text),
+        "references": references,
+        "tables": tables,
+        "figures": figures,
+        "table_caption_count": table_cap_count,
+        "figure_caption_count": figure_cap_count,
+        "body_text": body_text,
+        "citations": citations,
+    }
+
+
+# ============================================================
 # 体检规则
 # ============================================================
 def _issue(issues, *, id, category, severity, title, detail, suggestion,
@@ -596,13 +718,8 @@ def _summarize(issues, rules, structure):
 _SEV_ORDER = {"high": 0, "medium": 1, "low": 2}
 
 
-def run_checkup(items: list[dict], rules: dict | None = None) -> dict:
-    """
-    对 extract_blocks 的原始块运行体检，返回 {issues, summary, structure}。
-    items: extract_blocks(file_bytes) 的输出（含段落/表格/图片块）。
-    """
-    rules = rules or load_checkup_rules()
-    structure = detect_structure(items)
+def _run_rules(structure: dict, rules: dict, source: str) -> dict:
+    """对已检测出的结构画像运行全部规则，汇总返回。source: rule/parse（仅日志）。"""
     issues: list[dict] = []
     for check in _CHECKS:
         try:
@@ -611,15 +728,27 @@ def run_checkup(items: list[dict], rules: dict | None = None) -> dict:
             logger.warning("体检规则 %s 执行异常: %s", getattr(check, "__name__", "?"), e)
     issues.sort(key=lambda it: (_SEV_ORDER.get(it["severity"], 9), it["category"]))
     summary = _summarize(issues, rules, structure)
-    logger.info("体检完成：%d 项问题（高 %d / 中 %d / 低 %d），得分 %d",
-                summary["total"], summary["by_severity"]["high"],
+    logger.info("体检完成[%s]：%d 项问题（高 %d / 中 %d / 低 %d），得分 %d",
+                source, summary["total"], summary["by_severity"]["high"],
                 summary["by_severity"]["medium"], summary["by_severity"]["low"],
                 summary["score"])
-    return {"issues": issues, "summary": summary}
+    return {"issues": issues, "summary": summary, "source": source}
+
+
+def run_checkup(items: list[dict], rules: dict | None = None) -> dict:
+    """正则路径（离线兜底）：对 extract_blocks 的原始块运行体检。"""
+    rules = rules or load_checkup_rules()
+    return _run_rules(detect_structure(items), rules, "rule")
+
+
+def run_checkup_typed(paragraphs: list[dict], rules: dict | None = None) -> dict:
+    """复用路径（推荐）：对 parse_docx 的带类型段落运行体检，边界更可靠。"""
+    rules = rules or load_checkup_rules()
+    return _run_rules(detect_structure_from_paragraphs(paragraphs), rules, "parse")
 
 
 def checkup_docx(file_bytes: bytes, rules: dict | None = None) -> dict:
-    """上传入口：解析 .docx -> 抽取原始块 -> 体检。"""
+    """上传入口（无解析缓存时）：抽取原始块 -> 正则体检。"""
     try:
         items = extract_blocks(file_bytes)
     except Exception as e:

@@ -122,6 +122,28 @@ export interface CheckupResponse {
   summary: CheckupSummary;
 }
 
+/** 复用路径（推荐）：把已解析的带类型段落送去体检，边界可靠、零重复解析。 */
+export async function runCheckupTyped(paragraphs: Paragraph[]): Promise<CheckupResponse> {
+  const res = await fetch(`${API_BASE}/api/checkup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({
+      paragraphs: paragraphs.map((p) => ({
+        index: p.index,
+        text: p.text,
+        type: p.type,
+        block: p.block,
+      })),
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || `体检失败 (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+/** 兜底路径：直接上传 .docx，后端走正则结构检测（无 AI 解析时使用）。 */
 export async function runCheckup(file: File): Promise<CheckupResponse> {
   const form = new FormData();
   form.append("file", file);
