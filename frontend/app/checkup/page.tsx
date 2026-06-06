@@ -72,6 +72,10 @@ export default function CheckupPage() {
   const [dragOver, setDragOver] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [statusText, setStatusText] = useState("");
+  // 记住本次上传的原始文件：体检时若 AI 解析失败未落库，跳转模块时用它兜底
+  const [lastFile, setLastFile] = useState<File | null>(null);
+  // 跳转反馈："polish" | "format" | null，避免按钮点了无任何提示
+  const [navTarget, setNavTarget] = useState<"polish" | "format" | null>(null);
 
   async function handleFile(file: File) {
     if (!file.name.toLowerCase().endsWith(".docx")) {
@@ -82,6 +86,7 @@ export default function CheckupPage() {
     setLoading(true);
     setResult(null);
     setFileName(file.name);
+    setLastFile(file);
     try {
       // 复用「解析一次」的共享缓存：命中即零 AI，未命中则 AI 解析并落库，
       // 这份解析后续格式化/优化都能直接复用。
@@ -128,32 +133,40 @@ export default function CheckupPage() {
     setError("");
   }
 
-  // 软串联：复用刚解析的缓存，直接进入目标模块的工作界面（无需重新上传）
+  // 软串联：优先复用刚解析的缓存，缺失时用本次上传的文件兜底，直接进入目标模块
   async function goPolish() {
+    if (navTarget) return;
     setError("");
+    setNavTarget("polish");
     try {
-      const ok = await preparePolishFromActive();
+      const ok = await preparePolishFromActive(lastFile ?? undefined);
       if (!ok) {
-        setError("没有可复用的解析，请重新上传");
+        setError("没有可用的文档，请重新上传");
         return;
       }
       router.push("/polish");
     } catch (e) {
       setError(e instanceof Error ? e.message : "进入在线编辑失败");
+    } finally {
+      setNavTarget(null);
     }
   }
 
   async function goFormat() {
+    if (navTarget) return;
     setError("");
+    setNavTarget("format");
     try {
-      const ok = await prepareFormatFromActive();
+      const ok = await prepareFormatFromActive(lastFile ?? undefined);
       if (!ok) {
-        setError("没有可复用的解析，请重新上传");
+        setError("没有可用的文档，请重新上传");
         return;
       }
       router.push("/review");
     } catch (e) {
       setError(e instanceof Error ? e.message : "进入格式对齐失败");
+    } finally {
+      setNavTarget(null);
     }
   }
 
@@ -254,6 +267,8 @@ export default function CheckupPage() {
             onReset={reset}
             onGoFormat={goFormat}
             onGoPolish={goPolish}
+            navTarget={navTarget}
+            navError={error}
           />
         )}
       </div>
@@ -271,6 +286,8 @@ function ResultView({
   onReset,
   onGoFormat,
   onGoPolish,
+  navTarget,
+  navError,
 }: {
   result: CheckupResponse;
   fileName: string;
@@ -280,6 +297,8 @@ function ResultView({
   onReset: () => void;
   onGoFormat: () => void;
   onGoPolish: () => void;
+  navTarget: "polish" | "format" | null;
+  navError: string;
 }) {
   const { summary } = result;
   const sc = scoreColor(summary.score);
@@ -348,26 +367,39 @@ function ResultView({
         <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-100 pt-5">
           <button
             onClick={onGoPolish}
-            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            disabled={navTarget !== null}
+            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Pencil size={15} />
-            在线编辑
-            <ArrowRight size={15} />
+            {navTarget === "polish" ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Pencil size={15} />
+            )}
+            {navTarget === "polish" ? "正在打开编辑器…" : "在线编辑"}
+            {navTarget !== "polish" && <ArrowRight size={15} />}
           </button>
           <button
             onClick={onGoFormat}
-            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+            disabled={navTarget !== null}
+            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            去对齐格式
+            {navTarget === "format" && <Loader2 size={15} className="animate-spin" />}
+            {navTarget === "format" ? "正在准备…" : "去对齐格式"}
           </button>
           <button
             onClick={onReset}
-            className="ml-auto inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-slate-500 transition hover:text-slate-700"
+            disabled={navTarget !== null}
+            className="ml-auto inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-slate-500 transition hover:text-slate-700 disabled:opacity-60"
           >
             <RotateCcw size={15} />
             换一份
           </button>
         </div>
+        {navError && (
+          <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 ring-1 ring-red-100">
+            {navError}
+          </div>
+        )}
       </div>
 
       {/* 过滤器 */}
