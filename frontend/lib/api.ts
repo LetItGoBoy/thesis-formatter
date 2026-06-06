@@ -81,6 +81,62 @@ export async function formatDocx(
   return res.blob();
 }
 
+// ============================================================
+// 提交前体检（第三个模块，纯规则、零 AI 调用）
+// ============================================================
+
+export type CheckupSeverity = "high" | "medium" | "low";
+
+export interface CheckupIssue {
+  id: string;
+  category: string;
+  category_label: string;
+  severity: CheckupSeverity;
+  severity_label: string;
+  title: string;
+  detail: string;
+  suggestion: string;
+  locations: number[];
+}
+
+export interface CheckupSummary {
+  score: number;
+  total: number;
+  by_severity: Record<CheckupSeverity, number>;
+  by_category: Record<string, number>;
+  structure_overview: {
+    abstract_cn_chars: number;
+    keywords_cn_count: number;
+    chapter_count: number;
+    reference_count: number;
+    table_count: number;
+    figure_count: number;
+    has_toc: boolean;
+    has_conclusion: boolean;
+    has_abstract_en: boolean;
+  };
+}
+
+export interface CheckupResponse {
+  issues: CheckupIssue[];
+  summary: CheckupSummary;
+}
+
+export async function runCheckup(file: File): Promise<CheckupResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/api/checkup`, {
+    method: "POST",
+    headers: authHeader(),
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || `体检失败 (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
 export async function checkHealth(): Promise<{ status: string; ai_provider: string }> {
   const res = await fetch(`${API_BASE}/api/health`);
   if (!res.ok) throw new Error("后端不可用");
