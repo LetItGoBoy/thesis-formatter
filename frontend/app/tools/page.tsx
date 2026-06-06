@@ -9,7 +9,7 @@ import { Logo } from "@/components/Logo";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { CheckCircle2, ClipboardCheck, FileText, ListChecks } from "lucide-react";
 import { useThesisStore, MODEL_TIERS } from "@/lib/store";
-import { parseDocx } from "@/lib/api";
+import { ensureDocParsed } from "@/lib/doc-store";
 import { maskPhone, useAuthStore } from "@/lib/auth-store";
 
 // 学院 → 格式模板。后续接入其他学院时在此追加 available 项。
@@ -83,18 +83,23 @@ export default function UploadPage() {
     setProgress(6);
     setProgressText("正在读取文件...");
     try {
-      const buf = await file.arrayBuffer();
-      const base64 = btoa(
-        new Uint8Array(buf).reduce((acc, b) => acc + String.fromCharCode(b), "")
-      );
-      setProgress(18);
-      setProgressText("AI 正在通读全文，批量识别每段类型...");
-      startCreep();
-      const data = await parseDocx(file, tier);
+      // 共享缓存：同一文件若已被任意模块解析过，直接命中、零 AI 调用
+      const doc = await ensureDocParsed(file, {
+        tier,
+        onCacheHit: () => {
+          setProgress(100);
+          setProgressText("已复用此前的识别结果，正在进入分块确认...");
+        },
+        onParseStart: () => {
+          setProgress(18);
+          setProgressText("AI 正在通读全文，批量识别每段类型...");
+          startCreep();
+        },
+      });
       if (timerRef.current) clearInterval(timerRef.current);
       setProgress(100);
       setProgressText("识别完成，正在进入分块确认...");
-      setSource(file.name, base64, data.paragraphs);
+      setSource(doc.fileName, doc.docxBase64, doc.paragraphs);
       router.push("/review");
     } catch (e: unknown) {
       if (timerRef.current) clearInterval(timerRef.current);

@@ -17,10 +17,12 @@ import { Logo } from "@/components/Logo";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import {
   runCheckup,
+  runCheckupTyped,
   type CheckupIssue,
   type CheckupResponse,
   type CheckupSeverity,
 } from "@/lib/api";
+import { ensureDocParsed } from "@/lib/doc-store";
 
 const SEVERITY_META: Record<
   CheckupSeverity,
@@ -67,6 +69,7 @@ export default function CheckupPage() {
   const [result, setResult] = useState<CheckupResponse | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
+  const [statusText, setStatusText] = useState("");
 
   async function handleFile(file: File) {
     if (!file.name.toLowerCase().endsWith(".docx")) {
@@ -78,13 +81,29 @@ export default function CheckupPage() {
     setResult(null);
     setFileName(file.name);
     try {
-      const res = await runCheckup(file);
+      // 复用「解析一次」的共享缓存：命中即零 AI，未命中则 AI 解析并落库，
+      // 这份解析后续格式化/优化都能直接复用。
+      let res: CheckupResponse;
+      try {
+        const doc = await ensureDocParsed(file, {
+          tier: "standard",
+          onCacheHit: () => setStatusText("已复用此前的识别结果，正在体检..."),
+          onParseStart: () => setStatusText("AI 正在通读全文、识别章节结构..."),
+        });
+        setStatusText("正在按章节逐项体检...");
+        res = await runCheckupTyped(doc.paragraphs);
+      } catch (parseErr) {
+        // AI 解析不可用时降级为正则结构检测（精度较低但可离线）
+        setStatusText("AI 解析不可用，改用基础规则体检...");
+        res = await runCheckup(file);
+      }
       setResult(res);
       setFilter("all");
     } catch (e) {
       setError(e instanceof Error ? e.message : "体检失败");
     } finally {
       setLoading(false);
+      setStatusText("");
     }
   }
 
@@ -172,7 +191,7 @@ export default function CheckupPage() {
             {loading ? (
               <div className="flex flex-col items-center gap-3 text-slate-500">
                 <Loader2 className="animate-spin" size={32} />
-                <p className="text-sm">正在体检：{fileName}</p>
+                <p className="text-sm">{statusText || "正在体检"}：{fileName}</p>
               </div>
             ) : (
               <>
@@ -181,7 +200,7 @@ export default function CheckupPage() {
                 </span>
                 <p className="mt-4 text-base font-semibold">拖入或选择 .docx 论文文件</p>
                 <p className="mt-1 text-sm text-slate-500">
-                  体检在本地规则下即时完成，不消耗 AI 次数，也不改动你的文档。
+                  首次会用 AI 识别章节结构，这份解析后续对齐格式、优化表达都能直接复用，不再重复解析，也不改动你的文档。
                 </p>
                 <button
                   onClick={() => inputRef.current?.click()}
