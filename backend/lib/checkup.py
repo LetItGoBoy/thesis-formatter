@@ -12,13 +12,10 @@ backend/lib/checkup.py
   - 只查「内容/结构」，不查排版字体字号（那是 formatter 的职责）。
   - 自带轻量结构检测（不依赖 AI 识别结果），复用与 ai_client 一致的正则模式。
 """
-import io
 import os
 import re
 import json
 import logging
-
-from docx import Document as DocxDocument
 
 from .parser import extract_blocks
 

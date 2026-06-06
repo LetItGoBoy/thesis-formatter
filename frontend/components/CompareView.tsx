@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import type { Paragraph } from "@/lib/api";
 import { blockOf, type BlockKey, useThesisStore } from "@/lib/store";
+import { base64ToBytes } from "@/lib/doc-store";
 import { FormattedParagraph, AuthorInstructorBlock, groupAuthor } from "./BlockPreview";
 
 /**
@@ -47,10 +48,8 @@ export function CompareView({ paragraphs, onClose }: Props) {
     const leftPanel = leftRef.current;
     if (!docxBase64 || !container) return;
 
-    // base64 → ArrayBuffer
-    const binary = atob(docxBase64);
-    const buf = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) buf[i] = binary.charCodeAt(i);
+    // base64 → 字节（复用 doc-store 的统一实现）
+    const buf = base64ToBytes(docxBase64);
 
     import("docx-preview")
       .then(({ renderAsync }) =>
@@ -191,7 +190,7 @@ export function CompareView({ paragraphs, onClose }: Props) {
                     if (isRef && _autoNumRefs) { refSeq++; return { ...p, text: `[${refSeq}] ${p.text}` }; }
                     return p;
                   })
-                ).map((g, gi) => {
+                ).map((g) => {
                   if (g.kind === "author") {
                     const blk = "abstract" as BlockKey;
                     const isNewBlock = prevBlock !== null && blk !== prevBlock;
