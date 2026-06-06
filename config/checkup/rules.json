@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "_comment": "提交前体检规则阈值与关键词。只读，不在代码里硬编码数值。供 backend/lib/checkup.py 使用。",
+
+  "abstract_cn": {
+    "min_chars": 200,
+    "max_chars": 400
+  },
+  "abstract_en": {
+    "min_words": 80
+  },
+  "keywords": {
+    "min_count": 3,
+    "max_count": 8
+  },
+  "references": {
+    "min_count": 8
+  },
+  "conclusion": {
+    "min_chars": 150
+  },
+
+  "intro": {
+    "research_status_keywords": ["研究现状", "国内外", "国外研究", "国内研究", "研究综述", "研究进展", "发展现状"],
+    "significance_keywords": ["研究意义", "理论意义", "实践意义", "研究价值", "选题意义"],
+    "content_keywords": ["研究内容", "主要工作", "本文的主要", "研究方法", "技术路线", "论文结构", "章节安排"]
+  },
+
+  "language": {
+    "colloquial_words": ["其实", "非常", "特别特别", "等等", "差不多", "搞定", "弄好", "我觉得", "大家都知道", "众所周知", "一下子", "好多"],
+    "first_person": ["我认为", "我们认为", "笔者认为", "我觉得", "依我看"],
+    "en_punct_in_cn": [",", ";", "?", "!"]
+  },
+
+  "severity_weights": {
+    "high": 14,
+    "medium": 7,
+    "low": 3
+  }
+}

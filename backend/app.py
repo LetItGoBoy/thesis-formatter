@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 
 from lib.parser import parse_docx, ParseError
 from lib.formatter import format_docx
+from lib.checkup import checkup_docx, load_checkup_rules, CheckupError
 from lib.polish_parser import import_docx_as_blocks
 from lib.polish_rewriter import rewrite_text, SUPPORTED_ACTIONS, PolishError
 from lib.polish_export import export_polished_docx
@@ -219,6 +220,35 @@ def api_format():
     except Exception as e:
         logger.error("格式化失败: %s\n%s", e, traceback.format_exc())
         return jsonify({"error": f"格式化失败: {e}"}), 500
+
+
+# ============================================================
+# 提交前体检（第三个模块，独立于格式化与润色）
+#   纯规则、零 AI 调用：上传 .docx -> 抽取原始块 -> 内容/结构体检
+#   -> 返回按严重度分级的问题清单 + 评分。
+# ============================================================
+
+@app.route("/api/checkup", methods=["POST"])
+def api_checkup():
+    if "file" not in request.files:
+        return jsonify({"error": "缺少file字段"}), 400
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": "文件名为空"}), 400
+    if not file.filename.lower().endswith(".docx"):
+        return jsonify({"error": "仅支持.docx文件"}), 400
+
+    file_bytes = file.read()
+    logger.info("收到 /api/checkup: file=%s size=%dB", file.filename, len(file_bytes))
+    try:
+        result = checkup_docx(file_bytes, load_checkup_rules())
+        return jsonify(result)
+    except CheckupError as e:
+        logger.warning("体检失败: %s", e)
+        return jsonify({"error": str(e)}), 422
+    except Exception as e:
+        logger.error("体检未知异常: %s\n%s", e, traceback.format_exc())
+        return jsonify({"error": f"体检失败: {e}"}), 500
 
 
 # ============================================================

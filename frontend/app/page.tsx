@@ -26,9 +26,9 @@ type Tool = {
 const tools: Tool[] = [
   {
     title: "提交前体检",
-    badge: "规划中",
+    badge: "原型",
     desc: "上传后先识别结构、摘要、关键词与规范风险，明确修改优先级，避免最后阶段反复返工。",
-    href: "/tools",
+    href: "/checkup",
     icon: ClipboardCheck,
   },
   {
@@ -81,7 +81,7 @@ const featureRows: FeatureRow[] = [
     highlight: "再动手修改。",
     desc: "在动笔修改前，先识别结构完整性、摘要与关键词、图表与引用规范等常见风险，给出一份清晰的修改优先级清单。",
     image: "/images/tool-checkup.svg",
-    cta: { label: "了解体检", href: "/tools" },
+    cta: { label: "开始体检", href: "/checkup" },
   },
 ];
 
@@ -300,7 +300,7 @@ export default function HomePage() {
           <FooterCol
             title="论文工具"
             links={[
-              { label: "提交前体检", href: "/tools" },
+              { label: "提交前体检", href: "/checkup" },
               { label: "AI 表达优化", href: "/polish" },
               { label: "格式对齐", href: "/tools" },
             ]}
