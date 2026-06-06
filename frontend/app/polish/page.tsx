@@ -15,6 +15,7 @@ import {
   POLISH_ACTIONS,
   type PolishAction,
 } from "@/lib/polish-api";
+import { prepareFormatFromPolish } from "@/lib/flow";
 
 // 计算 (node, offset) 相对某个块元素起点的字符下标（兼容多文本节点）
 function offsetWithin(blockEl: Element, node: Node, offset: number): number {
@@ -87,6 +88,7 @@ export default function PolishPage() {
   const [uploadError, setUploadError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [goingFormat, setGoingFormat] = useState(false);
   const [lastAction, setLastAction] = useState<PolishAction | null>(null);
   const [toolbar, setToolbar] = useState<{ top: number; left: number } | null>(null);
 
@@ -209,6 +211,22 @@ export default function PolishPage() {
     }
   }
 
+  async function goFormat() {
+    setGoingFormat(true);
+    try {
+      const ok = await prepareFormatFromPolish();
+      if (!ok) {
+        alert("没有可用的文档，请重新上传");
+        return;
+      }
+      router.push("/review");
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGoingFormat(false);
+    }
+  }
+
   async function handleExport() {
     setExporting(true);
     try {
@@ -320,6 +338,14 @@ export default function PolishPage() {
           <span className="text-sm text-slate-500">
             已修改 <span className="font-semibold text-indigo-600">{changedCount}</span> 段
           </span>
+          <Button variant="outline" onClick={goFormat} disabled={goingFormat}>
+            {goingFormat ? (
+              <Loader2 className="mr-1.5 animate-spin" size={16} />
+            ) : (
+              <FileText className="mr-1.5" size={16} />
+            )}
+            去对齐格式
+          </Button>
           <Button onClick={handleExport} disabled={exporting}>
             {exporting ? (
               <Loader2 className="mr-1.5 animate-spin" size={16} />

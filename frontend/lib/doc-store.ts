@@ -193,7 +193,57 @@ export async function ensureDocParsed(file: File, opts: EnsureOptions = {}): Pro
     lastUsedAt: Date.now(),
   };
   await putCachedDoc(model);
+  setActiveDoc(fileHash);
   return model;
+}
+
+// ============================================================
+// 当前活动文档（跨页面记住「正在处理的是哪一份」）
+// 用 sessionStorage：跨模块导航保留，关闭标签即清。
+// ============================================================
+const ACTIVE_KEY = "thesis-active-doc-hash";
+
+export function setActiveDoc(fileHash: string): void {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.setItem(ACTIVE_KEY, fileHash);
+  } catch {
+    /* 忽略 */
+  }
+}
+
+export function getActiveDocHash(): string | null {
+  if (typeof sessionStorage === "undefined") return null;
+  try {
+    return sessionStorage.getItem(ACTIVE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** 取当前活动文档的完整解析结果（无活动文档或缓存已淘汰则返回 null）。 */
+export async function getActiveDocModel(): Promise<DocModel | null> {
+  const hash = getActiveDocHash();
+  if (!hash) return null;
+  return getCachedDoc(hash);
+}
+
+// ============================================================
+// base64 ↔ 字节 / File
+// ============================================================
+export function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+/** 把缓存的 docxBase64 还原成 File，供 polish import 等复用，避免让用户重新上传。 */
+export function base64ToFile(base64: string, fileName: string): File {
+  const bytes = base64ToBytes(base64);
+  return new File([bytes.buffer as ArrayBuffer], fileName || "document.docx", {
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  });
 }
 
 // 与各上传页一致的 base64 编码（分块避免大文件爆栈）

@@ -93,6 +93,12 @@ export default function HomePage() {
     router.push(token ? "/dashboard" : "/login");
   }
 
+  // 通用入口不直接进某个模块，而是滚到三模块区让学生自己选；
+  // 只有点三个模块卡片才会进入各自的上传主页面。
+  function scrollToTools() {
+    document.getElementById("tools")?.scrollIntoView({ behavior: "smooth" });
+  }
+
   return (
     <main className="min-h-screen bg-white text-slate-900">
       {/* 顶栏 */}
@@ -102,7 +108,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => router.push("/tools")}
+              onClick={scrollToTools}
               className="hidden rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:text-blue-600 sm:inline-flex"
             >
               论文工具
@@ -140,7 +146,7 @@ export default function HomePage() {
             )}
             <button
               type="button"
-              onClick={() => router.push("/tools")}
+              onClick={scrollToTools}
               className="ml-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
             >
               开始使用
@@ -164,7 +170,7 @@ export default function HomePage() {
             <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => router.push("/tools")}
+                onClick={scrollToTools}
                 className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
                 进入论文工具
@@ -187,7 +193,7 @@ export default function HomePage() {
       </section>
 
       {/* 三个工具卡片 */}
-      <section className="border-b border-slate-100">
+      <section id="tools" className="scroll-mt-20 border-b border-slate-100">
         <div className="mx-auto max-w-6xl px-5 py-16">
           <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
             提交前，给论文一个<span className="text-blue-600">完整闭环。</span>
