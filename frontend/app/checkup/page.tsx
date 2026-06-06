@@ -10,6 +10,7 @@ import {
   FileText,
   Info,
   Loader2,
+  Pencil,
   RotateCcw,
   Upload,
 } from "lucide-react";
@@ -23,6 +24,7 @@ import {
   type CheckupSeverity,
 } from "@/lib/api";
 import { ensureDocParsed } from "@/lib/doc-store";
+import { prepareFormatFromActive, preparePolishFromActive } from "@/lib/flow";
 
 const SEVERITY_META: Record<
   CheckupSeverity,
@@ -126,6 +128,35 @@ export default function CheckupPage() {
     setError("");
   }
 
+  // 软串联：复用刚解析的缓存，直接进入目标模块的工作界面（无需重新上传）
+  async function goPolish() {
+    setError("");
+    try {
+      const ok = await preparePolishFromActive();
+      if (!ok) {
+        setError("没有可复用的解析，请重新上传");
+        return;
+      }
+      router.push("/polish");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "进入在线编辑失败");
+    }
+  }
+
+  async function goFormat() {
+    setError("");
+    try {
+      const ok = await prepareFormatFromActive();
+      if (!ok) {
+        setError("没有可复用的解析，请重新上传");
+        return;
+      }
+      router.push("/review");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "进入格式对齐失败");
+    }
+  }
+
   const issues = result?.issues ?? [];
   const shown = filter === "all" ? issues : issues.filter((i) => i.severity === filter);
 
@@ -221,8 +252,8 @@ export default function CheckupPage() {
             setFilter={setFilter}
             shown={shown}
             onReset={reset}
-            onGoFormat={() => router.push("/tools")}
-            onGoPolish={() => router.push("/polish")}
+            onGoFormat={goFormat}
+            onGoPolish={goPolish}
           />
         )}
       </div>
@@ -319,7 +350,8 @@ function ResultView({
             onClick={onGoPolish}
             className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
-            去优化表达
+            <Pencil size={15} />
+            在线编辑
             <ArrowRight size={15} />
           </button>
           <button
