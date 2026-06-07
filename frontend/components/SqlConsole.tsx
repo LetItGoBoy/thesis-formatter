@@ -7,7 +7,7 @@
  * 侦探游戏的核心交互：写 SQL → 运行 → 看结果表。Ctrl/⌘+Enter 快捷运行。
  * 只负责执行与展示，是否"破案成功"由上层关卡的 validate 判定。
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Play, Loader2, AlertTriangle } from "lucide-react";
 import type { QueryResult } from "@/lib/db-detective";
 import type { RunFn } from "@/lib/sqljs";
@@ -17,14 +17,22 @@ interface Props {
   ready: boolean;
   placeholder: string;
   onResult: (res: QueryResult) => void;
+  /** 外部预填查询（点表名预览时用）：nonce 变化即把 sql 写入编辑框 */
+  prefill?: { sql: string; nonce: number };
 }
 
 const MAX_ROWS = 50;
 
-export function SqlConsole({ run, ready, placeholder, onResult }: Props) {
+export function SqlConsole({ run, ready, placeholder, onResult, prefill }: Props) {
   const [sql, setSql] = useState("");
   const [result, setResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState("");
+
+  // 外部预填：侧栏点「预览表」时把 SELECT * 写进编辑框
+  useEffect(() => {
+    if (prefill && prefill.sql) setSql(prefill.sql);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill?.nonce]);
 
   function execute() {
     setError("");
