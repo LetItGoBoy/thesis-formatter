@@ -1,6 +1,7 @@
 /**
  * 第一案《后巷的打卡记录》
- * 知识点：SELECT · WHERE · LIKE · JOIN 入门 · 多条件求交
+ * 知识点（层层递进）：浏览全表 → WHERE 单条件 → WHERE 多条件 AND →
+ *                    按日期筛选 → LIKE 模糊匹配 → JOIN 多表求交
  */
 import {
   type DetectiveCase,
@@ -20,14 +21,14 @@ export const caseBackAlley: DetectiveCase = {
     subtitle: "第一案 · SQL 入门",
     title: "《后巷的打卡记录》",
     intro:
-      "一桩深夜命案，两条互相独立的线索，八名市民。你是查档侦探，唯一的武器是 SQL。逐条查询、层层求交，把真凶从档案里揪出来。",
+      "一桩深夜命案，两条互相独立的线索，八名市民。你是查档侦探，唯一的武器是 SQL。从认识嫌疑池开始，逐条查询、层层求交，把真凶从档案里揪出来。",
     arc: "这是你接手的第一起案子——但档案库里的记录，似乎已经被人悄悄动过手脚。",
   },
   accusation: {
     prompt:
       "你已经掌握全部线索：当晚在健身房打卡、且车牌含 X7 的，只有一个人。输入 TA 的姓名结案。",
     winNote:
-      "你用三条 SQL 完成了一次完整推理：先用 WHERE 缩小范围，再用 JOIN 把多张表的线索求交，最终锁定唯一嫌疑人。这正是关系数据库查询的核心。",
+      "你走完了一条完整的查询链：从浏览全表，到单/多条件 WHERE，到 LIKE 模糊匹配，最后用 JOIN 把多张表的线索求交，锁定唯一嫌疑人。这正是关系数据库查询的地基。",
   },
   seedSql: `
 CREATE TABLE crime_scene_report (
@@ -118,46 +119,87 @@ INSERT INTO cars VALUES
   ],
   levels: [
     {
-      id: "scene",
+      id: "roster",
       badge: "线索 01",
-      title: "翻开现场报告",
-      concept: "SELECT · WHERE",
+      title: "认识嫌疑池",
+      concept: "SELECT · 浏览全表",
       story:
-        "2024 年 1 月 15 日深夜，雾港大剧院后巷发现一具尸体。你接入城市档案数据库，第一步是调出这起案子的现场报告。",
-      task: "从 crime_scene_report 中，查出 2024-01-15 雾港这起「谋杀」案的现场描述。",
+        "接手案子第一件事，是把所有相关人摸个底。雾港城市档案里登记着八名市民，先把整张 people 表调出来看看。",
+      task: "查出 people 表里的全部市民。",
+      skeleton: "SELECT * FROM ___;",
+      hint: "SELECT * 表示『选所有列』，FROM 后面跟表名。把 people 整张表查出来即可。",
+      solution: "SELECT * FROM people;",
+      validate: (res) => res.rows.length >= 8,
+    },
+    {
+      id: "murders",
+      badge: "线索 02",
+      title: "翻出谋杀案卷",
+      concept: "WHERE · 单条件",
+      story:
+        "档案里案件类型五花八门：盗窃、谋杀、纠纷……你只关心谋杀。用一个条件，把谋杀案从报告里挑出来。",
+      task: "从 crime_scene_report 中，查出所有 type 为「谋杀」的案件。",
+      skeleton: "SELECT * FROM ___\nWHERE ___ = ___;",
+      hint: "案件类型在 type 列，用 WHERE type = '谋杀' 过滤。会查到两起——其中一起是外地旧案。",
+      solution: "SELECT * FROM crime_scene_report WHERE type='谋杀';",
+      // 谋杀案含「青石」旧案，且不应混入盗窃案
+      validate: (res) => anyCellContains(res, "青石") && !anyCellContains(res, "盗窃"),
+    },
+    {
+      id: "scene",
+      badge: "线索 03",
+      title: "锁定本案现场",
+      concept: "WHERE · 多条件 AND",
+      story:
+        "两起谋杀里，只有一起是本案：2024-01-15、雾港。把三个条件叠在一起，精确翻到唯一一份现场报告，读出它留下的线索。",
+      task: "查出 2024-01-15、雾港、谋杀 这起案子的现场描述（description）。",
       skeleton: "SELECT ___ FROM ___\nWHERE ___ AND ___ AND ___;",
-      hint: "用 WHERE 同时限定 date、city、type 三个条件，把无关的盗窃案和旧案排除掉。",
+      hint: "三个条件 date、city、type 用 AND 串起来，精确到唯一一条；只选 description 列即可。",
       solution:
         "SELECT description FROM crime_scene_report WHERE date='2024-01-15' AND city='雾港' AND type='谋杀';",
       validate: (res) => anyCellContains(res, "健身房") && anyCellContains(res, "X7"),
     },
     {
       id: "checkin",
-      badge: "线索 02",
+      badge: "线索 04",
       title: "当晚谁在健身房",
-      concept: "WHERE · 集合筛选",
+      concept: "WHERE · 按日期筛选",
       story:
-        "报告说凶手当晚在「雾港健身房」打过卡。你打开打卡记录表，先把案发当晚到场的人都筛出来。",
+        "现场报告给了第一条线索：凶手当晚在「雾港健身房」打过卡。打开打卡记录，把案发当晚到场的人筛出来。",
       task: "从 gym_checkin 中，查出 2024-01-15 当天打卡的所有 person_id。",
-      skeleton: "SELECT ___ FROM ___\nWHERE ___;",
-      hint: "只看 check_date = '2024-01-15' 这一天，会得到 3 个人；注意还有别的日期是干扰项。",
+      skeleton: "SELECT ___ FROM ___\nWHERE ___ = ___;",
+      hint: "打卡日期在 check_date 列，筛 '2024-01-15' 这一天。别被其他日期的记录干扰，最终是 3 个人。",
       solution: "SELECT person_id FROM gym_checkin WHERE check_date='2024-01-15';",
       validate: (res) => includesAll(res, ["2", "5", "7"]),
     },
     {
+      id: "plate",
+      badge: "线索 05",
+      title: "可疑的车牌",
+      concept: "LIKE · 模糊匹配",
+      story:
+        "第二条线索：逃离时车牌被记下，含字符 X7。车牌不是精确值，只知道里面有 X7——这正是模糊匹配的用武之地。",
+      task: "从 cars 中，查出车牌包含 X7 的所有车主 person_id。",
+      skeleton: "SELECT ___ FROM ___\nWHERE ___ LIKE '%___%';",
+      hint: "用 plate LIKE '%X7%'，% 是通配符，表示前后可以是任意字符。会得到 3 个车主。",
+      solution: "SELECT person_id FROM cars WHERE plate LIKE '%X7%';",
+      validate: (res) => includesAll(res, ["3", "5", "8"]),
+    },
+    {
       id: "join",
-      badge: "线索 03",
+      badge: "线索 06",
       title: "锁定唯一真凶",
       concept: "JOIN · 多表求交",
       story:
-        "三名当晚到场者还不够。第二条线索是车牌含 X7。光看车牌也有好几个人——只有「当晚打卡」且「车牌含 X7」同时成立的那一个，才是真凶。",
+        "当晚打卡的有 3 人，车牌含 X7 的也有 3 人。两条线索独立，但只有同时满足的那一个才是真凶。用 JOIN 把表连起来求交集。",
       task:
-        "把 gym_checkin、cars、people 连接起来，找出 2024-01-15 当天打卡、且车牌包含 X7 的那个人的姓名。",
-      skeleton: "SELECT ___\nFROM ___\nJOIN ___ ON ___\nJOIN ___ ON ___\nWHERE ___ AND ___;",
-      hint: "用两次 JOIN 把三张表按 person_id 串起来，再用 WHERE 同时卡住 check_date 和 plate LIKE '%X7%'。",
+        "连接 gym_checkin、cars、people，找出 2024-01-15 当天打卡、且车牌包含 X7 的那个人的姓名。",
+      skeleton:
+        "SELECT ___\nFROM ___\nJOIN ___ ON ___\nJOIN ___ ON ___\nWHERE ___ AND ___;",
+      hint: "用两次 JOIN 把三张表按 person_id 串起来，再用 WHERE 同时卡住 check_date='2024-01-15' 和 plate LIKE '%X7%'。",
       solution:
         "SELECT p.name FROM gym_checkin g JOIN cars c ON c.person_id=g.person_id JOIN people p ON p.id=g.person_id WHERE g.check_date='2024-01-15' AND c.plate LIKE '%X7%';",
-      validate: (res) => anyCellContains(res, CULPRIT),
+      validate: (res) => anyCellContains(res, CULPRIT) && res.rows.length === 1,
     },
   ],
 };

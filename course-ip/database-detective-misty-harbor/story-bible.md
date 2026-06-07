@@ -40,11 +40,13 @@
 
 ### 第 1 案《后巷的打卡记录》
 
-深夜命案，两条独立线索（健身房打卡 / 车牌含 X7）。SELECT/WHERE 缩小范围 → JOIN 求交 → 唯一真凶**高金**。4 张表：crime_scene_report、people、gym_checkin、cars。
+深夜命案，两条独立线索（健身房打卡 / 车牌含 X7）。**6 关层层递进**：浏览全表 → WHERE 单条件 → WHERE 多条件 AND → 按日期筛选 → LIKE 模糊匹配 → JOIN 求交，锁定真凶**高金**。4 张表：crime_scene_report、people、gym_checkin、cars。
 
 ### 第 2 案《高频的影子》
 
-五起连环夜盗，每夜路过的人都不同。聚合 + GROUP BY 统计每人出现次数 → HAVING 过滤出「五夜全勤」者 → 真凶是夜班保安**钱伟**（看似有巡逻理由，实则每个案发现场都在）。3 张表：people、burglary、sightings。
+五起连环夜盗，每夜路过的人都不同。**6 关层层递进**：聚合(COUNT/MAX/MIN/AVG) → ORDER BY 排序 → GROUP BY 按区分组 → GROUP BY 按人分组 → HAVING 过滤高频 → HAVING+JOIN 锁定五夜全勤者，真凶是夜班保安**钱伟**。3 张表：people、burglary、sightings。
+
+> 设计约定：**每案至少 6 关**，难度阶梯式上升——前面关卡铺垫单个概念，后面关卡组合运用、收窄到唯一真凶。
 
 ## 关卡结构（沿用霓虹栈城模板）
 
