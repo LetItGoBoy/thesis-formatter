@@ -24,9 +24,9 @@ export interface DetectiveLevel {
   story: string;
   /** 给玩家的查询任务 */
   task: string;
-  /** SQL 输入框占位提示 */
-  placeholder: string;
-  /** 卡住时可展开的提示 */
+  /** 第二层提示：带空格的 SQL 骨架（点开「看提示」后再展开，输入框本身不提示） */
+  skeleton: string;
+  /** 第一层提示：文字思路 */
   hint: string;
   /** 参考答案（仅作「查看答案」用，不参与判定） */
   solution: string;

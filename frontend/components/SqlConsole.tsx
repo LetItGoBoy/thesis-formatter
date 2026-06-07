@@ -15,15 +15,16 @@ import type { RunFn } from "@/lib/sqljs";
 interface Props {
   run: RunFn;
   ready: boolean;
-  placeholder: string;
   onResult: (res: QueryResult) => void;
   /** 外部预填查询（点表名预览时用）：nonce 变化即把 sql 写入编辑框 */
   prefill?: { sql: string; nonce: number };
 }
 
 const MAX_ROWS = 50;
+// 输入框本身不给任何解题提示，保持中性
+const NEUTRAL_PLACEHOLDER = "在这里写下你的 SQL 查询…";
 
-export function SqlConsole({ run, ready, placeholder, onResult, prefill }: Props) {
+export function SqlConsole({ run, ready, onResult, prefill }: Props) {
   const [sql, setSql] = useState("");
   const [result, setResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState("");
@@ -60,7 +61,7 @@ export function SqlConsole({ run, ready, placeholder, onResult, prefill }: Props
             }
           }}
           spellCheck={false}
-          placeholder={placeholder}
+          placeholder={NEUTRAL_PLACEHOLDER}
           className="block h-36 w-full resize-y bg-transparent px-4 py-3 font-mono text-[13px] leading-6 text-emerald-200 placeholder:text-slate-500 focus:outline-none"
         />
         <div className="flex items-center justify-between border-t border-slate-700 px-3 py-2">
