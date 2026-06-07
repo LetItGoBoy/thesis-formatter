@@ -103,7 +103,7 @@ INSERT INTO sightings VALUES
       story:
         "接手这串夜盗案，你先要心里有数：到底发生了几起？哪一起损失最惨重？聚合函数能一次算出整张表的统计量。",
       task: "查出 burglary 里盗窃案的总起数，以及损失金额最大的一起是多少。",
-      placeholder: "SELECT COUNT(*) AS 起数, MAX(loss_value) AS 最大损失\nFROM burglary;",
+      placeholder: "SELECT COUNT(*), MAX(___)\nFROM ___;",
       hint: "COUNT(*) 数行数、MAX(loss_value) 取最大值，两个聚合可以写在同一句 SELECT 里。",
       solution: "SELECT COUNT(*) AS 起数, MAX(loss_value) AS 最大损失 FROM burglary;",
       // 5 起、最大损失 80000
@@ -117,7 +117,7 @@ INSERT INTO sightings VALUES
       story:
         "五个案发夜，每夜都有不同的人被目击在附近。光看一夜看不出名堂——得把目击记录按人聚到一起，数数每个人一共出现了几次。",
       task: "按 person_id 分组，统计 sightings 里每个人被目击的次数。",
-      placeholder: "SELECT person_id, COUNT(*) AS 次数\nFROM sightings\nGROUP BY person_id;",
+      placeholder: "SELECT ___, COUNT(*)\nFROM ___\nGROUP BY ___;",
       hint: "GROUP BY person_id 把同一个人的记录归成一组，COUNT(*) 数出每组的行数。",
       solution: "SELECT person_id, COUNT(*) AS 次数 FROM sightings GROUP BY person_id;",
       // 必须真的聚合出 (6→5) 和 (3→4) 这两组
@@ -133,7 +133,7 @@ INSERT INTO sightings VALUES
       task:
         "连接 people，找出在全部 5 个案发夜都被目击（出现次数 ≥ 5）的人的姓名，按次数从高到低排列。",
       placeholder:
-        "SELECT p.name, COUNT(*) AS 次数\nFROM sightings s\nJOIN people p ON p.id = s.person_id\nGROUP BY p.name\nHAVING COUNT(*) >= 5\nORDER BY 次数 DESC;",
+        "SELECT ___, COUNT(*)\nFROM ___\nJOIN ___ ON ___\nGROUP BY ___\nHAVING COUNT(*) >= ___\nORDER BY ___;",
       hint: "GROUP BY 之后用 HAVING COUNT(*) >= 5 过滤分组（WHERE 不能跟聚合，必须用 HAVING）；再 JOIN people 把 id 换成姓名。",
       solution:
         "SELECT p.name, COUNT(*) AS c FROM sightings s JOIN people p ON p.id=s.person_id GROUP BY p.name HAVING COUNT(*)>=5 ORDER BY c DESC;",
