@@ -27,10 +27,10 @@ const courses = [
   {
     title: "数据库原理",
     subtitle: "当前重点课程",
-    desc: "围绕 ER 模型、关系模型、SQL、规范化、事务与索引，整理案例、项目练习和复习资料。",
+    desc: "《雾港谜案》SQL 侦探游戏：浏览器内写真实 SQL 逐步破案，从 WHERE 到 JOIN 边玩边学。",
     icon: Database,
-    modules: ["课程讲义", "SQL 练习", "推荐视频", "项目案例"],
-    href: "",
+    modules: ["SQL 侦探闯关", "真实查询", "案件数据库", "层层推理"],
+    href: "/quest/database",
   },
 ];
 
