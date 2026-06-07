@@ -30,13 +30,6 @@ export type Course = {
   prerequisites: string[];
 };
 
-export type LearningStage = {
-  id: StageId;
-  title: string;
-  subtitle: string;
-  outcome: string;
-};
-
 export type CareerRole = {
   id: string;
   title: string;
@@ -86,53 +79,14 @@ export const curriculumMajors: CurriculumMajor[] = [
   },
 ];
 
-export const curriculumStats = [
+const curriculumStats = [
   { label: "毕业总学分", value: "172", note: "专业培养方案要求" },
   { label: "实践教学", value: "800", note: "实践学时，偏应用型" },
   { label: "培养模式", value: "3+1", note: "三年校内 + 一年实训实习" },
   { label: "专业方向", value: "IoT", note: "电子信息工程物联网方向" },
 ];
 
-export const learningStages: LearningStage[] = [
-  {
-    id: "foundation",
-    title: "基础认知",
-    subtitle: "数学、物理、编程入口",
-    outcome: "能读懂工程问题，开始用程序描述问题。",
-  },
-  {
-    id: "engineering",
-    title: "电路与电子",
-    subtitle: "从电路到信号",
-    outcome: "能分析硬件单元，理解电子系统如何采集和传输信号。",
-  },
-  {
-    id: "software",
-    title: "软件与数据",
-    subtitle: "算法、Java、数据库",
-    outcome: "能组织数据、写业务逻辑，为物联网应用层打底。",
-  },
-  {
-    id: "embedded",
-    title: "嵌入式底层",
-    subtitle: "单片机、ARM、RTOS、Linux",
-    outcome: "能把传感器、控制器和操作系统连接起来。",
-  },
-  {
-    id: "iot",
-    title: "物联网系统",
-    subtitle: "传感、无线、客户端、安全",
-    outcome: "能把设备、网络、数据和应用组合成完整方案。",
-  },
-  {
-    id: "practice",
-    title: "项目与就业",
-    subtitle: "综合实训、岗位实习、毕业设计",
-    outcome: "把课程能力沉淀为项目经验、作品集和岗位技能。",
-  },
-];
-
-export const courses: Course[] = [
+const courses: Course[] = [
   {
     id: "calculus-1",
     name: "高等数学 AI",
@@ -668,7 +622,7 @@ export const courses: Course[] = [
   }
 ];
 
-export const careerRoles: CareerRole[] = [
+const careerRoles: CareerRole[] = [
   {
     id: "embedded",
     title: "嵌入式/单片机开发工程师",
@@ -757,14 +711,14 @@ export const careerRoles: CareerRole[] = [
   },
 ];
 
-export const electronicInfoStats = [
+const electronicInfoStats = [
   { label: "毕业总学分", value: "170", note: "25 版培养方案要求" },
   { label: "实践教学", value: "846", note: "实践学时，强化工程能力" },
   { label: "培养模式", value: "3.5+0.5", note: "校内培养 + 企业实习" },
   { label: "专业方向", value: "EI", note: "电子设备、通信与智能系统" },
 ];
 
-export const electronicInfoCourses: Course[] = [
+const electronicInfoCourses: Course[] = [
   {
     id: "ei-calculus-1",
     name: "高等数学 AⅠ",
@@ -1235,7 +1189,7 @@ export const electronicInfoCourses: Course[] = [
   }
 ];
 
-export const electronicInfoCareerRoles: CareerRole[] = [
+const electronicInfoCareerRoles: CareerRole[] = [
   {
     id: "ei-hardware",
     title: "电子硬件/测试工程师",
@@ -1298,14 +1252,14 @@ export const electronicInfoCareerRoles: CareerRole[] = [
   },
 ];
 
-export const mobileInternetStats = [
+const mobileInternetStats = [
   { label: "毕业总学分", value: "170", note: "25 版培养方案要求" },
   { label: "实践教学", value: "1022", note: "实践学时，软件项目导向" },
   { label: "培养模式", value: "3+1", note: "校内理论 + 企业实训实习" },
   { label: "专业方向", value: "Mobile", note: "移动终端、Web 与互联网软件" },
 ];
 
-export const mobileInternetCourses: Course[] = [
+const mobileInternetCourses: Course[] = [
   {
     id: "mi-english-1",
     name: "大学英语 AⅠ",
@@ -1971,7 +1925,7 @@ export const mobileInternetCourses: Course[] = [
   }
 ];
 
-export const mobileInternetCareerRoles: CareerRole[] = [
+const mobileInternetCareerRoles: CareerRole[] = [
   {
     id: "mi-android",
     title: "Android / 鸿蒙移动端开发",
@@ -2046,14 +2000,14 @@ export const mobileInternetCareerRoles: CareerRole[] = [
   },
 ];
 
-export const communicationEngineeringStats = [
+const communicationEngineeringStats = [
   { label: "毕业总学分", value: "170", note: "25 版培养方案要求" },
   { label: "实践教学", value: "1142", note: "实践学时，通信工程导向" },
   { label: "培养模式", value: "3+1", note: "校内课程 + 企业实训实习" },
   { label: "专业方向", value: "5G/ICT", note: "移动通信、数据通信、光接入" },
 ];
 
-export const communicationEngineeringCourses: Course[] = [
+const communicationEngineeringCourses: Course[] = [
   {
     id: "ce-english-1",
     name: "大学英语 AI",
@@ -2680,7 +2634,7 @@ export const communicationEngineeringCourses: Course[] = [
   }
 ];
 
-export const communicationEngineeringCareerRoles: CareerRole[] = [
+const communicationEngineeringCareerRoles: CareerRole[] = [
   {
     id: "ce-wireless-optimization",
     title: "5G 无线网络优化工程师",

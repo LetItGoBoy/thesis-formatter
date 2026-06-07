@@ -431,7 +431,7 @@ export function BlockPreview({ block, paragraphs, selectedIndex, onSelect }: Pro
               <div className="text-center text-slate-400 text-sm">本块暂无段落</div>
             ) : (
               <div className="space-y-2">
-                {groups.map((g, gi) => {
+                {groups.map((g) => {
                   if (g.kind === "author") {
                     return (
                       <AuthorInstructorBlock
