@@ -248,14 +248,6 @@ export function CaseRunner({ caseData }: { caseData: DetectiveCase }) {
               {showHint && (
                 <div className="mt-2 rounded-lg bg-white/5 px-4 py-3 text-sm leading-6 text-slate-300 ring-1 ring-white/10">
                   💡 {level.hint}
-                  <details className="mt-2">
-                    <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-300">
-                      仍想不出？查看参考答案
-                    </summary>
-                    <pre className="mt-2 overflow-auto rounded bg-slate-900 px-3 py-2 font-mono text-xs text-emerald-200">
-                      {level.solution}
-                    </pre>
-                  </details>
                 </div>
               )}
 
