@@ -44,6 +44,13 @@ export default function DatabaseDetectivePage() {
   const [accuse, setAccuse] = useState("");
   const [accuseState, setAccuseState] = useState<"idle" | "wrong" | "win">("idle");
 
+  // 侧栏点「预览表」→ 把 SELECT * 预填进 SQL 控制台
+  const [prefill, setPrefill] = useState<{ sql: string; nonce: number }>({ sql: "", nonce: 0 });
+  function previewTable(name: string) {
+    setPrefill((p) => ({ sql: `SELECT * FROM ${name};`, nonce: p.nonce + 1 }));
+  }
+  const [showHelp, setShowHelp] = useState(true);
+
   const solvedCount = solved.filter(Boolean).length;
   const allSolved = solvedCount === LEVELS.length;
   const level = LEVELS[active];
@@ -134,6 +141,70 @@ export default function DatabaseDetectivePage() {
         )}
       </section>
 
+      {/* 怎么玩 · 侦探入门 */}
+      <section className="mx-auto max-w-6xl px-5 pt-6">
+        <div className="rounded-2xl bg-emerald-500/5 p-5 ring-1 ring-emerald-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
+              <Lightbulb size={16} />
+              怎么玩 · 侦探入门
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHelp((v) => !v)}
+              className="text-xs text-slate-400 transition hover:text-emerald-300"
+            >
+              {showHelp ? "收起" : "展开"}
+            </button>
+          </div>
+
+          {showHelp && (
+            <div className="mt-4 grid gap-5 md:grid-cols-2">
+              {/* 三步流程 */}
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">三步破案</div>
+                <ol className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
+                  <li>
+                    <span className="mr-1.5 font-semibold text-emerald-300">1.</span>
+                    你是查档侦探，所有线索都藏在右侧「案件数据库」的 4 张表里。
+                  </li>
+                  <li>
+                    <span className="mr-1.5 font-semibold text-emerald-300">2.</span>
+                    在黑色框里写一句 <span className="font-mono text-emerald-300">SQL</span>，点「运行查询」就能向数据库提问、看结果。
+                  </li>
+                  <li>
+                    <span className="mr-1.5 font-semibold text-emerald-300">3.</span>
+                    照每关的「查询任务」写查询，命中关键线索就解锁下一关；三条线索集齐后指认真凶结案。
+                  </li>
+                </ol>
+                <p className="mt-3 text-xs leading-5 text-slate-500">
+                  没写过 SQL？点右侧表名可一键预览数据；每关都有「看提示」，再卡可展开参考答案。放心试，写错不扣分。
+                </p>
+              </div>
+
+              {/* SQL 速查 */}
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">SQL 速查（够用版）</div>
+                <div className="mt-2 space-y-1.5 font-mono text-[12px] leading-5">
+                  {[
+                    ["看一张表的全部数据", "SELECT * FROM people;"],
+                    ["加条件筛选", "SELECT * FROM people WHERE job = '记者';"],
+                    ["只看某几列", "SELECT id, name FROM people;"],
+                    ["模糊匹配（含某字符）", "WHERE plate LIKE '%X7%'"],
+                    ["连接两张表", "FROM a JOIN b ON a.person_id = b.id"],
+                  ].map(([label, code]) => (
+                    <div key={code} className="rounded-md bg-slate-900/70 px-3 py-1.5 ring-1 ring-white/5">
+                      <div className="text-[11px] text-slate-500">{label}</div>
+                      <code className="text-emerald-200">{code}</code>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
       <section className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[1fr_19rem]">
         {/* 主区 */}
         <div className="rounded-3xl bg-[#161b2c] p-6 ring-1 ring-white/10 md:p-8">
@@ -155,10 +226,12 @@ export default function DatabaseDetectivePage() {
 
               <div className="mt-5">
                 <SqlConsole
+                  key={level.id}
                   run={run}
                   ready={ready}
                   placeholder={level.placeholder}
                   onResult={handleResult}
+                  prefill={prefill}
                 />
               </div>
 
@@ -324,11 +397,18 @@ export default function DatabaseDetectivePage() {
               <Table2 size={15} />
               案件数据库
             </div>
-            <p className="mt-1 text-xs text-slate-500">这些就是你能查询的全部表。</p>
+            <p className="mt-1 text-xs text-slate-500">这些就是你能查询的全部表。点表名可一键预览它的全部数据。</p>
             <div className="mt-3 space-y-3">
               {SCHEMA.map((t) => (
                 <div key={t.name} className="rounded-lg bg-slate-900/60 p-3 ring-1 ring-white/5">
-                  <div className="font-mono text-[13px] text-emerald-300">{t.name}</div>
+                  <button
+                    type="button"
+                    onClick={() => previewTable(t.name)}
+                    title={`预览 ${t.name} 的全部数据`}
+                    className="font-mono text-[13px] text-emerald-300 underline-offset-2 hover:underline"
+                  >
+                    {t.name}
+                  </button>
                   <div className="text-[11px] text-slate-500">{t.comment}</div>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {t.columns.map((c) => (
