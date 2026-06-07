@@ -217,7 +217,6 @@ export function CaseRunner({ caseData }: { caseData: DetectiveCase }) {
                   key={level.id}
                   run={run}
                   ready={ready}
-                  placeholder={level.placeholder}
                   onResult={handleResult}
                   prefill={prefill}
                 />
@@ -246,8 +245,20 @@ export function CaseRunner({ caseData }: { caseData: DetectiveCase }) {
                 </button>
               </div>
               {showHint && (
-                <div className="mt-2 rounded-lg bg-white/5 px-4 py-3 text-sm leading-6 text-slate-300 ring-1 ring-white/10">
-                  💡 {level.hint}
+                <div className="mt-2 space-y-2">
+                  {/* 第一层：文字思路 */}
+                  <div className="rounded-lg bg-white/5 px-4 py-3 text-sm leading-6 text-slate-300 ring-1 ring-white/10">
+                    💡 {level.hint}
+                  </div>
+                  {/* 第二层：语句骨架（再点一下才显示，输入框本身不提示） */}
+                  <details className="rounded-lg bg-white/5 px-4 py-3 ring-1 ring-white/10">
+                    <summary className="cursor-pointer text-sm text-slate-400 transition hover:text-amber-300">
+                      还不会写？看语句骨架（把空格 ___ 填上）
+                    </summary>
+                    <pre className="mt-2 overflow-auto rounded bg-slate-900 px-3 py-2 font-mono text-xs text-emerald-200">
+                      {level.skeleton}
+                    </pre>
+                  </details>
                 </div>
               )}
 

@@ -125,7 +125,7 @@ INSERT INTO cars VALUES
       story:
         "2024 年 1 月 15 日深夜，雾港大剧院后巷发现一具尸体。你接入城市档案数据库，第一步是调出这起案子的现场报告。",
       task: "从 crime_scene_report 中，查出 2024-01-15 雾港这起「谋杀」案的现场描述。",
-      placeholder: "SELECT ___ FROM ___\nWHERE ___ AND ___ AND ___;",
+      skeleton: "SELECT ___ FROM ___\nWHERE ___ AND ___ AND ___;",
       hint: "用 WHERE 同时限定 date、city、type 三个条件，把无关的盗窃案和旧案排除掉。",
       solution:
         "SELECT description FROM crime_scene_report WHERE date='2024-01-15' AND city='雾港' AND type='谋杀';",
@@ -139,7 +139,7 @@ INSERT INTO cars VALUES
       story:
         "报告说凶手当晚在「雾港健身房」打过卡。你打开打卡记录表，先把案发当晚到场的人都筛出来。",
       task: "从 gym_checkin 中，查出 2024-01-15 当天打卡的所有 person_id。",
-      placeholder: "SELECT ___ FROM ___\nWHERE ___;",
+      skeleton: "SELECT ___ FROM ___\nWHERE ___;",
       hint: "只看 check_date = '2024-01-15' 这一天，会得到 3 个人；注意还有别的日期是干扰项。",
       solution: "SELECT person_id FROM gym_checkin WHERE check_date='2024-01-15';",
       validate: (res) => includesAll(res, ["2", "5", "7"]),
@@ -153,7 +153,7 @@ INSERT INTO cars VALUES
         "三名当晚到场者还不够。第二条线索是车牌含 X7。光看车牌也有好几个人——只有「当晚打卡」且「车牌含 X7」同时成立的那一个，才是真凶。",
       task:
         "把 gym_checkin、cars、people 连接起来，找出 2024-01-15 当天打卡、且车牌包含 X7 的那个人的姓名。",
-      placeholder: "SELECT ___\nFROM ___\nJOIN ___ ON ___\nJOIN ___ ON ___\nWHERE ___ AND ___;",
+      skeleton: "SELECT ___\nFROM ___\nJOIN ___ ON ___\nJOIN ___ ON ___\nWHERE ___ AND ___;",
       hint: "用两次 JOIN 把三张表按 person_id 串起来，再用 WHERE 同时卡住 check_date 和 plate LIKE '%X7%'。",
       solution:
         "SELECT p.name FROM gym_checkin g JOIN cars c ON c.person_id=g.person_id JOIN people p ON p.id=g.person_id WHERE g.check_date='2024-01-15' AND c.plate LIKE '%X7%';",
