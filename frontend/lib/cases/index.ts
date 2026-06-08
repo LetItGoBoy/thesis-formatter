@@ -11,6 +11,7 @@ import { caseShadow } from "./case-02-shadow";
 import { caseNetwork } from "./case-03-network";
 import { caseNestedLies } from "./case-04-nested-lies";
 import { caseTampered } from "./case-05-tampered";
+import { caseNormalForm } from "./case-06-normal-form";
 
 export const CASES: DetectiveCase[] = [
   caseBackAlley,
@@ -18,6 +19,7 @@ export const CASES: DetectiveCase[] = [
   caseNetwork,
   caseNestedLies,
   caseTampered,
+  caseNormalForm,
 ];
 
 export function getCase(id: string): DetectiveCase | undefined {
@@ -39,7 +41,7 @@ export const SEASON_PLAN: SeasonEntry[] = [
   { order: 3, title: "错综的关系网", concepts: "内/外连接 · 自连接 · IS NULL", id: caseNetwork.id },
   { order: 4, title: "嵌套的谎言", concepts: "子查询 · EXISTS · 集合运算", id: caseNestedLies.id },
   { order: 5, title: "被篡改的档案", concepts: "INSERT/UPDATE/DELETE · 视图 · 完整性约束", id: caseTampered.id },
-  { order: 6, title: "范式的裂缝", concepts: "函数依赖 · 范式 · 数据冗余异常", id: null },
+  { order: 6, title: "范式的裂缝", concepts: "函数依赖 · 范式 · 数据冗余异常", id: caseNormalForm.id },
   { order: 7, title: "看不见的转账", concepts: "事务 ACID · 并发控制 · 隔离级别", id: null },
   { order: 8, title: "日志不会说谎", concepts: "恢复(redo/undo) · 权限安全 · 综合", id: null },
 ];
