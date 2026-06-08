@@ -162,27 +162,29 @@ export default function HomePage() {
 
       {/* ================= HERO ================= */}
       <section id="top" className="relative flex min-h-screen items-center">
-        {/* 背景：大图占位 + 光谱星云渐变兜底 + 扫描线 + 暗场 */}
+        {/* 背景：大图 + 光谱星云渐变兜底 + 扫描线 + 暗场遮罩 */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[#06060c]" />
           {/* 🖼️ 放 /public/images/hero-bg.jpg 即生效；未放时下面的光谱星云渐变作占位 */}
-          <div className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center opacity-70" />
+          <div className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center" />
+          {/* 星云渐变：放图后调低，作为氛围增强 / 无图时的兜底 */}
           <div
-            className="absolute inset-0 animate-huedrift opacity-80"
+            className="absolute inset-0 animate-huedrift opacity-35"
             style={{
               backgroundImage:
-                "radial-gradient(60% 80% at 18% 22%, rgba(124,58,237,0.40), transparent 60%)," +
-                "radial-gradient(55% 70% at 82% 18%, rgba(6,182,212,0.32), transparent 60%)," +
-                "radial-gradient(70% 90% at 70% 85%, rgba(236,72,153,0.30), transparent 60%)," +
-                "radial-gradient(50% 60% at 30% 90%, rgba(34,197,94,0.18), transparent 60%)",
+                "radial-gradient(60% 80% at 16% 24%, rgba(124,58,237,0.45), transparent 60%)," +
+                "radial-gradient(50% 60% at 28% 88%, rgba(34,197,94,0.16), transparent 60%)",
             }}
           />
           {/* 光谱扫描线：缓缓下扫，呼应"逐波段成像" */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-70 blur-[1px]" />
+            <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-60 blur-[1px]" />
           </div>
-          <div className="absolute inset-0 scanlines opacity-60" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#06060c]/30 via-[#06060c]/40 to-[#06060c]" />
+          <div className="absolute inset-0 scanlines opacity-40" />
+          {/* 左侧压暗，保证标题文字在亮图上也清晰 */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#06060c] via-[#06060c]/55 to-transparent" />
+          {/* 顶/底淡入，衔接导航与下一屏 */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#06060c]/40 via-transparent to-[#06060c]" />
         </div>
 
         <div className="relative mx-auto w-full max-w-6xl px-5 pt-24">
