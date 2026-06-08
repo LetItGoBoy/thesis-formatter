@@ -19,6 +19,28 @@ export const caseLogNeverLies: DetectiveCase = {
   order: 8,
   concepts: "恢复(redo/undo) · 权限安全 · 综合",
   culprit: CULPRIT,
+  briefing: [
+    {
+      term: "预写日志（WAL）",
+      story: "可见记录被清空，但每一次改动都先写进了日志，连「改动前」的原貌都留着——这成了翻案的起点。",
+      definition: "预写日志在修改数据前先记录变更，是崩溃恢复的依据；含改前值、改后值与提交标志。",
+    },
+    {
+      term: "redo / undo（恢复）",
+      story: "已提交的改动重做一遍确保不丢（redo），未提交的撤销回到改动前（undo）。",
+      definition: "恢复时 redo 重做已提交事务、undo 回滚未提交事务，使数据库回到一致状态。",
+    },
+    {
+      term: "权限（GRANT / REVOKE）",
+      story: "谁能写、谁能删，由授权决定；把最高权限授给自己，就是越权的铁证。",
+      definition: "GRANT 授予权限、REVOKE 收回权限；最小权限原则要求只授予完成工作所必需的权限。",
+    },
+    {
+      term: "审计",
+      story: "删库、收权这类敏感操作都被审计日志一一记下，谁、何时、做了什么，一清二楚。",
+      definition: "审计记录对数据库的敏感操作，用于事后追责与取证。",
+    },
+  ],
   meta: {
     codename: "雾港谜案",
     subtitle: "终章 · 恢复与真相",

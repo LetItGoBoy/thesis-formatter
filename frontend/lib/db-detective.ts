@@ -60,6 +60,16 @@ export interface CaseAccusation {
   winNote: string;
 }
 
+/** 案前简报里的一个概念：先用本案故事讲，再给形式化定义 */
+export interface ConceptBrief {
+  /** 概念/术语名 */
+  term: string;
+  /** 用本案故事化讲解（不剧透真凶与解题） */
+  story: string;
+  /** 形式化定义 */
+  definition: string;
+}
+
 export interface DetectiveCase {
   id: string;
   /** 在季里的序号，从 1 开始 */
@@ -67,6 +77,8 @@ export interface DetectiveCase {
   /** 本案主打的知识点群（用于 hub 展示） */
   concepts: string;
   meta: CaseMeta;
+  /** 案前简报：本案要用到的概念（故事化 + 定义） */
+  briefing: ConceptBrief[];
   /** 案件数据库种子：schema + 数据 */
   seedSql: string;
   schema: SchemaTable[];

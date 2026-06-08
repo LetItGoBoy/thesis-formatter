@@ -19,6 +19,7 @@ import {
   Table2,
   Skull,
   RotateCcw,
+  BookOpen,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { SqlConsole } from "@/components/SqlConsole";
@@ -43,6 +44,7 @@ export function CaseRunner({ caseData }: { caseData: DetectiveCase }) {
     setPrefill((p) => ({ sql: `SELECT * FROM ${name};`, nonce: p.nonce + 1 }));
   }
   const [showHelp, setShowHelp] = useState(true);
+  const [showBrief, setShowBrief] = useState(true);
 
   const solvedCount = solved.filter(Boolean).length;
   const allSolved = solvedCount === levels.length;
@@ -129,6 +131,39 @@ export function CaseRunner({ caseData }: { caseData: DetectiveCase }) {
             数据库加载失败：{loadError}
           </div>
         )}
+      </section>
+
+      {/* 案前简报 · 本案概念预习（先故事、后定义；可折叠，不剧透） */}
+      <section className="mx-auto max-w-6xl px-5 pt-6">
+        <div className="rounded-2xl bg-indigo-500/5 p-5 ring-1 ring-indigo-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold text-indigo-300">
+              <BookOpen size={16} />
+              案前简报 · 本案要用到的概念
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowBrief((v) => !v)}
+              className="text-xs text-slate-400 transition hover:text-indigo-300"
+            >
+              {showBrief ? "收起" : "展开"}
+            </button>
+          </div>
+          {showBrief && (
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {caseData.briefing.map((b) => (
+                <div key={b.term} className="rounded-xl bg-slate-900/40 p-4 ring-1 ring-white/5">
+                  <div className="text-sm font-semibold text-indigo-200">{b.term}</div>
+                  <p className="mt-1.5 text-sm leading-6 text-slate-300">{b.story}</p>
+                  <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-xs leading-5 text-slate-400">
+                    <span className="font-semibold text-slate-300">定义　</span>
+                    {b.definition}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* 怎么玩 · 侦探入门 */}

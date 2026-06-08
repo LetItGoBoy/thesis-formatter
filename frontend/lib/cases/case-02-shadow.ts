@@ -18,6 +18,28 @@ export const caseShadow: DetectiveCase = {
   order: 2,
   concepts: "聚合 · GROUP BY · HAVING · ORDER BY",
   culprit: CULPRIT,
+  briefing: [
+    {
+      term: "聚合函数",
+      story: "面对一摞案卷，你想一句话说清「一共几起、损失最重多少」——把一整列数压成一个统计值。",
+      definition: "COUNT / SUM / AVG / MAX / MIN 等聚合函数，对一组行计算出单个汇总值。",
+    },
+    {
+      term: "GROUP BY（分组）",
+      story: "把分散的目击记录按「人」摞成一堆一堆，每一堆各自数一数。",
+      definition: "GROUP BY 按指定列把行分组，聚合函数对每个组分别计算。",
+    },
+    {
+      term: "HAVING（分组后过滤）",
+      story: "分好堆、数完数之后，只留下「次数够多」的那几堆——这一步发生在分组之后。",
+      definition: "HAVING 对分组聚合后的组进行过滤；WHERE 在分组前过滤行，HAVING 在分组后过滤组。",
+    },
+    {
+      term: "ORDER BY（排序）",
+      story: "把案子按损失从高到低排个队，最重的排最前面。",
+      definition: "ORDER BY 按指定列排序，DESC 降序、ASC（默认）升序。",
+    },
+  ],
   meta: {
     codename: "雾港谜案",
     subtitle: "第二案 · 聚合与分组",

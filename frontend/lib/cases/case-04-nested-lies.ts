@@ -19,6 +19,28 @@ export const caseNestedLies: DetectiveCase = {
   order: 4,
   concepts: "子查询 · EXISTS · UNION/INTERSECT/EXCEPT",
   culprit: CULPRIT,
+  briefing: [
+    {
+      term: "子查询",
+      story: "要先算出「全场平均价」这一个数，再拿它来比——查询里再套一个查询。",
+      definition: "子查询是嵌在另一个查询中的 SELECT；标量子查询返回单个值，可放进 WHERE 比较。",
+    },
+    {
+      term: "IN 子查询",
+      story: "先用内层查询查出「买过毒的人的编号」，外层再把这些编号对应的姓名取出来。",
+      definition: "WHERE 列 IN (子查询) 判断该列的值是否落在子查询返回的集合里。",
+    },
+    {
+      term: "EXISTS（相关子查询）",
+      story: "对每位宾客逐一发问：他名下，是否存在一条下毒时段的离场记录？存在即命中。",
+      definition: "EXISTS (子查询) 判断子查询是否至少返回一行；相关子查询的内层引用了外层的列。",
+    },
+    {
+      term: "集合运算 UNION / INTERSECT / EXCEPT",
+      story: "买毒的人是一份名单、离场的人是另一份——并起来、求交、相减，对应合 / 交 / 差。",
+      definition: "UNION 并集（去重）、INTERSECT 交集、EXCEPT 差集；两侧 SELECT 的列数与类型须一致。",
+    },
+  ],
   meta: {
     codename: "雾港谜案",
     subtitle: "第四案 · 嵌套与集合",

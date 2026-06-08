@@ -20,6 +20,28 @@ export const caseTampered: DetectiveCase = {
   order: 5,
   concepts: "视图 · 完整性约束 · INSERT/UPDATE/DELETE",
   culprit: CULPRIT,
+  briefing: [
+    {
+      term: "视图（View）",
+      story: "对外公示的名册不是真表，而是一条被存起来的查询——它只展示「该给外人看的」那部分。",
+      definition: "视图是基于查询定义的虚拟表，本身不存数据，查询它等于执行其底层 SELECT。",
+    },
+    {
+      term: "参照完整性（外键）",
+      story: "契据的主人编号本该对应一名真实居民；指向不存在的人，就是凭空伪造的孤儿记录。",
+      definition: "外键约束要求子表的外键值必须在父表中存在；违反即参照完整性被破坏。",
+    },
+    {
+      term: "实体完整性（主键）",
+      story: "身份证号本该唯一，名册里冒出两个相同的 id，必有一个是假身份。",
+      definition: "主键约束要求每行有唯一且非空的标识；重复主键违反实体完整性。",
+    },
+    {
+      term: "DML：INSERT / UPDATE / DELETE",
+      story: "伪造是凭空 INSERT、偷改是 UPDATE、销毁证据是 DELETE——每次写操作都在改动日志里留痕。",
+      definition: "INSERT 增、UPDATE 改、DELETE 删，合称数据操纵语言（DML），是对表中数据的写操作。",
+    },
+  ],
   meta: {
     codename: "雾港谜案",
     subtitle: "第五案 · 篡改与约束",
