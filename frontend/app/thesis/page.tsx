@@ -3,11 +3,9 @@
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
-  BookOpen,
   CheckCircle2,
   ClipboardCheck,
   FileText,
-  LayoutDashboard,
   LogIn,
   LogOut,
 } from "lucide-react";
@@ -47,51 +45,9 @@ const tools: Tool[] = [
   },
 ];
 
-type FeatureRow = {
-  eyebrow: string;
-  title: string;
-  highlight: string;
-  desc: string;
-  image: string;
-  cta: { label: string; href: string };
-  flip?: boolean;
-};
-
-const featureRows: FeatureRow[] = [
-  {
-    eyebrow: "AI 表达优化",
-    title: "像在线文档一样，",
-    highlight: "选中即改。",
-    desc: "全文按原顺序呈现，用鼠标选中任意一段或几句，即可进行学术润色、压缩精简、适当扩写与逻辑优化。改写结果先确认、可还原，绝不擅自替换。",
-    image: "/images/tool-polish.svg",
-    cta: { label: "开始润色", href: "/polish" },
-  },
-  {
-    eyebrow: "格式对齐",
-    title: "一次对齐，",
-    highlight: "全文规范。",
-    desc: "依托呼伦贝尔学院本科论文标准，自动处理中英文混排、三线表、首行缩进、目录与分页，导出可直接提交的标准 Word。",
-    image: "/images/tool-format.svg",
-    cta: { label: "查看格式工具", href: "/tools" },
-    flip: true,
-  },
-  {
-    eyebrow: "提交前体检",
-    title: "先发现问题，",
-    highlight: "再动手修改。",
-    desc: "在动笔修改前，先识别结构完整性、摘要与关键词、图表与引用规范等常见风险，给出一份清晰的修改优先级清单。",
-    image: "/images/tool-checkup.svg",
-    cta: { label: "开始体检", href: "/checkup" },
-  },
-];
-
 export default function HomePage() {
   const router = useRouter();
   const { token, phone, logout } = useAuthStore();
-
-  function goCourseWorkspace() {
-    router.push(token ? "/dashboard" : "/login");
-  }
 
   // 通用入口不直接进某个模块，而是滚到三模块区让学生自己选；
   // 只有点三个模块卡片才会进入各自的上传主页面。
@@ -114,13 +70,6 @@ export default function HomePage() {
               className="hidden rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:text-blue-600 sm:inline-flex"
             >
               论文工具
-            </button>
-            <button
-              type="button"
-              onClick={goCourseWorkspace}
-              className="hidden rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:text-blue-600 sm:inline-flex"
-            >
-              课程工作台
             </button>
             {token ? (
               <>
@@ -178,14 +127,6 @@ export default function HomePage() {
                 进入论文工具
                 <ArrowRight size={16} />
               </button>
-              <button
-                type="button"
-                onClick={goCourseWorkspace}
-                className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
-              >
-                <LayoutDashboard size={16} />
-                课程工作台
-              </button>
             </div>
           </div>
 
@@ -239,60 +180,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 交替特性行 */}
-      {featureRows.map((row, i) => (
-        <section key={row.title} className={i % 2 === 1 ? "bg-slate-50" : "bg-white"}>
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-16 lg:grid-cols-2 lg:py-20">
-            <div className={row.flip ? "lg:order-2" : ""}>
-              <p className="text-sm font-semibold text-blue-600">{row.eyebrow}</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">
-                {row.title}
-                <span className="text-blue-600">{row.highlight}</span>
-              </h2>
-              <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">{row.desc}</p>
-              <button
-                type="button"
-                onClick={() => router.push(row.cta.href)}
-                className="mt-6 inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-              >
-                {row.cta.label}
-                <ArrowRight size={15} />
-              </button>
-            </div>
-            <div className={row.flip ? "lg:order-1" : ""}>
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <img src={row.image} alt={row.eyebrow} className="h-full w-full object-cover" />
-              </div>
-            </div>
-          </div>
-        </section>
-      ))}
-
-      {/* 课程工作台 CTA */}
-      <section className="border-t border-slate-100 bg-white">
-        <div className="mx-auto max-w-6xl px-5 py-16">
-          <div className="rounded-2xl bg-slate-900 p-8 md:flex md:items-center md:justify-between md:p-10">
-            <div>
-              <p className="text-sm font-semibold text-blue-400">Course Studio</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">
-                把课程学习设计成一条可抵达的路径。
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-                以数据结构、数据库原理为起点，将资料、训练、项目和学习反馈沉淀到同一个课程空间。
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={goCourseWorkspace}
-              className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 md:mt-0"
-            >
-              <BookOpen size={16} />
-              进入课程工作台
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* 深色页脚 */}
       <footer className="bg-slate-950 text-slate-400">
         <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 sm:grid-cols-2 md:grid-cols-4">
@@ -316,10 +203,7 @@ export default function HomePage() {
           />
           <FooterCol
             title="课程空间"
-            links={[
-              { label: "课程工作台", href: token ? "/dashboard" : "/login" },
-              { label: "课程列表", href: "/curriculum" },
-            ]}
+            links={[{ label: "课程列表", href: "/curriculum" }]}
             onNav={(h) => router.push(h)}
           />
           <FooterCol
