@@ -13,4 +13,102 @@ body {
   .scroll-smooth-y {
     scroll-behavior: smooth;
   }
+
+  /* 可见光谱渐变（高光谱主题签名色）：紫→蓝→青→绿→黄→橙→红 */
+  .bg-spectrum {
+    background-image: linear-gradient(
+      90deg,
+      #7c3aed,
+      #2563eb,
+      #06b6d4,
+      #22c55e,
+      #eab308,
+      #f97316,
+      #ef4444
+    );
+  }
+  .text-spectrum {
+    background-image: linear-gradient(
+      90deg,
+      #a78bfa,
+      #60a5fa,
+      #22d3ee,
+      #4ade80,
+      #facc15,
+      #fb923c,
+      #f87171
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* 扫描线叠层（科幻 HUD 质感） */
+  .scanlines {
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.035) 0px,
+      rgba(255, 255, 255, 0.035) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  .animate-sweep {
+    animation: spectral-sweep 7s linear infinite;
+  }
+  .animate-huedrift {
+    background-size: 200% 200%;
+    animation: hue-drift 16s ease-in-out infinite;
+  }
+  .animate-float {
+    animation: float-slow 7s ease-in-out infinite;
+  }
+  .animate-glow {
+    animation: glow-pulse 4s ease-in-out infinite;
+  }
+}
+
+@keyframes spectral-sweep {
+  0% {
+    transform: translateY(-120%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(120vh);
+    opacity: 0;
+  }
+}
+@keyframes hue-drift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
 }
