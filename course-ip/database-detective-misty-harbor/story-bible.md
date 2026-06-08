@@ -28,7 +28,7 @@
 | 2 | 高频的影子 | 聚合 · GROUP BY · HAVING · ORDER BY | ✅ 已实现 |
 | 3 | 错综的关系网 | 内/外连接 · 自连接 · IS NULL | ✅ 已实现 |
 | 4 | 嵌套的谎言 | 子查询 · EXISTS · UNION/INTERSECT/EXCEPT | ✅ 已实现 |
-| 5 | 被篡改的档案 | INSERT/UPDATE/DELETE · 视图 · 完整性约束 | 规划中 |
+| 5 | 被篡改的档案 | INSERT/UPDATE/DELETE · 视图 · 完整性约束 | ✅ 已实现 |
 | 6 | 范式的裂缝 | 函数依赖 · 范式 · 数据冗余异常 | 规划中 |
 | 7 | 看不见的转账 | 事务 ACID · 并发控制 · 隔离级别 | 规划中 |
 | 8 | 日志不会说谎（终章） | 恢复(redo/undo) · 权限安全 · 综合 | 规划中 |
@@ -53,6 +53,10 @@
 ### 第 4 案《嵌套的谎言》
 
 顾府寿宴投毒案，毒物鹤顶红。**6 关层层递进**：标量子查询(AVG) → IN 子查询(买毒者) → EXISTS 相关子查询(下毒时段离场者) → UNION 并出排查名单 → INTERSECT 求交(既买毒又离场) → EXCEPT 减去有人证者，锁定真凶世侄**陆衡**。5 张表：crime_report、guests、purchases、banquet_log、cleared。蛛丝马迹：**把推理写成集合的合/交/差**。
+
+### 第 5 案《被篡改的档案》
+
+校对者直接篡改城市档案库。**6 关层层递进**：视图入门(查 public_registry) → 视图遮蔽 vs 基表(揪出被藏的通缉犯) → 参照完整性(外键孤儿=伪造契据) → 实体完整性(重复主键=伪造身份) → DML 痕迹(change_log 的 UPDATE/DELETE) → 分组锁定篡改者档案员**周慎**。4 张表 + 1 视图：residents、public_registry(视图)、property_deeds、change_log。蛛丝马迹：**约束的缺失就是篡改得手的根源**——伪造记录=非法 INSERT、偷改=UPDATE、销毁证据=DELETE。
 
 > 设计约定：**每案至少 6 关**，难度阶梯式上升——前面关卡铺垫单个概念，后面关卡组合运用、收窄到唯一真凶。
 
