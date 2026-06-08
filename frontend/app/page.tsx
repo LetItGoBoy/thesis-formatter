@@ -93,7 +93,7 @@ const WORKS = [
     accent: "from-sky-500/20 to-blue-600/10",
     ring: "ring-sky-400/30",
     links: [
-      { label: "进入工具", href: "/tools", primary: true },
+      { label: "进入论文助手", href: "/thesis", primary: true },
       { label: "提交前体检", href: "/checkup", primary: false },
     ],
   },
