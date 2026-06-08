@@ -16,6 +16,28 @@ export const caseBackAlley: DetectiveCase = {
   order: 1,
   concepts: "SELECT · WHERE · LIKE · JOIN",
   culprit: CULPRIT,
+  briefing: [
+    {
+      term: "SELECT … FROM …（查询）",
+      story: "查档侦探办案第一步：从哪张档案表、取哪几列。这就是 SELECT 列 FROM 表。",
+      definition: "SELECT 指定要返回的列，FROM 指定来源表；SELECT * 返回全部列。",
+    },
+    {
+      term: "WHERE（条件筛选）",
+      story: "档案成千上万，你只要「某天、某地、某类」那一条——用条件把无关卷宗挡在门外。",
+      definition: "WHERE 对行进行过滤，只保留满足条件的行；多个条件可用 AND / OR 组合。",
+    },
+    {
+      term: "LIKE（模糊匹配）",
+      story: "车牌只记得含「X7」，记不全——用通配符做模糊匹配，含这几个字符的都捞出来。",
+      definition: "LIKE 配合通配符 %（任意多个字符）、_（单个字符）做模式匹配。",
+    },
+    {
+      term: "JOIN（多表连接）",
+      story: "打卡在一张表、车牌在另一张表、姓名在第三张表，要把同一个人的线索拼成一行。",
+      definition: "JOIN 按连接条件 ON 把多张表的行拼接；INNER JOIN 只保留两边都匹配的行。",
+    },
+  ],
   meta: {
     codename: "雾港谜案",
     subtitle: "第一案 · SQL 入门",

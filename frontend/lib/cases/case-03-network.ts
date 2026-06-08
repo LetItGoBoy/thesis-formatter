@@ -19,6 +19,28 @@ export const caseNetwork: DetectiveCase = {
   order: 3,
   concepts: "INNER JOIN · 自连接 · 外连接 · IS NULL",
   culprit: CULPRIT,
+  briefing: [
+    {
+      term: "INNER JOIN（内连接）",
+      story: "报告里受害人只写了编号，姓名在另一张表——按编号把两表对上，才知道是谁。",
+      definition: "INNER JOIN 只返回两表按 ON 条件都能匹配上的行。",
+    },
+    {
+      term: "自连接（self-join）",
+      story: "员工和上级在同一张表里，员工的 manager_id 指向同表另一个人——把表和它自己连一次，谁向谁汇报就清楚了。",
+      definition: "自连接是一张表用不同别名与自身连接，用于表达同表内行与行的关系（如上下级）。",
+    },
+    {
+      term: "LEFT JOIN（左外连接）",
+      story: "把全体员工和不在场证明拼起来——没有证明的人也要留下，证明那栏就空着。",
+      definition: "LEFT JOIN 保留左表全部行，右表无匹配处以 NULL 填充，从而保留「缺失」本身。",
+    },
+    {
+      term: "NULL 与 IS NULL",
+      story: "外连接之后，证明栏为空的，正是那些拿不出不在场证明的嫌疑人——空缺即线索。",
+      definition: "NULL 表示「没有值」；判断空值用 IS NULL / IS NOT NULL，不能用 = NULL。",
+    },
+  ],
   meta: {
     codename: "雾港谜案",
     subtitle: "第三案 · 连接的艺术",

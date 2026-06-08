@@ -20,6 +20,28 @@ export const caseInvisibleTransfer: DetectiveCase = {
   order: 7,
   concepts: "事务 ACID · 并发 · 隔离级别 · 死锁",
   culprit: CULPRIT,
+  briefing: [
+    {
+      term: "事务与原子性",
+      story: "一笔转账 = 扣款 + 入账两步，要么同生、要么同死；只成一半，钱就凭空消失。",
+      definition: "事务是一组要么全做、要么全不做的操作；原子性（Atomicity）保证其不可分割，是 ACID 之一。",
+    },
+    {
+      term: "提交与回滚",
+      story: "committed 表示这步已生效，rolledback 表示已撤销。半途回滚的那一步，正是黑账的破绽。",
+      definition: "COMMIT 使事务改动永久生效，ROLLBACK 撤销事务的全部改动。",
+    },
+    {
+      term: "脏读与隔离级别",
+      story: "作案者读到了别的事务尚未提交的余额，掐着点下手——这是隔离不足留下的漏洞。",
+      definition: "脏读指读到了未提交的数据；提高隔离级别可避免脏读、不可重复读、幻读等并发异常。",
+    },
+    {
+      term: "死锁",
+      story: "两笔事务各持一把锁，又都在等对方手里的那把，谁也不肯让，系统就此卡死。",
+      definition: "死锁是两个及以上事务互相等待对方持有的资源，形成循环等待、无法推进。",
+    },
+  ],
   meta: {
     codename: "雾港谜案",
     subtitle: "第七案 · 事务与并发",
