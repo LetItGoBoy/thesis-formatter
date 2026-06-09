@@ -161,29 +161,20 @@ export default function HomePage() {
       </nav>
 
       {/* ================= HERO ================= */}
-      <section id="top" className="relative flex min-h-screen items-center overflow-hidden">
-        {/* 背景：纯深空底色 + 轻微星云 + 扫描线 */}
+      <section id="top" className="relative min-h-screen overflow-hidden">
+        {/* 背景：纯深空底色 + 扫描线 */}
         <div className="absolute inset-0 bg-[#06060c]">
-          <div
-            className="absolute inset-0 animate-huedrift opacity-20"
-            style={{
-              backgroundImage:
-                "radial-gradient(55% 70% at 75% 40%, rgba(99,102,241,0.35), transparent 65%)," +
-                "radial-gradient(40% 50% at 15% 75%, rgba(34,197,94,0.12), transparent 60%)",
-            }}
-          />
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-50 blur-[1px]" />
+            <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-40 blur-[1px]" />
           </div>
-          <div className="absolute inset-0 scanlines opacity-15" />
-          {/* 底部渐变衔接下一屏 */}
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#06060c] to-transparent" />
+          <div className="absolute inset-0 scanlines opacity-10" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#06060c] to-transparent" />
         </div>
 
-        {/* 两栏：左文字 · 右图 */}
-        <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-5 pb-12 pt-24 lg:grid-cols-2">
+        {/* 全宽两栏：左文字 · 右图（无容器限制宽度） */}
+        <div className="relative grid min-h-screen w-full items-center lg:grid-cols-[44%_56%]">
           {/* 左栏 */}
-          <div>
+          <div className="px-8 pb-16 pt-28 lg:pl-16 lg:pr-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-[0.2em] text-slate-300 backdrop-blur">
               <span className="bg-spectrum h-2 w-2 rounded-full" />
               HYPERSPECTRAL · AI · RESEARCH
@@ -226,20 +217,12 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* 右栏：高光谱数据立方体图 */}
-          <div className="relative flex items-center justify-center">
-            {/* 辉光光晕 */}
-            <div
-              className="absolute inset-0 -z-10 animate-glow rounded-full blur-3xl opacity-30"
-              style={{
-                background:
-                  "radial-gradient(ellipse at center, rgba(99,102,241,0.6) 0%, rgba(34,197,94,0.2) 50%, transparent 75%)",
-              }}
-            />
+          {/* 右栏：高光谱数据立方体图，撑满列宽 */}
+          <div className="flex items-center justify-center px-4 pb-16 pt-20 lg:px-8 lg:py-24">
             <img
               src="/images/hero-bg.png"
               alt="高光谱数据立方体"
-              className="w-full max-w-[520px] drop-shadow-[0_0_48px_rgba(99,102,241,0.45)] lg:max-w-full"
+              className="w-full"
             />
           </div>
         </div>
