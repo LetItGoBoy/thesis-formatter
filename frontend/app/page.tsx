@@ -161,73 +161,87 @@ export default function HomePage() {
       </nav>
 
       {/* ================= HERO ================= */}
-      <section id="top" className="relative flex min-h-screen items-center">
-        {/* 背景：大图 + 光谱星云渐变兜底 + 扫描线 + 暗场遮罩 */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[#06060c]" />
-          {/* 🖼️ 放 /public/images/hero-bg.png 即生效；未放时下面的光谱星云渐变作占位 */}
-          <div className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center" />
-          {/* 星云渐变：放图后调低，作为氛围增强 / 无图时的兜底 */}
+      <section id="top" className="relative flex min-h-screen items-center overflow-hidden">
+        {/* 背景：纯深空底色 + 轻微星云 + 扫描线 */}
+        <div className="absolute inset-0 bg-[#06060c]">
           <div
-            className="absolute inset-0 animate-huedrift opacity-35"
+            className="absolute inset-0 animate-huedrift opacity-20"
             style={{
               backgroundImage:
-                "radial-gradient(60% 80% at 16% 24%, rgba(124,58,237,0.45), transparent 60%)," +
-                "radial-gradient(50% 60% at 28% 88%, rgba(34,197,94,0.16), transparent 60%)",
+                "radial-gradient(55% 70% at 75% 40%, rgba(99,102,241,0.35), transparent 65%)," +
+                "radial-gradient(40% 50% at 15% 75%, rgba(34,197,94,0.12), transparent 60%)",
             }}
           />
-          {/* 光谱扫描线：缓缓下扫，呼应"逐波段成像" */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-60 blur-[1px]" />
+            <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-50 blur-[1px]" />
           </div>
-          <div className="absolute inset-0 scanlines opacity-40" />
-          {/* 左侧压暗，保证标题文字在亮图上也清晰 */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#06060c] via-[#06060c]/55 to-transparent" />
-          {/* 顶/底淡入，衔接导航与下一屏 */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#06060c]/40 via-transparent to-[#06060c]" />
+          <div className="absolute inset-0 scanlines opacity-15" />
+          {/* 底部渐变衔接下一屏 */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#06060c] to-transparent" />
         </div>
 
-        <div className="relative mx-auto w-full max-w-6xl px-5 pt-24">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-[0.2em] text-slate-300 backdrop-blur">
-            <span className="bg-spectrum h-2 w-2 rounded-full" />
-            HYPERSPECTRAL · AI · RESEARCH
+        {/* 两栏：左文字 · 右图 */}
+        <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-5 pb-12 pt-24 lg:grid-cols-2">
+          {/* 左栏 */}
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-[0.2em] text-slate-300 backdrop-blur">
+              <span className="bg-spectrum h-2 w-2 rounded-full" />
+              HYPERSPECTRAL · AI · RESEARCH
+            </div>
+
+            <h1 className="mt-7 text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
+              <span className="text-spectrum animate-huedrift">{PROFILE.name}</span>
+            </h1>
+            <div className="mt-3 font-mono text-sm tracking-[0.35em] text-slate-500">{PROFILE.enName}</div>
+
+            <p className="mt-6 max-w-lg text-xl font-light leading-snug text-slate-200 md:text-2xl">
+              {PROFILE.tagline}
+            </p>
+            <p className="mt-4 text-sm leading-7 text-slate-400">
+              {PROFILE.title} · {PROFILE.field}
+            </p>
+
+            <div className="mt-9 flex flex-wrap gap-3">
+              <button
+                onClick={() => scrollTo("works")}
+                className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+              >
+                看我的作品
+                <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
+              </button>
+              <button
+                onClick={() => scrollTo("research")}
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-slate-100 backdrop-blur transition hover:bg-white/10"
+              >
+                <Microscope size={16} />
+                在研项目
+              </button>
+            </div>
+
+            <button
+              onClick={() => scrollTo("about")}
+              className="mt-14 inline-flex animate-float items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-300"
+            >
+              向下滚动 <ChevronDown size={14} />
+            </button>
           </div>
 
-          <h1 className="mt-7 text-6xl font-black leading-[0.95] tracking-tight md:text-8xl">
-            <span className="text-spectrum animate-huedrift">{PROFILE.name}</span>
-          </h1>
-          <div className="mt-3 font-mono text-sm tracking-[0.35em] text-slate-500">{PROFILE.enName}</div>
-
-          <p className="mt-6 max-w-2xl text-2xl font-light leading-snug text-slate-200 md:text-3xl">
-            {PROFILE.tagline}
-          </p>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400">
-            {PROFILE.title} · {PROFILE.field}
-          </p>
-
-          <div className="mt-9 flex flex-wrap gap-3">
-            <button
-              onClick={() => scrollTo("works")}
-              className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
-            >
-              看我的作品
-              <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
-            </button>
-            <button
-              onClick={() => scrollTo("research")}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-slate-100 backdrop-blur transition hover:bg-white/10"
-            >
-              <Microscope size={16} />
-              在研项目
-            </button>
+          {/* 右栏：高光谱数据立方体图 */}
+          <div className="relative flex items-center justify-center">
+            {/* 辉光光晕 */}
+            <div
+              className="absolute inset-0 -z-10 animate-glow rounded-full blur-3xl opacity-30"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, rgba(99,102,241,0.6) 0%, rgba(34,197,94,0.2) 50%, transparent 75%)",
+              }}
+            />
+            <img
+              src="/images/hero-bg.png"
+              alt="高光谱数据立方体"
+              className="w-full max-w-[520px] drop-shadow-[0_0_48px_rgba(99,102,241,0.45)] lg:max-w-full"
+            />
           </div>
-
-          <button
-            onClick={() => scrollTo("about")}
-            className="mt-16 inline-flex animate-float items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-300"
-          >
-            向下滚动 <ChevronDown size={14} />
-          </button>
         </div>
       </section>
 
