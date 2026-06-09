@@ -161,20 +161,18 @@ export default function HomePage() {
       </nav>
 
       {/* ================= HERO ================= */}
-      <section id="top" className="relative min-h-screen overflow-hidden">
-        {/* 背景：纯深空底色 + 扫描线 */}
-        <div className="absolute inset-0 bg-[#06060c]">
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-40 blur-[1px]" />
-          </div>
+      <section id="top" className="relative flex min-h-screen items-center overflow-hidden bg-[#06060c]">
+        {/* 背景：扫描线 + 底部渐变 */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-40 blur-[1px]" />
           <div className="absolute inset-0 scanlines opacity-10" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#06060c] to-transparent" />
         </div>
 
-        {/* 全宽两栏：左文字 · 右图（无容器限制宽度） */}
-        <div className="relative grid min-h-screen w-full items-center lg:grid-cols-[44%_56%]">
-          {/* 左栏 */}
-          <div className="px-8 pb-16 pt-28 lg:pl-16 lg:pr-10">
+        {/* 网格：左侧文字固定窄列，右侧图片出血到视口右缘（保证大而不压字） */}
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-6 pt-24 lg:grid-cols-[minmax(0,440px)_1fr] lg:px-12 lg:pt-0">
+          {/* 左栏：文字 */}
+          <div className="z-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-[0.2em] text-slate-300 backdrop-blur">
               <span className="bg-spectrum h-2 w-2 rounded-full" />
               HYPERSPECTRAL · AI · RESEARCH
@@ -185,7 +183,7 @@ export default function HomePage() {
             </h1>
             <div className="mt-3 font-mono text-sm tracking-[0.35em] text-slate-500">{PROFILE.enName}</div>
 
-            <p className="mt-6 max-w-lg text-xl font-light leading-snug text-slate-200 md:text-2xl">
+            <p className="mt-6 text-xl font-light leading-snug text-slate-200 md:text-2xl">
               {PROFILE.tagline}
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-400">
@@ -211,18 +209,18 @@ export default function HomePage() {
 
             <button
               onClick={() => scrollTo("about")}
-              className="mt-14 inline-flex animate-float items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-300"
+              className="mt-14 hidden animate-float items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-300 lg:inline-flex"
             >
               向下滚动 <ChevronDown size={14} />
             </button>
           </div>
 
-          {/* 右栏：高光谱数据立方体图，撑满列宽 */}
-          <div className="flex items-center justify-center px-4 pb-16 pt-20 lg:px-8 lg:py-24">
+          {/* 右栏：图片出血到视口右缘 */}
+          <div className="lg:mr-[calc(50%-50vw)]">
             <img
               src="/images/hero-bg.png"
               alt="高光谱数据立方体"
-              className="w-full"
+              className="h-auto w-full object-contain"
             />
           </div>
         </div>
