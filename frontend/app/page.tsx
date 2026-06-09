@@ -220,7 +220,7 @@ export default function HomePage() {
             <img
               src="/images/hero-bg.png"
               alt="高光谱数据立方体"
-              className="h-auto w-full object-contain"
+              className="h-auto w-[60%] object-contain"
             />
           </div>
         </div>
