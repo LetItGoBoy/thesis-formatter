@@ -35,12 +35,12 @@ import { useAuthStore } from "@/lib/auth-store";
 // 个人信息（改这里）
 // ============================================================
 const PROFILE = {
-  name: "你的名字", // ← 改成你的真名
-  enName: "YOUR NAME",
+  name: "同乐科技", // 品牌名（顶栏 / 页脚）
+  headline: "光谱之外", // Hero 大标题（贴合高光谱主题，不露真名）
   title: "高校教师 · AI 研究者",
   field: "高光谱图像 / 深度学习",
   // Hero 一句话主张
-  tagline: "在像素背后，每一束光都藏着一条光谱。",
+  tagline: "超越可见之光，让机器读懂万物的光谱指纹。",
   intro:
     "我是一名高校教师，研究方向是高光谱图像与深度学习——让机器看见人眼看不见的光谱维度。课余沉迷电影与动漫，也喜欢把课程做成能玩的东西。这里收集我的研究、作品与课程资料。",
   tags: ["高光谱成像", "深度学习", "遥感 / 图像分类", "高校教学", "电影 & 动漫"],
@@ -179,9 +179,8 @@ export default function HomePage() {
             </div>
 
             <h1 className="mt-7 text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
-              <span className="text-spectrum animate-huedrift">{PROFILE.name}</span>
+              <span className="text-spectrum animate-huedrift">{PROFILE.headline}</span>
             </h1>
-            <div className="mt-3 font-mono text-sm tracking-[0.35em] text-slate-500">{PROFILE.enName}</div>
 
             <p className="mt-6 text-xl font-light leading-snug text-slate-200 md:text-2xl">
               {PROFILE.tagline}
