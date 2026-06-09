@@ -8,7 +8,7 @@
  * 板块：Hero（大背景图占位）→ 关于我 → 在研项目 → 作品 → 课程资料 → 页脚。
  *
  * ⚙️ 个人信息集中在下面的 PROFILE / RESEARCH / WORKS / TEACHING，改这里即可。
- * 🖼️ 大背景图：把图片放到 /public/images/hero-bg.jpg 自动生效；未放则显示光谱星云渐变占位。
+ * 🖼️ 大背景图：把图片放到 /public/images/hero-bg.png 自动生效；未放则显示光谱星云渐变占位。
  */
 import { useRouter } from "next/navigation";
 import {
@@ -165,8 +165,8 @@ export default function HomePage() {
         {/* 背景：大图 + 光谱星云渐变兜底 + 扫描线 + 暗场遮罩 */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[#06060c]" />
-          {/* 🖼️ 放 /public/images/hero-bg.jpg 即生效；未放时下面的光谱星云渐变作占位 */}
-          <div className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center" />
+          {/* 🖼️ 放 /public/images/hero-bg.png 即生效；未放时下面的光谱星云渐变作占位 */}
+          <div className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center" />
           {/* 星云渐变：放图后调低，作为氛围增强 / 无图时的兜底 */}
           <div
             className="absolute inset-0 animate-huedrift opacity-35"
