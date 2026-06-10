@@ -162,11 +162,14 @@ export default function HomePage() {
 
       {/* ================= HERO ================= */}
       <section id="top" className="relative flex min-h-screen items-center overflow-hidden bg-[#06060c]">
-        {/* 背景：扫描线 + 底部渐变 */}
+        {/* 背景：静态叠层 */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-40 blur-[1px]" />
           <div className="absolute inset-0 scanlines opacity-10" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#06060c] to-transparent" />
+        </div>
+        {/* 光谱扫描线：z-20 覆盖图片层 */}
+        <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
+          <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-50 blur-[1px]" />
         </div>
 
         {/* 网格：左侧文字固定窄列，右侧图片出血到视口右缘（保证大而不压字） */}
