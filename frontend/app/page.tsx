@@ -5,9 +5,11 @@
  * frontend/app/page.tsx
  *
  * 主题：高光谱（可见光谱分光）——深空底色 + 光谱渐变 + 扫描线/辉光的电影感 HUD。
- * 板块：Hero（大背景图占位）→ 关于我 → 在研项目 → 作品 → 课程资料 → 页脚。
+ * 板块：Hero → 关于(含 NOW) → 研究(含高光谱交互 Demo) → 成果 → 作品 → 教学
+ *       → 履历 → 影响我的 → 联系 → 页脚。
  *
- * ⚙️ 个人信息集中在下面的 PROFILE / RESEARCH / WORKS / TEACHING，改这里即可。
+ * ⚙️ 个人/内容数据集中在下面的 PROFILE / NOW / LINKS / RESEARCH / PUBLICATIONS /
+ *   WORKS / TEACHING / TIMELINE / FILMS，改这里即可。
  * 🖼️ 大背景图：把图片放到 /public/images/hero-bg.png 自动生效；未放则显示光谱星云渐变占位。
  */
 import { useRouter } from "next/navigation";
@@ -26,9 +28,18 @@ import {
   FileText,
   Database,
   BookOpen,
+  Code2,
+  GraduationCap,
+  Fingerprint,
+  Radio,
+  Clapperboard,
+  Award,
+  ExternalLink,
 } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { MusicPlayer } from "@/components/MusicPlayer";
+import { SpectralDemo } from "@/components/SpectralDemo";
+import { Reveal } from "@/components/Reveal";
 import { useAuthStore } from "@/lib/auth-store";
 
 // ============================================================
@@ -46,6 +57,59 @@ const PROFILE = {
   tags: ["高光谱成像", "深度学习", "遥感 / 图像分类", "高校教学", "电影 & 动漫"],
   email: "you@example.edu.cn", // ← 改成你的邮箱
 };
+
+// 「最近在做」（一句话动态，按需替换）
+const NOW = [
+  "本学期在带《数据库原理》《数据结构》两门课。",
+  "在投一篇高光谱小样本分类的论文。",
+  "在迭代课程游戏《雾港档案》与论文助手。",
+];
+
+// 外部链接（把 # 换成你的真实主页；留空的可删）
+const LINKS = [
+  { label: "GitHub", href: "#", icon: Code2 },
+  { label: "Google Scholar", href: "#", icon: GraduationCap },
+  { label: "ORCID", href: "#", icon: Fingerprint },
+];
+
+// 论文 / 成果（按需替换；type: 期刊 / 会议）
+const PUBLICATIONS = [
+  {
+    title: "面向小样本的轻量化光谱—空间高光谱图像分类网络",
+    authors: "你的名字, 合作者 A, 合作者 B",
+    venue: "示例期刊 / 会议",
+    year: "2025",
+    type: "期刊",
+    award: "",
+    links: [
+      { label: "PDF", href: "#" },
+      { label: "代码", href: "#" },
+      { label: "BibTeX", href: "#" },
+    ],
+  },
+  {
+    title: "高光谱与多源遥感的特征级融合方法研究",
+    authors: "你的名字, 合作者 C",
+    venue: "示例会议",
+    year: "2024",
+    type: "会议",
+    award: "最佳论文提名",
+    links: [
+      { label: "PDF", href: "#" },
+      { label: "BibTeX", href: "#" },
+    ],
+  },
+];
+
+// 履历时间线（按需替换）
+const TIMELINE = [
+  { year: "2023 — 至今", title: "高校教师 · AI 研究", desc: "从事高光谱图像与深度学习教学科研。" },
+  { year: "2020 — 2023", title: "博士 / 硕士阶段", desc: "遥感图像处理与机器学习方向。" },
+  { year: "更早", title: "起点", desc: "对图像、光与计算的最初兴趣。" },
+];
+
+// 影响我的影视 / 番剧（人格化记忆点，按需替换）
+const FILMS = ["你的名字", "星际穿越", "攻壳机动队", "银翼杀手 2049", "EVA", "瑞克和莫蒂"];
 
 const STATS = [
   { k: "研究方向", v: "高光谱图像" },
@@ -139,8 +203,9 @@ export default function HomePage() {
             {[
               { label: "关于", id: "about" },
               { label: "研究", id: "research" },
+              { label: "成果", id: "publications" },
               { label: "作品", id: "works" },
-              { label: "课程", id: "teaching" },
+              { label: "教学", id: "teaching" },
             ].map((n) => (
               <button
                 key={n.id}
@@ -250,6 +315,22 @@ export default function HomePage() {
               <Film size={15} className="text-fuchsia-400" />
               片单与番剧，是我灵感的另一半。
             </div>
+
+            {/* 最近在做 */}
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-emerald-300">
+                <Radio size={14} className="animate-glow" />
+                NOW · 最近在做
+              </div>
+              <ul className="mt-3 space-y-2">
+                {NOW.map((n) => (
+                  <li key={n} className="flex gap-2 text-sm leading-6 text-slate-300">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-spectrum" />
+                    {n}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 self-start">
@@ -264,6 +345,25 @@ export default function HomePage() {
             ))}
             {/* 光谱条装饰 */}
             <div className="col-span-2 mt-1 h-1.5 w-full rounded-full bg-spectrum opacity-80" />
+
+            {/* 外部链接 */}
+            <div className="col-span-2 mt-2 flex flex-wrap gap-2">
+              {LINKS.map((l) => {
+                const Icon = l.icon;
+                return (
+                  <a
+                    key={l.label}
+                    href={l.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs text-slate-300 transition hover:bg-white/10 hover:text-white"
+                  >
+                    <Icon size={14} />
+                    {l.label}
+                  </a>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -312,13 +412,82 @@ export default function HomePage() {
               );
             })}
           </div>
+
+          {/* 高光谱交互 Demo */}
+          <Reveal className="mt-14">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-8">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">试一试 · 光谱指纹</h3>
+                  <p className="mt-1 text-sm text-slate-400">
+                    高光谱影像里，每个像素都是一条曲线。移动鼠标，看不同地物如何被「光」区分。
+                  </p>
+                </div>
+                <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] font-mono tracking-wider text-cyan-300 ring-1 ring-white/10">
+                  INTERACTIVE
+                </span>
+              </div>
+              <SpectralDemo />
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ================= 成果 / 论文 ================= */}
+      <section id="publications" className="relative border-t border-white/5 py-24">
+        <div className="mx-auto max-w-6xl px-5">
+          <SectionLabel n="03" title="成果" en="PUBLICATIONS" />
+          <div className="mt-10 space-y-3">
+            {PUBLICATIONS.map((p) => (
+              <Reveal key={p.title}>
+                <div className="group rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-white/20 hover:bg-white/[0.06]">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-md bg-white/5 px-2 py-0.5 text-[11px] font-medium text-cyan-300 ring-1 ring-white/10">
+                          {p.type}
+                        </span>
+                        <span className="font-mono text-xs text-slate-500">{p.year}</span>
+                        {p.award ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-300 ring-1 ring-amber-500/20">
+                            <Award size={11} />
+                            {p.award}
+                          </span>
+                        ) : null}
+                      </div>
+                      <h3 className="mt-2.5 text-base font-semibold leading-6 text-white">
+                        {p.title}
+                      </h3>
+                      <p className="mt-1.5 text-sm text-slate-400">{p.authors}</p>
+                      <p className="mt-0.5 text-sm italic text-slate-500">{p.venue}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {p.links.map((l) => (
+                      <a
+                        key={l.label}
+                        href={l.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:bg-white/10 hover:text-white"
+                      >
+                        {l.label}
+                        <ExternalLink size={12} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <p className="mt-5 text-xs text-slate-600">* 论文列表为占位示例，替换 PUBLICATIONS 即可。</p>
         </div>
       </section>
 
       {/* ================= 作品 ================= */}
       <section id="works" className="relative border-t border-white/5 py-24">
         <div className="mx-auto max-w-6xl px-5">
-          <SectionLabel n="03" title="作品" en="WORKS" />
+          <SectionLabel n="04" title="作品" en="WORKS" />
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             {WORKS.map((w) => {
               const Icon = w.icon;
@@ -369,7 +538,7 @@ export default function HomePage() {
       {/* ================= 课程资料 ================= */}
       <section id="teaching" className="relative border-t border-white/5 py-24">
         <div className="mx-auto max-w-6xl px-5">
-          <SectionLabel n="04" title="课程资料" en="TEACHING" />
+          <SectionLabel n="05" title="教学" en="TEACHING" />
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {TEACHING.map((t) => {
               const Icon = t.icon;
@@ -388,6 +557,92 @@ export default function HomePage() {
                   </div>
                   <ArrowRight size={18} className="text-slate-500 transition group-hover:translate-x-1 group-hover:text-white" />
                 </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ================= 履历 ================= */}
+      <section id="timeline" className="relative border-t border-white/5 py-24">
+        <div className="mx-auto max-w-6xl px-5">
+          <SectionLabel n="06" title="履历" en="TIMELINE" />
+          <div className="relative mt-12 pl-6">
+            {/* 竖向光谱轴 */}
+            <div className="bg-spectrum absolute left-0 top-1 h-[calc(100%-0.5rem)] w-0.5 rounded-full opacity-70" />
+            <div className="space-y-9">
+              {TIMELINE.map((t) => (
+                <Reveal key={t.year}>
+                  <div className="relative">
+                    <span className="absolute -left-[1.65rem] top-1.5 h-3 w-3 rounded-full bg-white ring-4 ring-[#06060c]" />
+                    <div className="font-mono text-xs tracking-wider text-slate-500">{t.year}</div>
+                    <h3 className="mt-1 text-lg font-semibold text-white">{t.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-400">{t.desc}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================= 影响我的作品 ================= */}
+      <section id="films" className="relative border-t border-white/5 py-24">
+        <div className="mx-auto max-w-6xl px-5">
+          <SectionLabel n="07" title="影响我的" en="OFF-DUTY" />
+          <p className="mt-6 flex items-center gap-2 text-sm text-slate-400">
+            <Clapperboard size={15} className="text-fuchsia-400" />
+            实验室之外，这些电影与番剧塑造了我看世界的方式。
+          </p>
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {FILMS.map((f, i) => (
+              <div
+                key={f}
+                className="group relative flex aspect-[3/4] items-end overflow-hidden rounded-xl border border-white/10 p-3"
+                style={{
+                  background: `linear-gradient(160deg, hsl(${(i * 57) % 360} 70% 22%), hsl(${
+                    (i * 57 + 40) % 360
+                  } 65% 10%))`,
+                }}
+              >
+                <div className="scanlines pointer-events-none absolute inset-0 opacity-30" />
+                <span className="relative text-sm font-semibold leading-tight text-white/95 drop-shadow">
+                  {f}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ================= 联系 ================= */}
+      <section id="contact" className="relative border-t border-white/5 py-24">
+        <div className="mx-auto max-w-3xl px-5 text-center">
+          <SectionLabel n="08" title="联系" en="CONTACT" />
+          <p className="mx-auto mt-7 max-w-xl text-lg font-light leading-relaxed text-slate-300">
+            研究合作、教学交流、或只是想聊聊光谱与电影——欢迎随时来信。
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href={`mailto:${PROFILE.email}`}
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+            >
+              <Mail size={16} />
+              发邮件
+            </a>
+            {LINKS.map((l) => {
+              const Icon = l.icon;
+              return (
+                <a
+                  key={l.label}
+                  href={l.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
+                >
+                  <Icon size={16} />
+                  {l.label}
+                </a>
               );
             })}
           </div>
