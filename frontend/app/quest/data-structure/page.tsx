@@ -129,6 +129,35 @@ export default function DataStructureQuestPage() {
         </div>
       </section>
 
+      {/* 霓虹栈城 2.0 · 可玩城区入口 */}
+      <section className="mx-auto max-w-6xl px-5 pb-8">
+        <button
+          type="button"
+          onClick={() => router.push("/quest/data-structure/stack")}
+          className="group relative block w-full overflow-hidden rounded-[2rem] bg-[#0b0b18] p-7 text-left ring-1 ring-cyan-400/30 transition hover:-translate-y-0.5 hover:ring-cyan-300/60 md:p-9"
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_120%_at_85%_20%,rgba(34,211,238,0.16),transparent_60%)]" />
+          <div className="relative flex flex-wrap items-center justify-between gap-5">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-cyan-400/10 px-3 py-1 font-mono text-[11px] tracking-[0.25em] text-cyan-300 ring-1 ring-cyan-400/25">
+                NEW · 可玩城区
+              </div>
+              <h2 className="mt-4 text-3xl font-black tracking-tight text-white md:text-4xl">
+                货运塔 <span className="text-cyan-300">· 栈</span>
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-400">
+                不再读小说答题——亲手操作塔吊：入塔、装车、限高、倒塔。
+                六个递进任务，把 LIFO、栈混洗、栈溢出玩进手感里。
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-sm font-bold text-slate-950 transition group-hover:bg-cyan-300">
+              进入城区
+              <Sparkles size={16} />
+            </span>
+          </div>
+        </button>
+      </section>
+
       <section id="chapter-map" className="mx-auto max-w-6xl px-5 pb-10">
         <div className="mb-4 flex items-end justify-between">
           <div>
