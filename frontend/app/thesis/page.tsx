@@ -259,7 +259,7 @@ function HeroPhoto() {
     <div className="relative">
       <div className="overflow-hidden rounded-2xl shadow-2xl shadow-slate-300/50 ring-1 ring-slate-200">
         <img
-          src="/images/hero-editing.jpg"
+          src="/images/hero-editing.svg"
           alt="手持红笔批改论文"
           className="block w-full object-cover"
           style={{ aspectRatio: "4/3" }}
