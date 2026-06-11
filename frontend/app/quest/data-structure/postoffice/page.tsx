@@ -376,7 +376,7 @@ export default function PostOfficePage() {
               type="button"
               onClick={confirmNotExist}
               disabled={status !== "playing"}
-              className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-300 transition hover:bg-amber-500/20 disabled:opacity-40"
+              className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-600 transition hover:bg-amber-500/20 disabled:opacity-40"
             >
               确认不存在
             </button>
@@ -385,12 +385,12 @@ export default function PostOfficePage() {
             <button
               type="button"
               onClick={doRehash}
-              className="w-full animate-glow rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2.5 text-sm font-bold text-amber-300 transition hover:bg-amber-500/25"
+              className="w-full animate-glow rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2.5 text-sm font-bold text-amber-600 transition hover:bg-amber-500/25"
             >
               🏗️ 扩容搬家（{size} → {level.newSize} 格）
             </button>
           )}
-          <div className="rounded-xl bg-white/[0.04] p-3 font-mono text-[11px] leading-6 text-slate-300 ring-1 ring-white/5">
+          <div className="rounded-xl bg-slate-50 p-3 font-mono text-[11px] leading-6 text-slate-600 ring-1 ring-slate-200">
             H(k) = k mod {size}
             <br />
             α = {filled}/{size} = {(filled / size).toFixed(2)}
@@ -403,15 +403,15 @@ export default function PostOfficePage() {
         <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">
           {level.mode === "lookup" ? "PICKUP · 取信请求" : "INBOX · 待投递"}
         </div>
-        <div className="flex min-h-[3.4rem] flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-black/40 p-2">
+        <div className="flex min-h-[3.4rem] flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
           {level.mode === "lookup" ? (
             currentLookup ? (
-              <span className="px-2 text-sm text-slate-300">
-                有人来取 <b className="text-cyan-300">{currentLookup.value} 号信</b>——从格{" "}
+              <span className="px-2 text-sm text-slate-600">
+                有人来取 <b className="text-cyan-600">{currentLookup.value} 号信</b>——从格{" "}
                 {currentLookup.value % size} 开始沿探测序点击。
               </span>
             ) : (
-              <span className="px-2 text-xs text-slate-600">全部处理完毕</span>
+              <span className="px-2 text-xs text-slate-400">全部处理完毕</span>
             )
           ) : currentLetter !== undefined ? (
             <>
@@ -423,7 +423,7 @@ export default function PostOfficePage() {
               </span>
             </>
           ) : (
-            <span className="px-2 text-xs text-slate-600">没有待投递的信</span>
+            <span className="px-2 text-xs text-slate-400">没有待投递的信</span>
           )}
         </div>
       </div>
@@ -433,7 +433,7 @@ export default function PostOfficePage() {
         <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">
           PIGEONHOLES · 格口墙（{size} 格）
         </div>
-        <div className="flex flex-wrap items-start gap-2 rounded-xl border border-white/10 bg-black/40 p-3">
+        <div className="flex flex-wrap items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
           {slots.map((v, i) => (
             <div key={i} className="flex flex-col items-center gap-1">
               <button
@@ -442,16 +442,16 @@ export default function PostOfficePage() {
                 disabled={status !== "playing"}
                 style={v !== null ? letterStyle(v) : undefined}
                 className={`flex h-12 w-12 items-center justify-center rounded-lg text-sm font-black transition hover:scale-105 ${
-                  v === null ? "border border-dashed border-white/20 text-slate-600" : ""
+                  v === null ? "border border-dashed border-slate-300 text-slate-400" : ""
                 }`}
               >
                 {v ?? "空"}
               </button>
-              <div className="font-mono text-[10px] text-slate-600">[{i}]</div>
+              <div className="font-mono text-[10px] text-slate-400">[{i}]</div>
               {/* 链 */}
               {chains[i]?.map((c, j) => (
                 <div key={j} className="flex flex-col items-center">
-                  <span className="text-[9px] leading-3 text-slate-600">↓</span>
+                  <span className="text-[9px] leading-3 text-slate-400">↓</span>
                   <div style={letterStyle(c)} className="flex h-9 w-11 items-center justify-center rounded-md text-xs font-black opacity-90">
                     {c}
                   </div>
@@ -463,7 +463,7 @@ export default function PostOfficePage() {
       </div>
 
       {msg && (
-        <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm leading-6 text-amber-200">
+        <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm leading-6 text-amber-700">
           {msg}
         </p>
       )}

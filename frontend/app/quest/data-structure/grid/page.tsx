@@ -396,12 +396,12 @@ export default function GridPage() {
               type="button"
               onClick={undoPath}
               disabled={path.length <= 1 || status !== "playing"}
-              className="w-full rounded-xl bg-white/5 px-4 py-2 text-xs text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10 disabled:text-slate-600"
+              className="w-full rounded-xl bg-slate-50 px-4 py-2 text-xs text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100 disabled:text-slate-400"
             >
               倒车一步
             </button>
           )}
-          <div className="rounded-xl bg-white/[0.04] p-3 font-mono text-[11px] leading-6 text-slate-300 ring-1 ring-white/5">
+          <div className="rounded-xl bg-slate-50 p-3 font-mono text-[11px] leading-6 text-slate-600 ring-1 ring-slate-200">
             {level.mode === "bfs" && <>已点亮 {lit.length}/{IDS.length}</>}
             {level.mode === "dfs" && (
               <>
@@ -432,7 +432,7 @@ export default function GridPage() {
         <span>CITY GRID · 城市图（边上数字为里程/权值）</span>
         <span>V={IDS.length} · E={EDGES.length}</span>
       </div>
-      <div className="rounded-xl border border-white/10 bg-black/40 p-2">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-2">
         <svg viewBox="0 0 420 470" className="mx-auto w-full max-w-xl">
           {/* 边 */}
           {EDGES.map(([a, b, w], i) => {
@@ -501,7 +501,7 @@ export default function GridPage() {
       </div>
 
       {msg && (
-        <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm leading-6 text-amber-200">
+        <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm leading-6 text-amber-700">
           {msg}
         </p>
       )}

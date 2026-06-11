@@ -140,7 +140,7 @@ export function TreeSVG({
             onClick={() => onNodeClick?.(n.v)}
             className={onNodeClick ? "cursor-pointer" : undefined}
           >
-            <circle cx={p.x} cy={p.y} r={R} fill={fill} stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" />
+            <circle cx={p.x} cy={p.y} r={R} fill={fill} stroke="rgba(15,23,42,0.25)" strokeWidth="1.5" />
             <text
               x={p.x}
               y={p.y + 4.5}

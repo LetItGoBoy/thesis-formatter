@@ -313,29 +313,29 @@ export default function MetroPage() {
       consoleSlot={
         level.deque ? (
           <>
-            <button type="button" onClick={() => dqOp("pushFront")} disabled={status !== "playing" || inbound.length === 0} className="w-full rounded-xl bg-cyan-400/90 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-slate-600">
+            <button type="button" onClick={() => dqOp("pushFront")} disabled={status !== "playing" || inbound.length === 0} className="w-full rounded-xl bg-cyan-400/90 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400">
               头部进站{inbound.length > 0 ? ` · ${inbound[0]} 号` : ""}
             </button>
-            <button type="button" onClick={() => dqOp("pushRear")} disabled={status !== "playing" || inbound.length === 0} className="w-full rounded-xl bg-cyan-400/60 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-slate-600">
+            <button type="button" onClick={() => dqOp("pushRear")} disabled={status !== "playing" || inbound.length === 0} className="w-full rounded-xl bg-cyan-400/60 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400">
               尾部进站{inbound.length > 0 ? ` · ${inbound[0]} 号` : ""}
             </button>
-            <button type="button" onClick={() => dqOp("popFront")} disabled={status !== "playing" || dq.length === 0} className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-slate-600">
+            <button type="button" onClick={() => dqOp("popFront")} disabled={status !== "playing" || dq.length === 0} className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400">
               头部发车{dq.length > 0 ? ` · ${dq[0]} 号` : ""}
             </button>
-            <button type="button" onClick={() => dqOp("popRear")} disabled={status !== "playing" || dq.length === 0} className="w-full rounded-xl bg-fuchsia-400/60 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-slate-600">
+            <button type="button" onClick={() => dqOp("popRear")} disabled={status !== "playing" || dq.length === 0} className="w-full rounded-xl bg-fuchsia-400/60 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400">
               尾部发车{dq.length > 0 ? ` · ${dq[dq.length - 1]} 号` : ""}
             </button>
           </>
         ) : (
           <>
-            <button type="button" onClick={enqueue} disabled={status !== "playing" || inbound.length === 0} className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-slate-600">
+            <button type="button" onClick={enqueue} disabled={status !== "playing" || inbound.length === 0} className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400">
               进站 ENQUEUE{inbound.length > 0 ? ` · ${inbound[0]} 号` : ""}
             </button>
-            <button type="button" onClick={dequeue} disabled={status !== "playing" || count === 0} className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-slate-600">
+            <button type="button" onClick={dequeue} disabled={status !== "playing" || count === 0} className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400">
               发车 DEQUEUE
             </button>
             {fakeOverflow && (
-              <button type="button" onClick={upgradeToCircular} className="w-full animate-glow rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2.5 text-sm font-bold text-amber-300 transition hover:bg-amber-500/25">
+              <button type="button" onClick={upgradeToCircular} className="w-full animate-glow rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2.5 text-sm font-bold text-amber-600 transition hover:bg-amber-500/25">
                 🔧 改造为环形轨道
               </button>
             )}
@@ -349,8 +349,8 @@ export default function MetroPage() {
           <span>INBOUND · 进站序列</span>
           <span>{inbound.length} 列待进站</span>
         </div>
-        <div className="flex min-h-[3.2rem] items-center gap-2 rounded-xl border border-white/10 bg-black/40 p-2">
-          {inbound.length === 0 && <span className="px-2 text-xs text-slate-600">全部列车已进站</span>}
+        <div className="flex min-h-[3.2rem] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
+          {inbound.length === 0 && <span className="px-2 text-xs text-slate-400">全部列车已进站</span>}
           {inbound.map((n, i) => (
             <div key={`${n}-${i}`} style={trainStyle(n)} className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-base font-black ${i === 0 ? "ring-2 ring-cyan-300/70" : "opacity-60"}`}>
               {n}
@@ -373,18 +373,18 @@ export default function MetroPage() {
         </div>
 
         {level.deque ? (
-          <div className="flex min-h-[4.5rem] items-center gap-2 rounded-xl border border-white/10 bg-black/40 p-3">
-            <span className="font-mono text-[10px] text-cyan-300">头▶</span>
-            {dq.length === 0 && <span className="px-2 text-xs text-slate-600">站台为空</span>}
+          <div className="flex min-h-[4.5rem] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <span className="font-mono text-[10px] text-cyan-600">头▶</span>
+            {dq.length === 0 && <span className="px-2 text-xs text-slate-400">站台为空</span>}
             {dq.map((n, i) => (
               <div key={`${n}-${i}`} style={trainStyle(n)} className="flex h-11 w-11 items-center justify-center rounded-lg text-lg font-black">
                 {n}
               </div>
             ))}
-            <span className="ml-auto font-mono text-[10px] text-fuchsia-300">◀尾</span>
+            <span className="ml-auto font-mono text-[10px] text-fuchsia-600">◀尾</span>
           </div>
         ) : (
-          <div className={`relative rounded-xl border p-3 ${mode === "circular" ? "border-emerald-400/30" : "border-amber-500/30"} bg-black/40`}>
+          <div className={`relative rounded-xl border p-3 ${mode === "circular" ? "border-emerald-400/30" : "border-amber-500/30"} bg-slate-50`}>
             <div className="flex items-end gap-2">
               {slots.map((t, i) => (
                 <div key={i} className="flex flex-col items-center gap-1">
@@ -395,7 +395,7 @@ export default function MetroPage() {
                     style={t !== null ? trainStyle(t) : undefined}
                     className={`flex h-12 w-12 items-center justify-center rounded-lg text-lg font-black transition ${
                       t === null
-                        ? "border border-dashed border-white/15 text-slate-700"
+                        ? "border border-dashed border-slate-200 text-slate-700"
                         : i === front
                           ? "cursor-pointer ring-2 ring-fuchsia-300/70 hover:scale-105"
                           : "cursor-pointer opacity-90"
@@ -403,23 +403,23 @@ export default function MetroPage() {
                   >
                     {t ?? ""}
                   </button>
-                  <div className="font-mono text-[10px] text-slate-600">
+                  <div className="font-mono text-[10px] text-slate-400">
                     [{i}]
-                    {i === front && count > 0 && <span className="ml-0.5 text-fuchsia-300">F</span>}
+                    {i === front && count > 0 && <span className="ml-0.5 text-fuchsia-600">F</span>}
                     {i === rearIdx % level.cap && rearIdx < level.cap + level.cap && inbound.length > 0 && rearIdx < level.cap && (
-                      <span className="ml-0.5 text-cyan-300">R</span>
+                      <span className="ml-0.5 text-cyan-600">R</span>
                     )}
                   </div>
                 </div>
               ))}
               {mode === "circular" && (
-                <div className="ml-1 self-center font-mono text-lg text-emerald-400" title="首尾相接">
+                <div className="ml-1 self-center font-mono text-lg text-emerald-600" title="首尾相接">
                   ↩
                 </div>
               )}
             </div>
             {mode === "linear" && rearIdx >= level.cap && (
-              <div className="mt-2 font-mono text-[11px] text-amber-300">
+              <div className="mt-2 font-mono text-[11px] text-amber-600">
                 ⚠ rear 已撞到站台尽头（rear={rearIdx} ≥ {level.cap}）
               </div>
             )}
@@ -433,8 +433,8 @@ export default function MetroPage() {
           <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">
             DEPARTED · 已发车 {served.length}/{totalToServe}
           </div>
-          <div className="flex min-h-[3rem] flex-wrap items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 p-2">
-            {served.length === 0 && <span className="px-2 text-xs text-slate-600">尚未发车</span>}
+          <div className="flex min-h-[3rem] flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 p-2">
+            {served.length === 0 && <span className="px-2 text-xs text-slate-400">尚未发车</span>}
             {served.map((n, i) => (
               <div key={i} style={trainStyle(n)} className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-black opacity-80">
                 {n}
@@ -444,20 +444,20 @@ export default function MetroPage() {
           {level.deque && status === "playing" && (
             <p className="mt-2 text-xs text-slate-500">
               目标发车顺序：{level.target!.join(" → ")}，下一列：
-              <span className="font-bold text-cyan-300">{level.target![served.length]} 号</span>
+              <span className="font-bold text-cyan-600">{level.target![served.length]} 号</span>
             </p>
           )}
         </div>
         <div>
           <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">OPS LOG</div>
-          <div className="min-h-[3rem] rounded-xl bg-black/40 p-2 font-mono text-[11px] leading-5 text-slate-400 ring-1 ring-white/5">
+          <div className="min-h-[3rem] rounded-xl bg-slate-50 p-2 font-mono text-[11px] leading-5 text-slate-500 ring-1 ring-slate-200">
             {log.length === 0 ? "（尚未操作）" : log.slice(-12).join(" → ")}
           </div>
         </div>
       </div>
 
       {msg && (
-        <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm leading-6 text-amber-200">
+        <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm leading-6 text-amber-700">
           {msg}
         </p>
       )}

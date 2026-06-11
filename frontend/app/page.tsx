@@ -4,7 +4,7 @@
  * 个人作品集主页
  * frontend/app/page.tsx
  *
- * 主题：高光谱（可见光谱分光）——深空底色 + 光谱渐变 + 扫描线/辉光的电影感 HUD。
+ * 主题：高光谱（可见光谱分光）——亮色赛博：浅底 + 光谱渐变 + 扫描线纹理 + 霓虹强调。
  * 板块：Hero → 关于(含 NOW) → 研究(含高光谱交互 Demo) → 成果 → 作品 → 教学
  *       → 履历 → 影响我的 → 联系 → 页脚。
  *
@@ -191,9 +191,9 @@ export default function HomePage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#06060c] text-slate-100 selection:bg-fuchsia-500/30">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#eef1f8] text-slate-900 selection:bg-fuchsia-500/30">
       {/* ================= 顶栏 ================= */}
-      <nav className="fixed inset-x-0 top-0 z-40 border-b border-white/5 bg-[#06060c]/70 backdrop-blur-xl">
+      <nav className="fixed inset-x-0 top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
           <button onClick={() => scrollTo("top")} className="flex items-center gap-2.5">
             <LogoMark size={30} />
@@ -210,14 +210,14 @@ export default function HomePage() {
               <button
                 key={n.id}
                 onClick={() => scrollTo(n.id)}
-                className="hidden rounded-md px-3 py-2 font-medium text-slate-400 transition hover:text-white sm:inline-flex"
+                className="hidden rounded-md px-3 py-2 font-medium text-slate-500 transition hover:text-slate-900 sm:inline-flex"
               >
                 {n.label}
               </button>
             ))}
             <button
               onClick={() => router.push(token ? "/dashboard" : "/login")}
-              className="ml-1 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-slate-200 ring-1 ring-white/10 transition hover:bg-white/20"
+              className="ml-1 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-200"
             >
               {token ? "工作台" : "登录"}
             </button>
@@ -226,11 +226,11 @@ export default function HomePage() {
       </nav>
 
       {/* ================= HERO ================= */}
-      <section id="top" className="relative flex min-h-screen items-center overflow-hidden bg-[#06060c]">
+      <section id="top" className="relative flex min-h-screen items-center overflow-hidden bg-[#eef1f8]">
         {/* 背景：静态叠层 */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 scanlines opacity-10" />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#06060c] to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#eef1f8] to-transparent" />
         </div>
         {/* 光谱扫描线：z-20 覆盖图片层 */}
         <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
@@ -241,7 +241,7 @@ export default function HomePage() {
         <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-6 pt-24 lg:grid-cols-[minmax(0,440px)_1fr] lg:px-12 lg:pt-0">
           {/* 左栏：文字 */}
           <div className="z-10">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-[0.2em] text-slate-300 backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-xs font-medium tracking-[0.2em] text-slate-600 backdrop-blur">
               <span className="bg-spectrum h-2 w-2 rounded-full" />
               HYPERSPECTRAL · AI · RESEARCH
             </div>
@@ -250,24 +250,24 @@ export default function HomePage() {
               <span className="text-spectrum animate-huedrift">{PROFILE.headline}</span>
             </h1>
 
-            <p className="mt-6 text-xl font-light leading-snug text-slate-200 md:text-2xl">
+            <p className="mt-6 text-xl font-light leading-snug text-slate-800 md:text-2xl">
               {PROFILE.tagline}
             </p>
-            <p className="mt-4 text-sm leading-7 text-slate-400">
+            <p className="mt-4 text-sm leading-7 text-slate-500">
               {PROFILE.title} · {PROFILE.field}
             </p>
 
             <div className="mt-9 flex flex-wrap gap-3">
               <button
                 onClick={() => scrollTo("works")}
-                className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+                className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-indigo-400"
               >
                 看我的作品
                 <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
               </button>
               <button
                 onClick={() => scrollTo("research")}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-slate-100 backdrop-blur transition hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-6 py-3 text-sm font-semibold text-slate-900 backdrop-blur transition hover:bg-slate-100"
               >
                 <Microscope size={16} />
                 在研项目
@@ -276,7 +276,7 @@ export default function HomePage() {
 
             <button
               onClick={() => scrollTo("about")}
-              className="mt-14 hidden animate-float items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-300 lg:inline-flex"
+              className="mt-14 hidden animate-float items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-600 lg:inline-flex"
             >
               向下滚动 <ChevronDown size={14} />
             </button>
@@ -294,37 +294,37 @@ export default function HomePage() {
       </section>
 
       {/* ================= 关于我 ================= */}
-      <section id="about" className="relative border-t border-white/5 py-24">
+      <section id="about" className="relative border-t border-slate-200 py-24">
         <div className="mx-auto grid max-w-6xl gap-12 px-5 md:grid-cols-[1.4fr_1fr]">
           <div>
             <SectionLabel n="01" title="关于我" en="ABOUT" />
-            <p className="mt-7 text-2xl font-light leading-relaxed text-slate-200">
+            <p className="mt-7 text-2xl font-light leading-relaxed text-slate-800">
               {PROFILE.intro}
             </p>
             <div className="mt-7 flex flex-wrap gap-2">
               {PROFILE.tags.map((t) => (
                 <span
                   key={t}
-                  className="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-sm text-slate-300"
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-sm text-slate-600"
                 >
                   {t}
                 </span>
               ))}
             </div>
-            <div className="mt-7 flex items-center gap-2 text-sm text-slate-400">
-              <Film size={15} className="text-fuchsia-400" />
+            <div className="mt-7 flex items-center gap-2 text-sm text-slate-500">
+              <Film size={15} className="text-fuchsia-600" />
               片单与番剧，是我灵感的另一半。
             </div>
 
             {/* 最近在做 */}
-            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-emerald-300">
+            <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-emerald-600">
                 <Radio size={14} className="animate-glow" />
                 NOW · 最近在做
               </div>
               <ul className="mt-3 space-y-2">
                 {NOW.map((n) => (
-                  <li key={n} className="flex gap-2 text-sm leading-6 text-slate-300">
+                  <li key={n} className="flex gap-2 text-sm leading-6 text-slate-600">
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-spectrum" />
                     {n}
                   </li>
@@ -337,10 +337,10 @@ export default function HomePage() {
             {STATS.map((s) => (
               <div
                 key={s.k}
-                className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-transparent p-5"
+                className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white/[0.06] to-transparent p-5"
               >
                 <div className="text-xs tracking-wide text-slate-500">{s.k}</div>
-                <div className="mt-2 text-lg font-semibold text-white">{s.v}</div>
+                <div className="mt-2 text-lg font-semibold text-slate-900">{s.v}</div>
               </div>
             ))}
             {/* 光谱条装饰 */}
@@ -356,7 +356,7 @@ export default function HomePage() {
                     href={l.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs text-slate-300 transition hover:bg-white/10 hover:text-white"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                   >
                     <Icon size={14} />
                     {l.label}
@@ -369,7 +369,7 @@ export default function HomePage() {
       </section>
 
       {/* ================= 在研项目 ================= */}
-      <section id="research" className="relative border-t border-white/5 py-24">
+      <section id="research" className="relative border-t border-slate-200 py-24">
         <div className="mx-auto max-w-6xl px-5">
           <SectionLabel n="02" title="在研项目" en="RESEARCH" />
           <div className="mt-10 grid gap-5 md:grid-cols-3">
@@ -378,24 +378,24 @@ export default function HomePage() {
               return (
                 <div
                   key={r.code}
-                  className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-white/20 hover:bg-white/[0.06]"
+                  className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 transition hover:border-slate-300 hover:bg-slate-50"
                 >
-                  <div className="absolute right-5 top-5 font-mono text-[11px] tracking-widest text-slate-600">
+                  <div className="absolute right-5 top-5 font-mono text-[11px] tracking-widest text-slate-400">
                     {r.code}
                   </div>
-                  <span className="inline-flex size-11 items-center justify-center rounded-xl bg-white/5 text-cyan-300 ring-1 ring-white/10">
+                  <span className="inline-flex size-11 items-center justify-center rounded-xl bg-slate-50 text-cyan-600 ring-1 ring-slate-200">
                     <Icon size={20} />
                   </span>
                   <div className="mt-5 flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-white">{r.title}</h3>
+                    <h3 className="text-lg font-semibold text-slate-900">{r.title}</h3>
                   </div>
-                  <p className="mt-2.5 text-sm leading-6 text-slate-400">{r.desc}</p>
+                  <p className="mt-2.5 text-sm leading-6 text-slate-500">{r.desc}</p>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
                         r.status === "在研"
-                          ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/20"
-                          : "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/20"
+                          ? "bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/20"
+                          : "bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/20"
                       }`}
                     >
                       {r.status}
@@ -415,15 +415,15 @@ export default function HomePage() {
 
           {/* 高光谱交互 Demo */}
           <Reveal className="mt-14">
-            <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-8">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">试一试 · 光谱指纹</h3>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <h3 className="text-lg font-semibold text-slate-900">试一试 · 光谱指纹</h3>
+                  <p className="mt-1 text-sm text-slate-500">
                     高光谱影像里，每个像素都是一条曲线。移动鼠标，看不同地物如何被「光」区分。
                   </p>
                 </div>
-                <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] font-mono tracking-wider text-cyan-300 ring-1 ring-white/10">
+                <span className="rounded-full bg-slate-50 px-3 py-1 text-[11px] font-mono tracking-wider text-cyan-600 ring-1 ring-slate-200">
                   INTERACTIVE
                 </span>
               </div>
@@ -434,31 +434,31 @@ export default function HomePage() {
       </section>
 
       {/* ================= 成果 / 论文 ================= */}
-      <section id="publications" className="relative border-t border-white/5 py-24">
+      <section id="publications" className="relative border-t border-slate-200 py-24">
         <div className="mx-auto max-w-6xl px-5">
           <SectionLabel n="03" title="成果" en="PUBLICATIONS" />
           <div className="mt-10 space-y-3">
             {PUBLICATIONS.map((p) => (
               <Reveal key={p.title}>
-                <div className="group rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-white/20 hover:bg-white/[0.06]">
+                <div className="group rounded-2xl border border-slate-200 bg-white p-6 transition hover:border-slate-300 hover:bg-slate-50">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-md bg-white/5 px-2 py-0.5 text-[11px] font-medium text-cyan-300 ring-1 ring-white/10">
+                        <span className="rounded-md bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-cyan-600 ring-1 ring-slate-200">
                           {p.type}
                         </span>
                         <span className="font-mono text-xs text-slate-500">{p.year}</span>
                         {p.award ? (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-300 ring-1 ring-amber-500/20">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-600 ring-1 ring-amber-500/20">
                             <Award size={11} />
                             {p.award}
                           </span>
                         ) : null}
                       </div>
-                      <h3 className="mt-2.5 text-base font-semibold leading-6 text-white">
+                      <h3 className="mt-2.5 text-base font-semibold leading-6 text-slate-900">
                         {p.title}
                       </h3>
-                      <p className="mt-1.5 text-sm text-slate-400">{p.authors}</p>
+                      <p className="mt-1.5 text-sm text-slate-500">{p.authors}</p>
                       <p className="mt-0.5 text-sm italic text-slate-500">{p.venue}</p>
                     </div>
                   </div>
@@ -469,7 +469,7 @@ export default function HomePage() {
                         href={l.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:bg-white/10 hover:text-white"
+                        className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                       >
                         {l.label}
                         <ExternalLink size={12} />
@@ -480,12 +480,12 @@ export default function HomePage() {
               </Reveal>
             ))}
           </div>
-          <p className="mt-5 text-xs text-slate-600">* 论文列表为占位示例，替换 PUBLICATIONS 即可。</p>
+          <p className="mt-5 text-xs text-slate-400">* 论文列表为占位示例，替换 PUBLICATIONS 即可。</p>
         </div>
       </section>
 
       {/* ================= 作品 ================= */}
-      <section id="works" className="relative border-t border-white/5 py-24">
+      <section id="works" className="relative border-t border-slate-200 py-24">
         <div className="mx-auto max-w-6xl px-5">
           <SectionLabel n="04" title="作品" en="WORKS" />
           <div className="mt-10 grid gap-6 md:grid-cols-2">
@@ -494,23 +494,23 @@ export default function HomePage() {
               return (
                 <div
                   key={w.title}
-                  className={`group relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br ${w.accent} p-8 ring-1 ${w.ring} transition hover:-translate-y-1`}
+                  className={`group relative overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br ${w.accent} p-8 ring-1 ${w.ring} transition hover:-translate-y-1`}
                 >
                   <div className="scanlines pointer-events-none absolute inset-0 opacity-40" />
                   <div className="relative">
                     <div className="flex items-center justify-between">
-                      <span className="inline-flex size-14 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/15 backdrop-blur">
+                      <span className="inline-flex size-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-900 ring-1 ring-slate-300 backdrop-blur">
                         <Icon size={26} />
                       </span>
-                      <span className="rounded-full bg-black/30 px-3 py-1 text-[11px] font-medium tracking-wide text-slate-200 ring-1 ring-white/10">
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium tracking-wide text-slate-800 ring-1 ring-slate-200">
                         {w.kind}
                       </span>
                     </div>
-                    <h3 className="mt-6 text-3xl font-bold text-white">{w.title}</h3>
-                    <div className="mt-1 font-mono text-xs tracking-[0.25em] text-slate-300/70">
+                    <h3 className="mt-6 text-3xl font-bold text-slate-900">{w.title}</h3>
+                    <div className="mt-1 font-mono text-xs tracking-[0.25em] text-slate-500">
                       {w.en}
                     </div>
-                    <p className="mt-4 text-sm leading-7 text-slate-200/90">{w.desc}</p>
+                    <p className="mt-4 text-sm leading-7 text-slate-700">{w.desc}</p>
                     <div className="mt-7 flex flex-wrap gap-3">
                       {w.links.map((l) => (
                         <button
@@ -518,8 +518,8 @@ export default function HomePage() {
                           onClick={() => router.push(l.href)}
                           className={`inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
                             l.primary
-                              ? "bg-white text-slate-900 hover:bg-slate-200"
-                              : "border border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"
+                              ? "bg-gradient-to-r from-cyan-500 to-indigo-500 text-white shadow-md shadow-cyan-500/20 hover:from-cyan-400 hover:to-indigo-400"
+                              : "border border-slate-300 bg-slate-50 text-slate-900 hover:bg-slate-100"
                           }`}
                         >
                           {l.label}
@@ -536,7 +536,7 @@ export default function HomePage() {
       </section>
 
       {/* ================= 课程资料 ================= */}
-      <section id="teaching" className="relative border-t border-white/5 py-24">
+      <section id="teaching" className="relative border-t border-slate-200 py-24">
         <div className="mx-auto max-w-6xl px-5">
           <SectionLabel n="05" title="教学" en="TEACHING" />
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -546,16 +546,16 @@ export default function HomePage() {
                 <button
                   key={t.href}
                   onClick={() => router.push(t.href)}
-                  className="group flex items-center gap-5 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-left transition hover:border-white/20 hover:bg-white/[0.06]"
+                  className="group flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-6 text-left transition hover:border-slate-300 hover:bg-slate-50"
                 >
-                  <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/5 text-amber-300 ring-1 ring-white/10">
+                  <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-amber-600 ring-1 ring-slate-200">
                     <Icon size={22} />
                   </span>
                   <div className="flex-1">
-                    <div className="font-semibold text-white">{t.title}</div>
-                    <div className="mt-1 text-sm text-slate-400">{t.desc}</div>
+                    <div className="font-semibold text-slate-900">{t.title}</div>
+                    <div className="mt-1 text-sm text-slate-500">{t.desc}</div>
                   </div>
-                  <ArrowRight size={18} className="text-slate-500 transition group-hover:translate-x-1 group-hover:text-white" />
+                  <ArrowRight size={18} className="text-slate-500 transition group-hover:translate-x-1 group-hover:text-slate-900" />
                 </button>
               );
             })}
@@ -564,7 +564,7 @@ export default function HomePage() {
       </section>
 
       {/* ================= 履历 ================= */}
-      <section id="timeline" className="relative border-t border-white/5 py-24">
+      <section id="timeline" className="relative border-t border-slate-200 py-24">
         <div className="mx-auto max-w-6xl px-5">
           <SectionLabel n="06" title="履历" en="TIMELINE" />
           <div className="relative mt-12 pl-6">
@@ -576,8 +576,8 @@ export default function HomePage() {
                   <div className="relative">
                     <span className="absolute -left-[1.65rem] top-1.5 h-3 w-3 rounded-full bg-white ring-4 ring-[#06060c]" />
                     <div className="font-mono text-xs tracking-wider text-slate-500">{t.year}</div>
-                    <h3 className="mt-1 text-lg font-semibold text-white">{t.title}</h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-400">{t.desc}</p>
+                    <h3 className="mt-1 text-lg font-semibold text-slate-900">{t.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">{t.desc}</p>
                   </div>
                 </Reveal>
               ))}
@@ -587,18 +587,18 @@ export default function HomePage() {
       </section>
 
       {/* ================= 影响我的作品 ================= */}
-      <section id="films" className="relative border-t border-white/5 py-24">
+      <section id="films" className="relative border-t border-slate-200 py-24">
         <div className="mx-auto max-w-6xl px-5">
           <SectionLabel n="07" title="影响我的" en="OFF-DUTY" />
-          <p className="mt-6 flex items-center gap-2 text-sm text-slate-400">
-            <Clapperboard size={15} className="text-fuchsia-400" />
+          <p className="mt-6 flex items-center gap-2 text-sm text-slate-500">
+            <Clapperboard size={15} className="text-fuchsia-600" />
             实验室之外，这些电影与番剧塑造了我看世界的方式。
           </p>
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {FILMS.map((f, i) => (
               <div
                 key={f}
-                className="group relative flex aspect-[3/4] items-end overflow-hidden rounded-xl border border-white/10 p-3"
+                className="group relative flex aspect-[3/4] items-end overflow-hidden rounded-xl border border-slate-200 p-3"
                 style={{
                   background: `linear-gradient(160deg, hsl(${(i * 57) % 360} 70% 22%), hsl(${
                     (i * 57 + 40) % 360
@@ -606,7 +606,7 @@ export default function HomePage() {
                 }}
               >
                 <div className="scanlines pointer-events-none absolute inset-0 opacity-30" />
-                <span className="relative text-sm font-semibold leading-tight text-white/95 drop-shadow">
+                <span className="relative text-sm font-semibold leading-tight text-slate-900/95 drop-shadow">
                   {f}
                 </span>
               </div>
@@ -616,16 +616,16 @@ export default function HomePage() {
       </section>
 
       {/* ================= 联系 ================= */}
-      <section id="contact" className="relative border-t border-white/5 py-24">
+      <section id="contact" className="relative border-t border-slate-200 py-24">
         <div className="mx-auto max-w-3xl px-5 text-center">
           <SectionLabel n="08" title="联系" en="CONTACT" />
-          <p className="mx-auto mt-7 max-w-xl text-lg font-light leading-relaxed text-slate-300">
+          <p className="mx-auto mt-7 max-w-xl text-lg font-light leading-relaxed text-slate-600">
             研究合作、教学交流、或只是想聊聊光谱与电影——欢迎随时来信。
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <a
               href={`mailto:${PROFILE.email}`}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-indigo-400"
             >
               <Mail size={16} />
               发邮件
@@ -638,7 +638,7 @@ export default function HomePage() {
                   href={l.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                 >
                   <Icon size={16} />
                   {l.label}
@@ -650,7 +650,7 @@ export default function HomePage() {
       </section>
 
       {/* ================= 页脚 ================= */}
-      <footer className="relative border-t border-white/5 py-14">
+      <footer className="relative border-t border-slate-200 py-14">
         <div className="bg-spectrum absolute inset-x-0 top-0 h-px opacity-60" />
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-5 text-center">
           <div className="flex items-center gap-2.5">
@@ -658,17 +658,17 @@ export default function HomePage() {
             <span className="text-sm font-semibold">{PROFILE.name}</span>
           </div>
           <p className="max-w-md text-sm leading-6 text-slate-500">
-            <Sparkles size={13} className="mb-0.5 mr-1 inline text-fuchsia-400" />
+            <Sparkles size={13} className="mb-0.5 mr-1 inline text-fuchsia-600" />
             {PROFILE.title} · 专注高光谱图像与 AI · 也爱电影与动漫
           </p>
           <a
             href={`mailto:${PROFILE.email}`}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm text-slate-200 transition hover:bg-white/10"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-5 py-2.5 text-sm text-slate-800 transition hover:bg-slate-100"
           >
             <Mail size={15} />
             {PROFILE.email}
           </a>
-          <div className="mt-2 font-mono text-[11px] tracking-widest text-slate-600">
+          <div className="mt-2 font-mono text-[11px] tracking-widest text-slate-400">
             © {new Date().getFullYear()} · MADE WITH SPECTRUM
           </div>
         </div>
@@ -689,7 +689,7 @@ function SectionLabel({ n, title, en }: { n: string; title: string; en: string }
         {n}
       </span>
       <div className="pb-1.5">
-        <h2 className="text-2xl font-bold tracking-tight text-white md:text-3xl">{title}</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">{title}</h2>
         <div className="font-mono text-[11px] tracking-[0.3em] text-slate-500">{en}</div>
       </div>
     </div>

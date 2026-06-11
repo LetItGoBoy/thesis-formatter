@@ -292,7 +292,7 @@ export default function TowerPage() {
             type="button"
             onClick={craneNext}
             disabled={status !== "playing" || phase !== "insert" || queueIdx >= level.sequence.length}
-            className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-slate-600"
+            className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
           >
             吊装下一件
             {phase === "insert" && queueIdx < level.sequence.length ? ` · ${level.sequence[queueIdx]}` : ""}
@@ -311,10 +311,10 @@ export default function TowerPage() {
               ))}
             </div>
           )}
-          <div className="rounded-xl bg-white/[0.04] p-3 text-xs leading-6 text-slate-300 ring-1 ring-white/5">
+          <div className="rounded-xl bg-slate-50 p-3 text-xs leading-6 text-slate-600 ring-1 ring-slate-200">
             吊装序列：
             {level.sequence.map((v, i) => (
-              <span key={i} className={i < queueIdx ? "text-emerald-300" : i === queueIdx ? "font-bold text-cyan-300" : "text-slate-500"}>
+              <span key={i} className={i < queueIdx ? "text-emerald-600" : i === queueIdx ? "font-bold text-cyan-600" : "text-slate-500"}>
                 {i > 0 && "、"}
                 {v}
               </span>
@@ -325,23 +325,23 @@ export default function TowerPage() {
     >
       <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-500">
         <span>BALANCE TOWER · 高塔（每个结点标注平衡因子）</span>
-        <span className={pending ? "font-bold text-red-400" : "text-emerald-400"}>
+        <span className={pending ? "font-bold text-red-600" : "text-emerald-600"}>
           {pending ? "⚠ 失衡" : "稳定"}
         </span>
       </div>
       <div
-        className="rounded-xl border border-white/10 bg-black/40 p-3 transition-transform duration-700"
+        className="rounded-xl border border-slate-200 bg-slate-50 p-3 transition-transform duration-700"
         style={{ transform: `rotate(${tiltDeg}deg)` }}
       >
         {root ? (
           <TreeSVG root={root} onNodeClick={clickNode} nodeFill={nodeFill} nodeLabel={nodeLabel} />
         ) : (
-          <div className="py-10 text-center text-sm text-slate-600">塔基已就绪，点「吊装下一件」开工</div>
+          <div className="py-10 text-center text-sm text-slate-400">塔基已就绪，点「吊装下一件」开工</div>
         )}
       </div>
 
       {msg && (
-        <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm leading-6 text-amber-200">
+        <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm leading-6 text-amber-700">
           {msg}
         </p>
       )}

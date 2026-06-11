@@ -131,23 +131,23 @@ export default function StackDepotPage() {
   const allCleared = maxCleared >= STACK_LEVELS.length;
 
   return (
-    <main className="min-h-screen bg-[#070710] text-slate-100 selection:bg-fuchsia-500/30">
+    <main className="min-h-screen bg-[#eef1f8] text-slate-900 selection:bg-fuchsia-500/30">
       {/* 顶栏 */}
-      <nav className="sticky top-0 z-30 border-b border-white/5 bg-[#070710]/80 backdrop-blur-xl">
+      <nav className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
           <button
             type="button"
             onClick={() => router.push("/quest/data-structure")}
-            className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-slate-900"
           >
             <ArrowLeft size={16} />
             返回霓虹栈城
           </button>
           <div className="flex items-center gap-3 text-sm">
-            <span className="font-mono text-xs tracking-widest text-cyan-300">
+            <span className="font-mono text-xs tracking-widest text-cyan-600">
               STACK DEPOT
             </span>
-            <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-300 ring-1 ring-white/10">
+            <span className="rounded-full bg-slate-50 px-3 py-1 text-xs text-slate-600 ring-1 ring-slate-200">
               已通关 {maxCleared} / {STACK_LEVELS.length}
             </span>
           </div>
@@ -158,19 +158,19 @@ export default function StackDepotPage() {
         {/* 标题 */}
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="font-mono text-[11px] tracking-[0.3em] text-fuchsia-400">
+            <div className="font-mono text-[11px] tracking-[0.3em] text-fuchsia-600">
               NEON STACK CITY · 城区 01
             </div>
             <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
-              货运塔 <span className="text-cyan-300">· 栈</span>
+              货运塔 <span className="text-cyan-600">· 栈</span>
             </h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
               全城货物都要经过这座只有塔顶一个口的高塔。你是新上岗的塔吊手——
               客户的订单千奇百怪，而塔的规矩只有一条：后进，先出。
             </p>
           </div>
           {allCleared && (
-            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-300 ring-1 ring-amber-500/25">
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-600 ring-1 ring-amber-500/25">
               <Trophy size={16} />
               城区通关 · 栈已点亮
             </div>
@@ -184,23 +184,23 @@ export default function StackDepotPage() {
             onClick={() => setBriefOpen((o) => !o)}
             className="flex w-full items-center justify-between px-5 py-3.5 text-left"
           >
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-300">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600">
               <BookOpen size={16} />
               上岗简报 · 本城区的概念与原理
             </span>
             {briefOpen ? (
-              <ChevronUp size={16} className="text-indigo-300" />
+              <ChevronUp size={16} className="text-indigo-600" />
             ) : (
-              <ChevronDown size={16} className="text-indigo-300" />
+              <ChevronDown size={16} className="text-indigo-600" />
             )}
           </button>
           {briefOpen && (
             <div className="grid gap-3 px-5 pb-5 md:grid-cols-2">
               {STACK_BRIEFING.map((b) => (
-                <div key={b.term} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="text-sm font-semibold text-white">{b.term}</div>
-                  <p className="mt-2 text-[13px] leading-6 text-slate-300">{b.story}</p>
-                  <p className="mt-2 rounded-lg bg-indigo-500/10 p-2.5 text-[12px] leading-5 text-indigo-200">
+                <div key={b.term} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="text-sm font-semibold text-slate-900">{b.term}</div>
+                  <p className="mt-2 text-[13px] leading-6 text-slate-600">{b.story}</p>
+                  <p className="mt-2 rounded-lg bg-indigo-500/10 p-2.5 text-[12px] leading-5 text-indigo-700">
                     {b.definition}
                   </p>
                 </div>
@@ -225,11 +225,11 @@ export default function StackDepotPage() {
                   active
                     ? "bg-cyan-400 text-slate-950"
                     : locked
-                      ? "cursor-not-allowed bg-white/[0.03] text-slate-600 ring-1 ring-white/5"
-                      : "bg-white/5 text-slate-300 ring-1 ring-white/10 hover:bg-white/10"
+                      ? "cursor-not-allowed bg-white text-slate-400 ring-1 ring-slate-200"
+                      : "bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
                 }`}
               >
-                {locked ? <Lock size={12} /> : cleared ? <CheckCircle2 size={12} className={active ? "" : "text-emerald-400"} /> : null}
+                {locked ? <Lock size={12} /> : cleared ? <CheckCircle2 size={12} className={active ? "" : "text-emerald-600"} /> : null}
                 {lv.badge} {lv.title}
               </button>
             );
@@ -237,24 +237,24 @@ export default function StackDepotPage() {
         </div>
 
         {/* 任务简报 */}
-        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-fuchsia-500/15 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-300 ring-1 ring-fuchsia-500/25">
+            <span className="rounded-md bg-fuchsia-500/15 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-600 ring-1 ring-fuchsia-500/25">
               {level.badge}
             </span>
-            <span className="text-base font-bold text-white">{level.title}</span>
-            <span className="rounded-md bg-white/5 px-2 py-0.5 text-[11px] text-cyan-300 ring-1 ring-white/10">
+            <span className="text-base font-bold text-slate-900">{level.title}</span>
+            <span className="rounded-md bg-slate-50 px-2 py-0.5 text-[11px] text-cyan-600 ring-1 ring-slate-200">
               知识点 · {level.concept}
             </span>
             {level.capacity && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-red-500/15 px-2 py-0.5 text-[11px] text-red-300 ring-1 ring-red-500/25">
+              <span className="inline-flex items-center gap-1 rounded-md bg-red-500/15 px-2 py-0.5 text-[11px] text-red-600 ring-1 ring-red-500/25">
                 <Siren size={11} />
                 限高 {level.capacity} 层
               </span>
             )}
           </div>
-          <p className="mt-3 text-sm leading-7 text-slate-300">{level.story}</p>
-          <p className="mt-2 rounded-lg bg-white/[0.04] p-3 text-sm leading-6 text-slate-200 ring-1 ring-white/10">
+          <p className="mt-3 text-sm leading-7 text-slate-600">{level.story}</p>
+          <p className="mt-2 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-800 ring-1 ring-slate-200">
             🎯 {level.task}
           </p>
         </div>
@@ -262,8 +262,8 @@ export default function StackDepotPage() {
         {/* ============ 游戏区 ============ */}
         <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_15rem]">
           <div
-            className={`relative overflow-hidden rounded-3xl border bg-[#0b0b18] p-6 transition ${
-              status === "collapsed" ? "border-red-500/40" : "border-white/10"
+            className={`relative overflow-hidden rounded-3xl border bg-white p-6 transition ${
+              status === "collapsed" ? "border-red-500/40" : "border-slate-200"
             }`}
           >
             <div className="scanlines pointer-events-none absolute inset-0 opacity-20" />
@@ -274,9 +274,9 @@ export default function StackDepotPage() {
                 <span>INBOUND · 传送带（到货顺序，只能取最前一件）</span>
                 <span>{conveyor.length} 件待入塔</span>
               </div>
-              <div className="flex min-h-[3.5rem] items-center gap-2 rounded-xl border border-white/10 bg-black/40 p-2">
+              <div className="flex min-h-[3.5rem] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
                 {conveyor.length === 0 && (
-                  <span className="px-2 text-xs text-slate-600">传送带已清空</span>
+                  <span className="px-2 text-xs text-slate-400">传送带已清空</span>
                 )}
                 {conveyor.map((n, i) => (
                   <button
@@ -319,13 +319,13 @@ export default function StackDepotPage() {
                       className="pointer-events-none absolute inset-x-0 z-10 border-t-2 border-dashed border-red-500/60"
                       style={{ bottom: `${level.capacity * 3.2 + 0.4}rem` }}
                     >
-                      <span className="absolute -top-4 right-0 font-mono text-[9px] text-red-400">
+                      <span className="absolute -top-4 right-0 font-mono text-[9px] text-red-600">
                         限高线
                       </span>
                     </div>
                   )}
                   {tower.length === 0 && (
-                    <span className="pb-1 text-center text-[11px] text-slate-600">塔内为空</span>
+                    <span className="pb-1 text-center text-[11px] text-slate-400">塔内为空</span>
                   )}
                   {tower.map((n, i) => {
                     const isTop = i === tower.length - 1;
@@ -352,7 +352,7 @@ export default function StackDepotPage() {
                 </div>
                 <div className="mt-2 text-center text-[11px] text-slate-500">
                   {status === "collapsed" ? (
-                    <span className="font-semibold text-red-400">塔体倾倒！</span>
+                    <span className="font-semibold text-red-600">塔体倾倒！</span>
                   ) : (
                     <>塔顶在上 · 只能动最上面一件</>
                   )}
@@ -364,7 +364,7 @@ export default function StackDepotPage() {
                 <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">
                   ORDER · 客户订单（按从左到右的顺序装车）
                 </div>
-                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-black/40 p-3">
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
                   {level.target.map((n, i) => {
                     const delivered = i < truck.length;
                     const isNext = i === truck.length && status === "playing";
@@ -376,8 +376,8 @@ export default function StackDepotPage() {
                           delivered
                             ? ""
                             : isNext
-                              ? "border-2 border-dashed border-cyan-300/70 text-cyan-300"
-                              : "border border-dashed border-white/15 text-slate-600"
+                              ? "border-2 border-dashed border-cyan-300/70 text-cyan-600"
+                              : "border border-dashed border-slate-200 text-slate-400"
                         }`}
                       >
                         {n}
@@ -387,11 +387,11 @@ export default function StackDepotPage() {
                 </div>
                 {status === "playing" && (
                   <p className="mt-2 text-xs text-slate-500">
-                    下一件该装：<span className="font-bold text-cyan-300">{nextNeed} 号</span>
+                    下一件该装：<span className="font-bold text-cyan-600">{nextNeed} 号</span>
                     {tower.length > 0 && tower[tower.length - 1] !== nextNeed && (
                       <>
                         ，但塔顶是{" "}
-                        <span className="font-bold text-fuchsia-300">
+                        <span className="font-bold text-fuchsia-600">
                           {tower[tower.length - 1]} 号
                         </span>
                         —— 想想怎么办
@@ -405,7 +405,7 @@ export default function StackDepotPage() {
                   <div className="mb-1 font-mono text-[11px] tracking-widest text-slate-500">
                     OPS LOG · 操作记录
                   </div>
-                  <div className="min-h-[2.2rem] rounded-lg bg-black/40 p-2 font-mono text-[11px] leading-5 text-slate-400 ring-1 ring-white/5">
+                  <div className="min-h-[2.2rem] rounded-lg bg-slate-50 p-2 font-mono text-[11px] leading-5 text-slate-500 ring-1 ring-slate-200">
                     {log.length === 0 ? "（尚未操作）" : log.slice(-14).join(" → ")}
                   </div>
                 </div>
@@ -415,16 +415,16 @@ export default function StackDepotPage() {
             {/* 结果横幅 */}
             {status === "won" && (
               <div className="relative mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
-                <div className="flex items-center gap-2 text-base font-bold text-emerald-300">
+                <div className="flex items-center gap-2 text-base font-bold text-emerald-600">
                   <Sparkles size={18} />
                   {wonByReport ? "上报正确 · 任务完成" : "订单交付 · 任务完成"}
                   {mistakes === 0 && (
-                    <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] text-amber-300 ring-1 ring-amber-500/25">
+                    <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] text-amber-600 ring-1 ring-amber-500/25">
                       ★ 完美调度 · 零失误
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm leading-6 text-emerald-100/80">{level.winNote}</p>
+                <p className="mt-2 text-sm leading-6 text-emerald-700">{level.winNote}</p>
                 <div className="mt-4 flex gap-3">
                   {levelIdx + 1 < STACK_LEVELS.length ? (
                     <button
@@ -436,7 +436,7 @@ export default function StackDepotPage() {
                       <ArrowRight size={15} />
                     </button>
                   ) : (
-                    <span className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-5 py-2.5 text-sm font-bold text-amber-300 ring-1 ring-amber-500/25">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-5 py-2.5 text-sm font-bold text-amber-600 ring-1 ring-amber-500/25">
                       <Trophy size={15} />
                       货运塔全部通关！下一站：环线地铁（队列）
                     </span>
@@ -444,7 +444,7 @@ export default function StackDepotPage() {
                   <button
                     type="button"
                     onClick={() => loadLevel(levelIdx)}
-                    className="inline-flex items-center gap-2 rounded-full bg-white/5 px-5 py-2.5 text-sm text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10"
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-5 py-2.5 text-sm text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100"
                   >
                     <RotateCcw size={14} />
                     再玩一次
@@ -455,11 +455,11 @@ export default function StackDepotPage() {
 
             {status === "collapsed" && (
               <div className="relative mt-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-5">
-                <div className="flex items-center gap-2 text-base font-bold text-red-300">
+                <div className="flex items-center gap-2 text-base font-bold text-red-600">
                   <AlertTriangle size={18} />
                   栈溢出！货箱超过限高，塔倾倒了
                 </div>
-                <p className="mt-2 text-sm leading-6 text-red-100/80">
+                <p className="mt-2 text-sm leading-6 text-red-700">
                   塔内已有 {level.capacity} 件时再入塔，就是「栈溢出」。
                   重整旗鼓：把订单拆成不超过限高的小批次处理。
                 </p>
@@ -477,14 +477,14 @@ export default function StackDepotPage() {
 
           {/* 侧栏：操作与提示 */}
           <aside className="space-y-3 self-start">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="font-mono text-[11px] tracking-widest text-slate-500">CONSOLE</div>
               <div className="mt-3 space-y-2">
                 <button
                   type="button"
                   onClick={push}
                   disabled={status !== "playing" || conveyor.length === 0}
-                  className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-slate-600"
+                  className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
                 >
                   入塔 PUSH{conveyor.length > 0 ? ` · ${conveyor[0]} 号` : ""}
                 </button>
@@ -492,14 +492,14 @@ export default function StackDepotPage() {
                   type="button"
                   onClick={pop}
                   disabled={status !== "playing" || tower.length === 0}
-                  className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-slate-600"
+                  className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
                 >
                   装车 POP{tower.length > 0 ? ` · ${tower[tower.length - 1]} 号` : ""}
                 </button>
                 <button
                   type="button"
                   onClick={() => loadLevel(levelIdx)}
-                  className="w-full rounded-xl bg-white/5 px-4 py-2 text-xs text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10"
+                  className="w-full rounded-xl bg-slate-50 px-4 py-2 text-xs text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100"
                 >
                   重置本关
                 </button>
@@ -507,26 +507,26 @@ export default function StackDepotPage() {
                   type="button"
                   onClick={report}
                   disabled={status !== "playing"}
-                  className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-300 transition hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-600 transition hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   上报：订单不可行
                 </button>
               </div>
               {reportMsg && (
-                <p className="mt-3 rounded-lg bg-amber-500/10 p-2.5 text-[11px] leading-5 text-amber-200">
+                <p className="mt-3 rounded-lg bg-amber-500/10 p-2.5 text-[11px] leading-5 text-amber-700">
                   {reportMsg}
                 </p>
               )}
               <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
                 <span>失误（拒收/误报）</span>
-                <span className={mistakes > 0 ? "font-bold text-amber-300" : "text-slate-400"}>
+                <span className={mistakes > 0 ? "font-bold text-amber-600" : "text-slate-500"}>
                   {mistakes}
                 </span>
               </div>
             </div>
 
             {/* 两层提示 */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="flex items-center gap-1.5 font-mono text-[11px] tracking-widest text-slate-500">
                 <Lightbulb size={12} />
                 HINTS · 卡住了再点
@@ -535,13 +535,13 @@ export default function StackDepotPage() {
                 <button
                   type="button"
                   onClick={() => setHintTier(1)}
-                  className="mt-3 w-full rounded-xl bg-white/5 px-4 py-2 text-xs text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10"
+                  className="mt-3 w-full rounded-xl bg-slate-50 px-4 py-2 text-xs text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100"
                 >
                   看思路提示
                 </button>
               )}
               {hintTier >= 1 && (
-                <p className="mt-3 rounded-lg bg-white/[0.04] p-3 text-[12px] leading-5 text-slate-300 ring-1 ring-white/5">
+                <p className="mt-3 rounded-lg bg-slate-50 p-3 text-[12px] leading-5 text-slate-600 ring-1 ring-slate-200">
                   💡 {level.hint}
                 </p>
               )}
@@ -549,13 +549,13 @@ export default function StackDepotPage() {
                 <button
                   type="button"
                   onClick={() => setHintTier(2)}
-                  className="mt-2 w-full rounded-xl bg-white/5 px-4 py-2 text-xs text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10"
+                  className="mt-2 w-full rounded-xl bg-slate-50 px-4 py-2 text-xs text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100"
                 >
                   还是不行？看操作骨架
                 </button>
               )}
               {hintTier >= 2 && (
-                <p className="mt-2 rounded-lg bg-indigo-500/10 p-3 font-mono text-[11px] leading-5 text-indigo-200 ring-1 ring-indigo-400/20">
+                <p className="mt-2 rounded-lg bg-indigo-500/10 p-3 font-mono text-[11px] leading-5 text-indigo-700 ring-1 ring-indigo-400/20">
                   {level.skeleton}
                 </p>
               )}
