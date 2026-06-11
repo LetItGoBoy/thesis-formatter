@@ -1,356 +1,228 @@
 "use client";
 
-import { useMemo, useState } from "react";
+/**
+ * 霓虹栈城 · 城市地图（数据结构闯关入口）
+ * app/quest/data-structure/page.tsx
+ *
+ * 去掉了原有声小说/答题模式，改为故事线驱动的闯关地图：
+ * 按数据结构知识点顺序排布城区，逐个动手修复，重建「秩序协议」。
+ */
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  BookOpen,
+  ArrowRight,
   CheckCircle2,
-  Circle,
+  Cpu,
   Lock,
-  Map,
-  Radio,
-  RotateCcw,
-  Shield,
+  Play,
   Sparkles,
 } from "lucide-react";
-import { Logo } from "@/components/Logo";
-import { dataStructureQuest } from "@/lib/quest-data";
+import { ALL_DISTRICTS, DS_CITY, type District } from "@/lib/ds-city";
 
-export default function DataStructureQuestPage() {
+export default function NeonStackCityPage() {
   const router = useRouter();
-  const openChapter = dataStructureQuest.chapters[0];
-  const [activeLevelId, setActiveLevelId] = useState(openChapter.levels[0]?.id ?? "");
-  const [answers, setAnswers] = useState<Record<string, string>>({});
 
-  const activeLevel = useMemo(
-    () => openChapter.levels.find((level) => level.id === activeLevelId) ?? openChapter.levels[0],
-    [activeLevelId, openChapter.levels]
-  );
-
-  const activeQuestions = activeLevel?.questions ?? [];
-  const answeredCount = activeQuestions.filter((question) => answers[question.id]).length;
-  const correctCount = activeQuestions.filter((question) => answers[question.id] === question.answer).length;
-  const completed = answeredCount === activeQuestions.length && activeQuestions.length > 0;
-
-  function chooseAnswer(questionId: string, choiceId: string) {
-    setAnswers((current) => ({ ...current, [questionId]: choiceId }));
-  }
-
-  function resetActiveLevel() {
-    setAnswers((current) => {
-      const next = { ...current };
-      activeQuestions.forEach((question) => {
-        delete next[question.id];
-      });
-      return next;
-    });
-  }
+  const playableCount = ALL_DISTRICTS.filter((d) => d.status === "playable").length;
+  const total = ALL_DISTRICTS.length;
+  // 「秩序协议」恢复度：可玩城区算作已修复
+  const progress = Math.round((playableCount / total) * 100);
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
-        <Logo />
-        <button
-          type="button"
-          onClick={() => router.push("/course-spaces")}
-          className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 transition hover:text-blue-600"
-        >
-          <ArrowLeft size={16} />
-          返回课程空间
-        </button>
+    <main className="relative min-h-screen overflow-x-hidden bg-[#070710] text-slate-100 selection:bg-cyan-400/30">
+      {/* 顶栏 */}
+      <nav className="sticky top-0 z-30 border-b border-white/5 bg-[#070710]/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+          <button
+            type="button"
+            onClick={() => router.push("/course-spaces")}
+            className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
+          >
+            <ArrowLeft size={16} />
+            返回课程空间
+          </button>
+          <span className="font-mono text-xs tracking-[0.25em] text-cyan-300">
+            {DS_CITY.codename}
+          </span>
+        </div>
       </nav>
 
-      <section className="mx-auto max-w-6xl px-5 pb-8 pt-6">
-        <div className="grid gap-5 lg:grid-cols-[1fr_21rem]">
-          <div className="rounded-[2rem] bg-white p-7 shadow-sm ring-1 ring-slate-200 md:p-9">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 ring-1 ring-blue-100">
-              <Sparkles size={16} />
-              {dataStructureQuest.subtitle}
-            </div>
-            <h1 className="mt-6 text-4xl font-semibold tracking-tight md:text-6xl">
-              {dataStructureQuest.storyTitle}
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-500">
-              先听飞书故事，再完成小节关卡。每次通关都会点亮能力，推动“秩序协议”继续恢复。
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition hover:bg-blue-700"
-              >
-                <Radio size={17} />
-                飞书故事链接待接入
-              </button>
-              <button
-                type="button"
-                onClick={() => document.getElementById("chapter-map")?.scrollIntoView({ behavior: "smooth" })}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:text-blue-600"
-              >
-                <Map size={17} />
-                查看章节地图
-              </button>
-            </div>
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b border-white/5">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(60%_80%_at_80%_15%,rgba(34,211,238,0.14),transparent_60%),radial-gradient(50%_60%_at_15%_90%,rgba(217,70,239,0.12),transparent_60%)]" />
+          <div className="absolute inset-0 scanlines opacity-15" />
+          <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-40 blur-[1px]" />
+        </div>
+        <div className="relative mx-auto max-w-6xl px-5 py-16 md:py-20">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-mono text-[11px] tracking-[0.25em] text-cyan-300 backdrop-blur">
+            <Cpu size={13} />
+            DATA STRUCTURE · 闯关地图
           </div>
+          <h1 className="mt-6 text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
+            霓虹<span className="text-cyan-300">栈城</span>
+          </h1>
+          <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300">
+            {DS_CITY.arc}
+          </p>
 
-          <aside className="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-blue-600">状态卡</p>
-                <h2 className="mt-2 text-2xl font-semibold">{dataStructureQuest.currentLevel}</h2>
-              </div>
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
-                <Shield size={23} />
+          {/* 秩序协议进度 */}
+          <div className="mt-8 max-w-md">
+            <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
+              <span className="font-mono tracking-wider">秩序协议 · 恢复度</span>
+              <span>
+                {playableCount} / {total} 城区在线
               </span>
             </div>
-            <div className="mt-7 space-y-4 text-sm">
-              <div>
-                <div className="mb-2 flex items-center justify-between text-slate-500">
-                  <span>秩序协议</span>
-                  <span>{dataStructureQuest.progress}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100">
-                  <div
-                    className="h-2 rounded-full bg-blue-600"
-                    style={{ width: `${dataStructureQuest.progress}%` }}
-                  />
-                </div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
-                <p className="text-slate-500">已解锁技能</p>
-                <p className="mt-1 text-lg font-semibold">{dataStructureQuest.unlockedSkill}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
-                <p className="text-slate-500">下一章</p>
-                <p className="mt-1 text-lg font-semibold">{dataStructureQuest.nextChapter}</p>
-              </div>
+            <div className="h-2 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="bg-spectrum h-2 rounded-full transition-all"
+                style={{ width: `${progress}%` }}
+              />
             </div>
-          </aside>
-        </div>
-      </section>
-
-      {/* 霓虹栈城 2.0 · 可玩城区入口 */}
-      <section className="mx-auto max-w-6xl px-5 pb-8">
-        <button
-          type="button"
-          onClick={() => router.push("/quest/data-structure/stack")}
-          className="group relative block w-full overflow-hidden rounded-[2rem] bg-[#0b0b18] p-7 text-left ring-1 ring-cyan-400/30 transition hover:-translate-y-0.5 hover:ring-cyan-300/60 md:p-9"
-        >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_120%_at_85%_20%,rgba(34,211,238,0.16),transparent_60%)]" />
-          <div className="relative flex flex-wrap items-center justify-between gap-5">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-cyan-400/10 px-3 py-1 font-mono text-[11px] tracking-[0.25em] text-cyan-300 ring-1 ring-cyan-400/25">
-                NEW · 可玩城区
-              </div>
-              <h2 className="mt-4 text-3xl font-black tracking-tight text-white md:text-4xl">
-                货运塔 <span className="text-cyan-300">· 栈</span>
-              </h2>
-              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-400">
-                不再读小说答题——亲手操作塔吊：入塔、装车、限高、倒塔。
-                六个递进任务，把 LIFO、栈混洗、栈溢出玩进手感里。
-              </p>
-            </div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-sm font-bold text-slate-950 transition group-hover:bg-cyan-300">
-              进入城区
-              <Sparkles size={16} />
-            </span>
           </div>
-        </button>
-      </section>
 
-      <section id="chapter-map" className="mx-auto max-w-6xl px-5 pb-10">
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <p className="text-sm font-semibold text-blue-600">Chapter Map</p>
-            <h2 className="mt-1 text-3xl font-semibold tracking-tight">章节地图</h2>
+          <div className="mt-8">
+            <button
+              type="button"
+              onClick={() => router.push("/quest/data-structure/stack")}
+              className="group inline-flex items-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+            >
+              <Play size={16} />
+              从第一个城区开始
+              <ArrowRight size={15} className="transition group-hover:translate-x-0.5" />
+            </button>
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {dataStructureQuest.chapters.map((chapter) => {
-            const open = chapter.status === "open";
-            return (
-              <article
-                key={chapter.id}
-                className={`rounded-[1.5rem] bg-white p-5 shadow-sm ring-1 ${
-                  open ? "ring-blue-200" : "opacity-70 ring-slate-200"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-blue-600">{chapter.title}</p>
-                    <h3 className="mt-1 text-2xl font-semibold">{chapter.storyTitle}</h3>
-                  </div>
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-500 ring-1 ring-slate-100">
-                    {open ? <CheckCircle2 size={20} className="text-blue-600" /> : <Lock size={20} />}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-slate-500">{chapter.summary}</p>
-              </article>
-            );
-          })}
-        </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 pb-20">
-        <div className="mb-4">
-          <p className="text-sm font-semibold text-blue-600">{openChapter.title}</p>
-          <h2 className="mt-1 text-3xl font-semibold tracking-tight">{openChapter.storyTitle} · 关卡</h2>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-3">
-          {openChapter.levels.map((level) => (
-            <article key={level.id} className="rounded-[1.5rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <div className="flex items-center justify-between gap-4">
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
-                  {level.id}
+      {/* 城市地图：按章节（知识点大类）分组 */}
+      <section className="mx-auto max-w-6xl px-5 py-14">
+        <div className="space-y-14">
+          {DS_CITY.chapters.map((chapter, ci) => (
+            <div key={chapter.label} className="relative">
+              {/* 章节标题 */}
+              <div className="flex items-end gap-4">
+                <span className="bg-spectrum bg-clip-text font-mono text-4xl font-black text-transparent opacity-90">
+                  0{ci + 1}
                 </span>
-                <Circle size={18} className="text-blue-400" />
+                <div>
+                  <div className="font-mono text-[11px] tracking-[0.3em] text-cyan-300">
+                    {chapter.label}
+                  </div>
+                  <h2 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+                    {chapter.title}
+                  </h2>
+                </div>
               </div>
-              <h3 className="mt-5 text-xl font-semibold">{level.title}</h3>
-              <p className="mt-2 text-sm text-slate-400">{level.subtitle}</p>
-              <p className="mt-4 text-sm leading-6 text-slate-500">{level.storyHook}</p>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{chapter.theme}</p>
 
-              <div className="mt-5 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Knowledge</p>
-                <ul className="mt-2 space-y-1 text-sm text-slate-600">
-                  {level.knowledgeGoal.map((goal) => (
-                    <li key={goal}>- {goal}</li>
-                  ))}
-                </ul>
+              {/* 该章城区 */}
+              <div className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {chapter.districts.map((d) => (
+                  <DistrictCard key={d.id} d={d} onEnter={() => router.push(`/quest/data-structure/${d.id}`)} />
+                ))}
               </div>
-
-              <div className="mt-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Questions</p>
-                <p className="mt-2 text-sm text-slate-600">{level.questions.length} 题 · {level.passRule}</p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveLevelId(level.id);
-                  setTimeout(() => document.getElementById("level-practice")?.scrollIntoView({ behavior: "smooth" }), 0);
-                }}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                <BookOpen size={16} />
-                开始闯关
-              </button>
-            </article>
+            </div>
           ))}
         </div>
+
+        <p className="mt-12 text-center text-xs text-slate-600">
+          每个城区都将是一个亲手操作的小游戏 · 按知识点顺序逐步开放
+        </p>
       </section>
-
-      {activeLevel && (
-        <section id="level-practice" className="mx-auto max-w-6xl px-5 pb-24">
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-blue-600">Level Practice</p>
-              <h2 className="mt-1 text-3xl font-semibold tracking-tight">
-                {activeLevel.id} · {activeLevel.title}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{activeLevel.storyHook}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="rounded-full bg-white px-4 py-2 text-sm text-slate-600 shadow-sm ring-1 ring-slate-200">
-                {correctCount}/{activeQuestions.length} 正确
-              </span>
-              <button
-                type="button"
-                onClick={resetActiveLevel}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:text-blue-600"
-              >
-                <RotateCcw size={15} />
-                重做
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[1fr_19rem]">
-            <div className="space-y-4">
-              {activeQuestions.map((question, index) => {
-                const selected = answers[question.id];
-                const answered = Boolean(selected);
-                const correct = selected === question.answer;
-                return (
-                  <article key={question.id} className="rounded-[1.5rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                    <div className="flex items-start gap-3">
-                      <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-semibold leading-8">{question.stem}</h3>
-                        <div className="mt-4 grid gap-2">
-                          {question.choices.map((choice) => {
-                            const isSelected = selected === choice.id;
-                            const isAnswer = question.answer === choice.id;
-                            const stateClass = !answered
-                              ? "bg-white text-slate-700 ring-slate-200 hover:bg-blue-50 hover:ring-blue-200"
-                              : isAnswer
-                                ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-                                : isSelected
-                                  ? "bg-rose-50 text-rose-800 ring-rose-200"
-                                  : "bg-slate-50 text-slate-400 ring-slate-100";
-                            return (
-                              <button
-                                key={choice.id}
-                                type="button"
-                                onClick={() => chooseAnswer(question.id, choice.id)}
-                                className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm ring-1 transition ${stateClass}`}
-                              >
-                                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 font-semibold text-slate-700">
-                                  {choice.id}
-                                </span>
-                                <span>{choice.text}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {answered && (
-                          <div className={`mt-4 rounded-2xl p-4 text-sm leading-6 ring-1 ${
-                            correct
-                              ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-                              : "bg-rose-50 text-rose-800 ring-rose-200"
-                          }`}>
-                            <p className="font-semibold">{correct ? "回答正确" : `回答错误，正确答案是 ${question.answer}`}</p>
-                            <p className="mt-1 opacity-90">{question.explanation}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            <aside className="h-fit rounded-[1.5rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <p className="text-sm font-semibold text-blue-600">通关面板</p>
-              <h3 className="mt-2 text-2xl font-semibold">{completed ? "本关已作答" : "答题进行中"}</h3>
-              <div className="mt-5 space-y-3 text-sm text-slate-600">
-                <div className="flex justify-between rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
-                  <span>已答题</span>
-                  <span>{answeredCount}/{activeQuestions.length}</span>
-                </div>
-                <div className="flex justify-between rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
-                  <span>正确数</span>
-                  <span>{correctCount}</span>
-                </div>
-                <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
-                  <p className="text-slate-400">解锁内容</p>
-                  <ul className="mt-2 space-y-1">
-                    {activeLevel.unlock.map((item) => (
-                      <li key={item}>- {item}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              {completed && (
-                <div className="mt-5 rounded-2xl bg-blue-50 p-4 text-sm font-semibold text-blue-800 ring-1 ring-blue-100">
-                  {correctCount >= activeQuestions.length - 1 ? "达到通关条件，后续可写入学习进度。" : "还差一点，建议重做本关。"}
-                </div>
-              )}
-            </aside>
-          </div>
-        </section>
-      )}
     </main>
+  );
+}
+
+function DistrictCard({ d, onEnter }: { d: District; onEnter: () => void }) {
+  const playable = d.status === "playable";
+  const soon = d.status === "soon";
+
+  return (
+    <div
+      className={`group relative overflow-hidden rounded-3xl border p-6 transition ${
+        playable
+          ? "cursor-pointer border-cyan-400/30 bg-white/[0.03] hover:-translate-y-1 hover:border-cyan-300/60"
+          : "border-white/10 bg-white/[0.02] opacity-80"
+      }`}
+      onClick={playable ? onEnter : undefined}
+      style={
+        playable
+          ? {
+              backgroundImage: `radial-gradient(70% 120% at 85% 10%, hsl(${d.hue} 85% 50% / 0.14), transparent 60%)`,
+            }
+          : undefined
+      }
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div
+            className="font-mono text-[11px] tracking-[0.25em]"
+            style={{ color: `hsl(${d.hue} 80% 65%)` }}
+          >
+            {d.code}
+          </div>
+          <h3 className="mt-1.5 text-xl font-bold text-white">{d.name}</h3>
+          <div className="mt-0.5 text-sm" style={{ color: `hsl(${d.hue} 70% 70%)` }}>
+            · {d.structure}
+          </div>
+        </div>
+        <StatusBadge status={d.status} />
+      </div>
+
+      <p className="mt-4 text-sm leading-6 text-slate-400">{d.hook}</p>
+
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {d.topics.map((t) => (
+          <span
+            key={t}
+            className="rounded-md bg-white/5 px-2 py-0.5 text-[11px] text-slate-400 ring-1 ring-white/10"
+          >
+            {t}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-5">
+        {playable ? (
+          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-cyan-300">
+            进入城区
+            <ArrowRight size={15} className="transition group-hover:translate-x-0.5" />
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500">
+            <Lock size={14} />
+            {soon ? "即将开放" : "规划中"}
+          </span>
+        )}
+      </div>
+
+      {/* 底部主题色条 */}
+      <div
+        className="mt-5 h-0.5 w-full rounded-full opacity-70"
+        style={{ background: `linear-gradient(90deg, transparent, hsl(${d.hue} 85% 55%), transparent)` }}
+      />
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: District["status"] }) {
+  if (status === "playable")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-cyan-400/15 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-cyan-400/25">
+        <Sparkles size={11} />
+        可玩
+      </span>
+    );
+  if (status === "soon")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-400 ring-1 ring-white/10">
+        即将开放
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-white/10">
+      规划中
+    </span>
   );
 }
