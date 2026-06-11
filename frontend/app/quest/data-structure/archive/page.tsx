@@ -310,12 +310,12 @@ export default function ArchivePage() {
       onNext={() => loadLevel(levelIdx + 1)}
       completionText="档案塔秩序恢复！下一站：倾斜高塔（AVL）"
       consoleSlot={
-        <div className="rounded-xl bg-white/[0.04] p-3 text-xs leading-6 text-slate-300 ring-1 ring-white/5">
+        <div className="rounded-xl bg-slate-50 p-3 text-xs leading-6 text-slate-600 ring-1 ring-slate-200">
           {level.mode === "search" && (
             <>
-              目标档案：<b className="text-cyan-300">{level.target}</b>
+              目标档案：<b className="text-cyan-600">{level.target}</b>
               <br />
-              当前位置：<b className="text-fuchsia-300">{currentAt}</b>
+              当前位置：<b className="text-fuchsia-600">{currentAt}</b>
               <br />
               已走步数：{pathTaken.length - 1}
             </>
@@ -324,7 +324,7 @@ export default function ArchivePage() {
             <>
               {insertIdx < (level.insertQueue?.length ?? 0) ? (
                 <>
-                  待入库：<b className="text-cyan-300">{level.insertQueue![insertIdx]} 号</b>
+                  待入库：<b className="text-cyan-600">{level.insertQueue![insertIdx]} 号</b>
                   <br />
                   进度：{insertIdx} / {level.insertQueue!.length}
                 </>
@@ -332,12 +332,12 @@ export default function ArchivePage() {
                 "全部入库完成"
               )}
               <br />
-              当前塔高（深度）：<b className={d >= 4 ? "text-red-300" : "text-emerald-300"}>{d}</b>
+              当前塔高（深度）：<b className={d >= 4 ? "text-red-600" : "text-emerald-600"}>{d}</b>
             </>
           )}
           {level.mode === "traverse" && (
             <>
-              路线：<b className="text-cyan-300">{level.traversalKind === "in" ? "中序 左-根-右" : "前序 根-左-右"}</b>
+              路线：<b className="text-cyan-600">{level.traversalKind === "in" ? "中序 左-根-右" : "前序 根-左-右"}</b>
               <br />
               已巡逻：{visitIdx} / {seq.length}
               {visitIdx > 0 && (
@@ -355,7 +355,7 @@ export default function ArchivePage() {
         <span>ARCHIVE TOWER · 档案塔</span>
         <span>结点 {values.length} · 深度 {d}</span>
       </div>
-      <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
         {root ? (
           <TreeSVG
             root={root}
@@ -369,7 +369,7 @@ export default function ArchivePage() {
             <button
               type="button"
               onClick={placeRoot}
-              className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-cyan-300/60 text-sm font-bold text-cyan-300 transition hover:bg-cyan-400/10"
+              className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-cyan-300/60 text-sm font-bold text-cyan-600 transition hover:bg-cyan-400/10"
             >
               放根
             </button>
@@ -378,7 +378,7 @@ export default function ArchivePage() {
       </div>
 
       {msg && (
-        <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm leading-6 text-amber-200">
+        <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm leading-6 text-amber-700">
           {msg}
         </p>
       )}

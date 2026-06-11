@@ -21,7 +21,7 @@ export default function CasePage() {
 
   if (!caseData) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0f1320] text-sm text-slate-400">
+      <main className="flex min-h-screen items-center justify-center bg-[#eef1f8] text-sm text-slate-500">
         正在返回探案集…
       </main>
     );

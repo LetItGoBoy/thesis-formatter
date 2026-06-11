@@ -43,12 +43,12 @@ body {
     color: transparent;
   }
 
-  /* 扫描线叠层（科幻 HUD 质感） */
+  /* 扫描线叠层（科幻 HUD 质感 · 亮底用深色细线） */
   .scanlines {
     background-image: repeating-linear-gradient(
       0deg,
-      rgba(255, 255, 255, 0.035) 0px,
-      rgba(255, 255, 255, 0.035) 1px,
+      rgba(15, 23, 42, 0.035) 0px,
+      rgba(15, 23, 42, 0.035) 1px,
       transparent 1px,
       transparent 3px
     );

@@ -28,52 +28,52 @@ export default function NeonStackCityPage() {
   const progress = Math.round((playableCount / total) * 100);
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#070710] text-slate-100 selection:bg-cyan-400/30">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#eef1f8] text-slate-900 selection:bg-cyan-400/30">
       {/* 顶栏 */}
-      <nav className="sticky top-0 z-30 border-b border-white/5 bg-[#070710]/80 backdrop-blur-xl">
+      <nav className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
           <button
             type="button"
             onClick={() => router.push("/course-spaces")}
-            className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-slate-900"
           >
             <ArrowLeft size={16} />
             返回课程空间
           </button>
-          <span className="font-mono text-xs tracking-[0.25em] text-cyan-300">
+          <span className="font-mono text-xs tracking-[0.25em] text-cyan-600">
             {DS_CITY.codename}
           </span>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-white/5">
+      <section className="relative overflow-hidden border-b border-slate-200">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(60%_80%_at_80%_15%,rgba(34,211,238,0.14),transparent_60%),radial-gradient(50%_60%_at_15%_90%,rgba(217,70,239,0.12),transparent_60%)]" />
           <div className="absolute inset-0 scanlines opacity-15" />
           <div className="animate-sweep bg-spectrum absolute inset-x-0 h-px opacity-40 blur-[1px]" />
         </div>
         <div className="relative mx-auto max-w-6xl px-5 py-16 md:py-20">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-mono text-[11px] tracking-[0.25em] text-cyan-300 backdrop-blur">
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 font-mono text-[11px] tracking-[0.25em] text-cyan-600 backdrop-blur">
             <Cpu size={13} />
             DATA STRUCTURE · 闯关地图
           </div>
           <h1 className="mt-6 text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
-            霓虹<span className="text-cyan-300">栈城</span>
+            霓虹<span className="text-cyan-600">栈城</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300">
+          <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600">
             {DS_CITY.arc}
           </p>
 
           {/* 秩序协议进度 */}
           <div className="mt-8 max-w-md">
-            <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
+            <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
               <span className="font-mono tracking-wider">秩序协议 · 恢复度</span>
               <span>
                 {playableCount} / {total} 城区在线
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
               <div
                 className="bg-spectrum h-2 rounded-full transition-all"
                 style={{ width: `${progress}%` }}
@@ -106,15 +106,15 @@ export default function NeonStackCityPage() {
                   0{ci + 1}
                 </span>
                 <div>
-                  <div className="font-mono text-[11px] tracking-[0.3em] text-cyan-300">
+                  <div className="font-mono text-[11px] tracking-[0.3em] text-cyan-600">
                     {chapter.label}
                   </div>
-                  <h2 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+                  <h2 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
                     {chapter.title}
                   </h2>
                 </div>
               </div>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{chapter.theme}</p>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">{chapter.theme}</p>
 
               {/* 该章城区 */}
               <div className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -126,7 +126,7 @@ export default function NeonStackCityPage() {
           ))}
         </div>
 
-        <p className="mt-12 text-center text-xs text-slate-600">
+        <p className="mt-12 text-center text-xs text-slate-400">
           每个城区都将是一个亲手操作的小游戏 · 按知识点顺序逐步开放
         </p>
       </section>
@@ -142,8 +142,8 @@ function DistrictCard({ d, onEnter }: { d: District; onEnter: () => void }) {
     <div
       className={`group relative overflow-hidden rounded-3xl border p-6 transition ${
         playable
-          ? "cursor-pointer border-cyan-400/30 bg-white/[0.03] hover:-translate-y-1 hover:border-cyan-300/60"
-          : "border-white/10 bg-white/[0.02] opacity-80"
+          ? "cursor-pointer border-cyan-400/30 bg-white hover:-translate-y-1 hover:border-cyan-300/60"
+          : "border-slate-200 bg-white opacity-80"
       }`}
       onClick={playable ? onEnter : undefined}
       style={
@@ -162,7 +162,7 @@ function DistrictCard({ d, onEnter }: { d: District; onEnter: () => void }) {
           >
             {d.code}
           </div>
-          <h3 className="mt-1.5 text-xl font-bold text-white">{d.name}</h3>
+          <h3 className="mt-1.5 text-xl font-bold text-slate-900">{d.name}</h3>
           <div className="mt-0.5 text-sm" style={{ color: `hsl(${d.hue} 70% 70%)` }}>
             · {d.structure}
           </div>
@@ -170,13 +170,13 @@ function DistrictCard({ d, onEnter }: { d: District; onEnter: () => void }) {
         <StatusBadge status={d.status} />
       </div>
 
-      <p className="mt-4 text-sm leading-6 text-slate-400">{d.hook}</p>
+      <p className="mt-4 text-sm leading-6 text-slate-500">{d.hook}</p>
 
       <div className="mt-4 flex flex-wrap gap-1.5">
         {d.topics.map((t) => (
           <span
             key={t}
-            className="rounded-md bg-white/5 px-2 py-0.5 text-[11px] text-slate-400 ring-1 ring-white/10"
+            className="rounded-md bg-slate-50 px-2 py-0.5 text-[11px] text-slate-500 ring-1 ring-slate-200"
           >
             {t}
           </span>
@@ -185,7 +185,7 @@ function DistrictCard({ d, onEnter }: { d: District; onEnter: () => void }) {
 
       <div className="mt-5">
         {playable ? (
-          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-cyan-300">
+          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-cyan-600">
             进入城区
             <ArrowRight size={15} className="transition group-hover:translate-x-0.5" />
           </span>
@@ -209,19 +209,19 @@ function DistrictCard({ d, onEnter }: { d: District; onEnter: () => void }) {
 function StatusBadge({ status }: { status: District["status"] }) {
   if (status === "playable")
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-cyan-400/15 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 ring-1 ring-cyan-400/25">
+      <span className="inline-flex items-center gap-1 rounded-full bg-cyan-400/15 px-2.5 py-1 text-[11px] font-semibold text-cyan-600 ring-1 ring-cyan-400/25">
         <Sparkles size={11} />
         可玩
       </span>
     );
   if (status === "soon")
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-400 ring-1 ring-white/10">
+      <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-slate-200">
         即将开放
       </span>
     );
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-white/10">
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-slate-200">
       规划中
     </span>
   );

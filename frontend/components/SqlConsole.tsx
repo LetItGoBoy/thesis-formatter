@@ -62,7 +62,7 @@ export function SqlConsole({ run, ready, onResult, prefill }: Props) {
           }}
           spellCheck={false}
           placeholder={NEUTRAL_PLACEHOLDER}
-          className="block h-36 w-full resize-y bg-transparent px-4 py-3 font-mono text-[13px] leading-6 text-emerald-200 placeholder:text-slate-500 focus:outline-none"
+          className="block h-36 w-full resize-y bg-transparent px-4 py-3 font-mono text-[13px] leading-6 text-emerald-300 placeholder:text-slate-500 focus:outline-none"
         />
         <div className="flex items-center justify-between border-t border-slate-700 px-3 py-2">
           <span className="text-xs text-slate-500">Ctrl / ⌘ + Enter 运行</span>
@@ -95,7 +95,7 @@ export function SqlConsole({ run, ready, onResult, prefill }: Props) {
                 <thead className="sticky top-0 bg-slate-100">
                   <tr>
                     {result.columns.map((c) => (
-                      <th key={c} className="border-b border-slate-200 px-3 py-2 font-semibold text-slate-600">
+                      <th key={c} className="border-b border-slate-200 px-3 py-2 font-semibold text-slate-400">
                         {c}
                       </th>
                     ))}
@@ -106,14 +106,14 @@ export function SqlConsole({ run, ready, onResult, prefill }: Props) {
                     <tr key={ri} className="odd:bg-white even:bg-slate-50">
                       {row.map((cell, ci) => (
                         <td key={ci} className="border-b border-slate-100 px-3 py-1.5 text-slate-700">
-                          {cell === null ? <span className="text-slate-400">NULL</span> : String(cell)}
+                          {cell === null ? <span className="text-slate-500">NULL</span> : String(cell)}
                         </td>
                       ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div className="bg-white px-3 py-1.5 text-xs text-slate-400">
+              <div className="bg-white px-3 py-1.5 text-xs text-slate-500">
                 共 {result.rows.length} 行
                 {result.rows.length > MAX_ROWS && `（仅显示前 ${MAX_ROWS} 行）`}
               </div>

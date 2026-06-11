@@ -172,7 +172,7 @@ export function SpectralDemo() {
             const t = e.touches[0];
             if (t) pick(t.clientX, t.clientY);
           }}
-          className="w-full cursor-crosshair rounded-xl ring-1 ring-white/10 [image-rendering:pixelated]"
+          className="w-full cursor-crosshair rounded-xl ring-1 ring-slate-200 [image-rendering:pixelated]"
         />
         <p className="mt-2 text-xs text-slate-500">
           在影像上移动鼠标（手机长按拖动）取样任意像素的光谱指纹。
@@ -180,14 +180,14 @@ export function SpectralDemo() {
       </div>
 
       {/* 右：光谱曲线 + 读数 */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span
               className="h-3 w-3 rounded-sm"
               style={{ background: `rgb(${sig.color.join(",")})` }}
             />
-            <span className="text-sm font-semibold text-white">{sig.name}</span>
+            <span className="text-sm font-semibold text-slate-900">{sig.name}</span>
           </div>
           <span className="font-mono text-[11px] tracking-wider text-slate-500">REFLECTANCE</span>
         </div>
@@ -201,7 +201,7 @@ export function SpectralDemo() {
                 x2={W - PAD.r}
                 y1={yOf(g)}
                 y2={yOf(g)}
-                stroke="rgba(255,255,255,0.08)"
+                stroke="rgba(15,23,42,0.08)"
               />
               <text x={4} y={yOf(g) + 3} fill="#64748b" fontSize="9" fontFamily="monospace">
                 {g.toFixed(2)}
@@ -254,9 +254,9 @@ export function SpectralDemo() {
 
 function Readout({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-2 py-2">
+    <div className="rounded-lg border border-slate-200 bg-white px-2 py-2">
       <div className="font-mono text-[10px] tracking-wider text-slate-500">{label}</div>
-      <div className="mt-0.5 text-lg font-semibold text-white">{value}</div>
+      <div className="mt-0.5 text-lg font-semibold text-slate-900">{value}</div>
       <div className="text-[10px] text-slate-500">{hint}</div>
     </div>
   );
