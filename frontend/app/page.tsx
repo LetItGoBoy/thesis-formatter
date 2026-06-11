@@ -10,7 +10,7 @@
  *
  * ⚙️ 个人/内容数据集中在下面的 PROFILE / NOW / LINKS / RESEARCH / PUBLICATIONS /
  *   WORKS / TEACHING / TIMELINE / FILMS，改这里即可。
- * 🖼️ 大背景图：把图片放到 /public/images/hero-bg.png 自动生效；未放则显示光谱星云渐变占位。
+ * 🖼️ Hero 主视觉：components/HeroCube.tsx 纯 SVG 矢量高光谱立方体（无需图片文件）。
  */
 import { useRouter } from "next/navigation";
 import {
@@ -39,6 +39,7 @@ import {
 import { LogoMark } from "@/components/Logo";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { SpectralDemo } from "@/components/SpectralDemo";
+import { HeroCube } from "@/components/HeroCube";
 import { Reveal } from "@/components/Reveal";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -282,13 +283,9 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* 右栏：图片出血到视口右缘 */}
-          <div className="lg:mr-[calc(50%-50vw)]">
-            <img
-              src="/images/hero-bg.png"
-              alt="高光谱数据立方体"
-              className="h-auto w-[60%] object-contain"
-            />
+          {/* 右栏：SVG 矢量高光谱立方体（亮底无黑边，任意缩放不糊） */}
+          <div className="flex justify-center lg:justify-end lg:pr-4">
+            <HeroCube className="w-full max-w-[560px]" />
           </div>
         </div>
       </section>
