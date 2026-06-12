@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,6 +8,12 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
     "Segoe UI", Arial, sans-serif;
+}
+
+/* 编辑式衬线展示字（World Labs 风格大标题）；离线回退到衬线 */
+.font-display {
+  font-family: "Instrument Serif", "Songti SC", Georgia, "Times New Roman", serif;
+  font-weight: 400;
 }
 
 @layer utilities {
