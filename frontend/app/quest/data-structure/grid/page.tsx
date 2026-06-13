@@ -368,6 +368,7 @@ export default function GridPage() {
   return (
     <GameShell
       code="GRP"
+      courseId="ds-grid"
       name="城市电网"
       structure="图 Graph"
       hue={HUE}

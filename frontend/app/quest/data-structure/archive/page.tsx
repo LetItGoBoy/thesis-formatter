@@ -294,6 +294,7 @@ export default function ArchivePage() {
   return (
     <GameShell
       code="BST"
+      courseId="ds-archive"
       name="档案塔"
       structure="二叉树 / BST"
       hue={HUE}
