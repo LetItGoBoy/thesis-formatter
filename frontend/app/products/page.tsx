@@ -18,17 +18,10 @@ import {
   Plus,
 } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
-import { useAuthStore } from "@/lib/auth-store";
+import { SiteNav } from "@/components/SiteNav";
 
 const BRAND = "同乐科技";
 const BILIBILI = "https://space.bilibili.com"; // ← 换成你的 B 站主页
-
-const NAV = [
-  { label: "关于", href: "#" },
-  { label: "产品", href: "/products" },
-  { label: "课程", href: "/course-spaces" },
-  { label: "科研", href: "#" },
-];
 
 const PRODUCTS = [
   {
@@ -62,7 +55,6 @@ const PRODUCTS = [
 
 export default function ProductsPage() {
   const router = useRouter();
-  const { token } = useAuthStore();
 
   function go(href: string) {
     if (href !== "#") router.push(href);
@@ -70,36 +62,7 @@ export default function ProductsPage() {
 
   return (
     <main className="min-h-screen bg-white text-stone-900 selection:bg-indigo-500/10">
-      {/* ================= 顶栏 ================= */}
-      <nav className="sticky top-0 z-20 border-b border-stone-200 bg-stone-100/90 shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 md:px-10">
-          <button onClick={() => router.push("/")} className="flex items-center gap-2.5">
-            <LogoMark size={28} />
-            <span className="font-display text-xl tracking-tight text-stone-900">{BRAND}</span>
-          </button>
-          <div className="flex items-center gap-1.5 text-sm">
-            {NAV.map((n) => (
-              <button
-                key={n.label}
-                onClick={() => go(n.href)}
-                className={`hidden rounded-full px-4 py-2 transition sm:inline-flex ${
-                  n.href === "/products"
-                    ? "font-medium text-stone-900"
-                    : "text-stone-600 hover:text-stone-900"
-                }`}
-              >
-                {n.label}
-              </button>
-            ))}
-            <button
-              onClick={() => router.push(token ? "/dashboard" : "/login")}
-              className="ml-2 rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-stone-700"
-            >
-              {token ? "工作台" : "登录 / 注册"}
-            </button>
-          </div>
-        </div>
-      </nav>
+      <SiteNav active="products" />
 
       {/* ================= 主体：左列表 · 右机构卡 ================= */}
       <div className="mx-auto max-w-6xl px-6 py-12 md:px-10 md:py-16">
@@ -187,7 +150,7 @@ export default function ProductsPage() {
                   B 站主页
                 </a>
                 <button
-                  onClick={() => router.push(token ? "/dashboard" : "/login")}
+                  onClick={() => router.push("/login")}
                   className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-5 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-900/[0.04]"
                 >
                   <Plus size={15} />

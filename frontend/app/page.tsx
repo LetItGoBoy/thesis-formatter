@@ -9,6 +9,7 @@
  * 导航：关于 / 产品 / 课程 / 科研 / 登录注册。
  */
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { HeroOrbit } from "@/components/HeroOrbit";
 import { useAuthStore } from "@/lib/auth-store";
@@ -17,7 +18,7 @@ const BRAND = "同乐科技";
 
 // 导航项（href 为路由；# 表示规划中、暂未接入页面）
 const NAV = [
-  { label: "关于", href: "#" },
+  { label: "关于", href: "/about" },
   { label: "产品", href: "/products" },
   { label: "课程", href: "/course-spaces" },
   { label: "科研", href: "#" },
@@ -25,7 +26,7 @@ const NAV = [
 
 export default function HomePage() {
   const router = useRouter();
-  const { token } = useAuthStore();
+  const { token, nickname, logout } = useAuthStore();
 
   function go(href: string) {
     if (href === "#") return;
@@ -51,12 +52,30 @@ export default function HomePage() {
                 {n.label}
               </button>
             ))}
-            <button
-              onClick={() => router.push(token ? "/dashboard" : "/login")}
-              className="ml-2 rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-[#f4f1ea] transition hover:bg-stone-700"
-            >
-              {token ? "工作台" : "登录 / 注册"}
-            </button>
+            {token ? (
+              <div className="ml-2 flex items-center gap-1.5">
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-[#f4f1ea] transition hover:bg-stone-700"
+                >
+                  {nickname || "工作台"}
+                </button>
+                <button
+                  onClick={() => { logout(); }}
+                  title="退出登录 / 切换账户"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-stone-300 text-stone-500 transition hover:border-red-300 hover:text-red-500"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => router.push("/login")}
+                className="ml-2 rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-[#f4f1ea] transition hover:bg-stone-700"
+              >
+                登录 / 注册
+              </button>
+            )}
           </div>
         </div>
       </nav>
