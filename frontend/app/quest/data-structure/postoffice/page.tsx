@@ -400,7 +400,7 @@ export default function PostOfficePage() {
     >
       {/* 待处理 */}
       <div>
-        <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">
+        <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-600">
           {level.mode === "lookup" ? "PICKUP · 取信请求" : "INBOX · 待投递"}
         </div>
         <div className="flex min-h-[3.4rem] flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
@@ -411,26 +411,26 @@ export default function PostOfficePage() {
                 {currentLookup.value % size} 开始沿探测序点击。
               </span>
             ) : (
-              <span className="px-2 text-xs text-slate-400">全部处理完毕</span>
+              <span className="px-2 text-xs text-slate-600">全部处理完毕</span>
             )
           ) : currentLetter !== undefined ? (
             <>
               <div style={letterStyle(currentLetter)} className="flex h-11 min-w-[2.75rem] items-center justify-center rounded-lg px-2 text-base font-black ring-2 ring-cyan-300/60">
                 ✉ {currentLetter}
               </div>
-              <span className="font-mono text-xs text-slate-500">
+              <span className="font-mono text-xs text-slate-600">
                 {currentLetter} mod {size} = ?
               </span>
             </>
           ) : (
-            <span className="px-2 text-xs text-slate-400">没有待投递的信</span>
+            <span className="px-2 text-xs text-slate-600">没有待投递的信</span>
           )}
         </div>
       </div>
 
       {/* 格口墙 */}
       <div className="mt-6">
-        <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">
+        <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-600">
           PIGEONHOLES · 格口墙（{size} 格）
         </div>
         <div className="flex flex-wrap items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -442,16 +442,16 @@ export default function PostOfficePage() {
                 disabled={status !== "playing"}
                 style={v !== null ? letterStyle(v) : undefined}
                 className={`flex h-12 w-12 items-center justify-center rounded-lg text-sm font-black transition hover:scale-105 ${
-                  v === null ? "border border-dashed border-slate-300 text-slate-400" : ""
+                  v === null ? "border border-dashed border-slate-300 text-slate-600" : ""
                 }`}
               >
                 {v ?? "空"}
               </button>
-              <div className="font-mono text-[10px] text-slate-400">[{i}]</div>
+              <div className="font-mono text-[11px] text-slate-600">[{i}]</div>
               {/* 链 */}
               {chains[i]?.map((c, j) => (
                 <div key={j} className="flex flex-col items-center">
-                  <span className="text-[9px] leading-3 text-slate-400">↓</span>
+                  <span className="text-[11px] leading-3 text-slate-600">↓</span>
                   <div style={letterStyle(c)} className="flex h-9 w-11 items-center justify-center rounded-md text-xs font-black opacity-90">
                     {c}
                   </div>

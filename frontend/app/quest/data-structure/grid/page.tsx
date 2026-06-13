@@ -396,7 +396,7 @@ export default function GridPage() {
               type="button"
               onClick={undoPath}
               disabled={path.length <= 1 || status !== "playing"}
-              className="w-full rounded-xl bg-slate-50 px-4 py-2 text-xs text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100 disabled:text-slate-400"
+              className="w-full rounded-xl bg-slate-50 px-4 py-2 text-xs text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100 disabled:text-slate-600"
             >
               倒车一步
             </button>
@@ -428,7 +428,7 @@ export default function GridPage() {
         </>
       }
     >
-      <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-500">
+      <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-600">
         <span>CITY GRID · 城市图（边上数字为里程/权值）</span>
         <span>V={IDS.length} · E={EDGES.length}</span>
       </div>

@@ -138,7 +138,7 @@ export default function StackDepotPage() {
           <button
             type="button"
             onClick={() => router.push("/quest/data-structure")}
-            className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-slate-900"
+            className="inline-flex items-center gap-2 text-sm text-slate-600 transition hover:text-slate-900"
           >
             <ArrowLeft size={16} />
             返回霓虹栈城
@@ -164,7 +164,7 @@ export default function StackDepotPage() {
             <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
               货运塔 <span className="text-cyan-600">· 栈</span>
             </h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
               全城货物都要经过这座只有塔顶一个口的高塔。你是新上岗的塔吊手——
               客户的订单千奇百怪，而塔的规矩只有一条：后进，先出。
             </p>
@@ -225,7 +225,7 @@ export default function StackDepotPage() {
                   active
                     ? "bg-cyan-400 text-slate-950"
                     : locked
-                      ? "cursor-not-allowed bg-white text-slate-400 ring-1 ring-slate-200"
+                      ? "cursor-not-allowed bg-white text-slate-600 ring-1 ring-slate-200"
                       : "bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
                 }`}
               >
@@ -270,13 +270,13 @@ export default function StackDepotPage() {
 
             {/* 传送带 */}
             <div className="relative">
-              <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-500">
+              <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-600">
                 <span>INBOUND · 传送带（到货顺序，只能取最前一件）</span>
                 <span>{conveyor.length} 件待入塔</span>
               </div>
               <div className="flex min-h-[3.5rem] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
                 {conveyor.length === 0 && (
-                  <span className="px-2 text-xs text-slate-400">传送带已清空</span>
+                  <span className="px-2 text-xs text-slate-600">传送带已清空</span>
                 )}
                 {conveyor.map((n, i) => (
                   <button
@@ -302,7 +302,7 @@ export default function StackDepotPage() {
             <div className="relative mt-6 grid gap-6 sm:grid-cols-[10rem_1fr]">
               {/* 货运塔 */}
               <div>
-                <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">
+                <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-600">
                   TOWER · 货运塔
                 </div>
                 <div
@@ -319,13 +319,13 @@ export default function StackDepotPage() {
                       className="pointer-events-none absolute inset-x-0 z-10 border-t-2 border-dashed border-red-500/60"
                       style={{ bottom: `${level.capacity * 3.2 + 0.4}rem` }}
                     >
-                      <span className="absolute -top-4 right-0 font-mono text-[9px] text-red-600">
+                      <span className="absolute -top-4 right-0 font-mono text-[11px] text-red-600">
                         限高线
                       </span>
                     </div>
                   )}
                   {tower.length === 0 && (
-                    <span className="pb-1 text-center text-[11px] text-slate-400">塔内为空</span>
+                    <span className="pb-1 text-center text-[11px] text-slate-600">塔内为空</span>
                   )}
                   {tower.map((n, i) => {
                     const isTop = i === tower.length - 1;
@@ -350,7 +350,7 @@ export default function StackDepotPage() {
                     );
                   })}
                 </div>
-                <div className="mt-2 text-center text-[11px] text-slate-500">
+                <div className="mt-2 text-center text-[11px] text-slate-600">
                   {status === "collapsed" ? (
                     <span className="font-semibold text-red-600">塔体倾倒！</span>
                   ) : (
@@ -361,7 +361,7 @@ export default function StackDepotPage() {
 
               {/* 订单 / 货车 */}
               <div>
-                <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">
+                <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-600">
                   ORDER · 客户订单（按从左到右的顺序装车）
                 </div>
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -377,7 +377,7 @@ export default function StackDepotPage() {
                             ? ""
                             : isNext
                               ? "border-2 border-dashed border-cyan-300/70 text-cyan-600"
-                              : "border border-dashed border-slate-200 text-slate-400"
+                              : "border border-dashed border-slate-200 text-slate-600"
                         }`}
                       >
                         {n}
@@ -386,7 +386,7 @@ export default function StackDepotPage() {
                   })}
                 </div>
                 {status === "playing" && (
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-slate-600">
                     下一件该装：<span className="font-bold text-cyan-600">{nextNeed} 号</span>
                     {tower.length > 0 && tower[tower.length - 1] !== nextNeed && (
                       <>
@@ -402,10 +402,10 @@ export default function StackDepotPage() {
 
                 {/* 操作记录 */}
                 <div className="mt-4">
-                  <div className="mb-1 font-mono text-[11px] tracking-widest text-slate-500">
+                  <div className="mb-1 font-mono text-[11px] tracking-widest text-slate-600">
                     OPS LOG · 操作记录
                   </div>
-                  <div className="min-h-[2.2rem] rounded-lg bg-slate-50 p-2 font-mono text-[11px] leading-5 text-slate-500 ring-1 ring-slate-200">
+                  <div className="min-h-[2.2rem] rounded-lg bg-slate-50 p-2 font-mono text-[11px] leading-5 text-slate-600 ring-1 ring-slate-200">
                     {log.length === 0 ? "（尚未操作）" : log.slice(-14).join(" → ")}
                   </div>
                 </div>
@@ -478,13 +478,13 @@ export default function StackDepotPage() {
           {/* 侧栏：操作与提示 */}
           <aside className="space-y-3 self-start">
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="font-mono text-[11px] tracking-widest text-slate-500">CONSOLE</div>
+              <div className="font-mono text-[11px] tracking-widest text-slate-600">CONSOLE</div>
               <div className="mt-3 space-y-2">
                 <button
                   type="button"
                   onClick={push}
                   disabled={status !== "playing" || conveyor.length === 0}
-                  className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                  className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-600"
                 >
                   入塔 PUSH{conveyor.length > 0 ? ` · ${conveyor[0]} 号` : ""}
                 </button>
@@ -492,7 +492,7 @@ export default function StackDepotPage() {
                   type="button"
                   onClick={pop}
                   disabled={status !== "playing" || tower.length === 0}
-                  className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                  className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-600"
                 >
                   装车 POP{tower.length > 0 ? ` · ${tower[tower.length - 1]} 号` : ""}
                 </button>
@@ -517,9 +517,9 @@ export default function StackDepotPage() {
                   {reportMsg}
                 </p>
               )}
-              <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+              <div className="mt-3 flex items-center justify-between text-[11px] text-slate-600">
                 <span>失误（拒收/误报）</span>
-                <span className={mistakes > 0 ? "font-bold text-amber-600" : "text-slate-500"}>
+                <span className={mistakes > 0 ? "font-bold text-amber-600" : "text-slate-600"}>
                   {mistakes}
                 </span>
               </div>
@@ -527,7 +527,7 @@ export default function StackDepotPage() {
 
             {/* 两层提示 */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="flex items-center gap-1.5 font-mono text-[11px] tracking-widest text-slate-500">
+              <div className="flex items-center gap-1.5 font-mono text-[11px] tracking-widest text-slate-600">
                 <Lightbulb size={12} />
                 HINTS · 卡住了再点
               </div>

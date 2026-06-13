@@ -292,7 +292,7 @@ export default function TowerPage() {
             type="button"
             onClick={craneNext}
             disabled={status !== "playing" || phase !== "insert" || queueIdx >= level.sequence.length}
-            className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+            className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-600"
           >
             吊装下一件
             {phase === "insert" && queueIdx < level.sequence.length ? ` · ${level.sequence[queueIdx]}` : ""}
@@ -314,7 +314,7 @@ export default function TowerPage() {
           <div className="rounded-xl bg-slate-50 p-3 text-xs leading-6 text-slate-600 ring-1 ring-slate-200">
             吊装序列：
             {level.sequence.map((v, i) => (
-              <span key={i} className={i < queueIdx ? "text-emerald-600" : i === queueIdx ? "font-bold text-cyan-600" : "text-slate-500"}>
+              <span key={i} className={i < queueIdx ? "text-emerald-600" : i === queueIdx ? "font-bold text-cyan-600" : "text-slate-600"}>
                 {i > 0 && "、"}
                 {v}
               </span>
@@ -323,7 +323,7 @@ export default function TowerPage() {
         </>
       }
     >
-      <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-500">
+      <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-600">
         <span>BALANCE TOWER · 高塔（每个结点标注平衡因子）</span>
         <span className={pending ? "font-bold text-red-600" : "text-emerald-600"}>
           {pending ? "⚠ 失衡" : "稳定"}
@@ -336,7 +336,7 @@ export default function TowerPage() {
         {root ? (
           <TreeSVG root={root} onNodeClick={clickNode} nodeFill={nodeFill} nodeLabel={nodeLabel} />
         ) : (
-          <div className="py-10 text-center text-sm text-slate-400">塔基已就绪，点「吊装下一件」开工</div>
+          <div className="py-10 text-center text-sm text-slate-600">塔基已就绪，点「吊装下一件」开工</div>
         )}
       </div>
 
