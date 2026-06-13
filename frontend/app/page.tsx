@@ -18,7 +18,7 @@ const BRAND = "同乐科技";
 // 导航项（href 为路由；# 表示规划中、暂未接入页面）
 const NAV = [
   { label: "关于", href: "#" },
-  { label: "产品", href: "/thesis" },
+  { label: "产品", href: "/products" },
   { label: "课程", href: "/course-spaces" },
   { label: "科研", href: "#" },
 ];

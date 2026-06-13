@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, useCallback, ChangeEvent, CSSProperties, D
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Logo } from "@/components/Logo";
+import { ProductTopNav } from "@/components/ProductTopNav";
+import { LogoMark } from "@/components/Logo";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { CheckCircle2, Download, FileText, Loader2, MousePointerClick, RotateCcw, Sparkles } from "lucide-react";
 import { usePolishStore, type PolishSelection } from "@/lib/polish-store";
@@ -251,16 +252,8 @@ export default function PolishPage() {
   // ============================================================
   if (!hasDoc) {
     return (
-      <main className="relative min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 via-indigo-50 to-cyan-50">
-        <nav className="relative z-10 flex items-center justify-between px-6 py-4 md:px-10">
-          <Logo />
-          <button
-            onClick={() => router.push("/tools")}
-            className="rounded-xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-white"
-          >
-            返回工具空间
-          </button>
-        </nav>
+      <main className="relative min-h-screen overflow-x-hidden bg-white">
+        <ProductTopNav current="polish" />
 
         <div className="relative z-10 flex flex-col items-center px-6 pb-16 pt-6 md:pt-12">
           <div className="w-full max-w-2xl">
@@ -328,7 +321,10 @@ export default function PolishPage() {
     <main className="relative min-h-screen bg-slate-100">
       <nav className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur md:px-8">
         <div className="flex items-center gap-3">
-          <Logo />
+          <button onClick={() => router.push("/products")} className="flex items-center gap-2">
+            <LogoMark size={24} />
+            <span className="font-display text-base tracking-tight text-stone-900">同乐科技</span>
+          </button>
           <span className="hidden items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600 md:inline-flex">
             <FileText size={13} />
             {fileName}
