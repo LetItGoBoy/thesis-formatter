@@ -50,11 +50,11 @@ export function HeroOrbit({ className }: { className?: string }) {
     const accents = new Map<number, number>(); // index -> hue
     for (let i = 0; i < 9; i++) accents.set(Math.floor((i * N) / 9), (i * 40) % 360);
 
-    // 三道轨道环（各自倾斜）
+    // 三道轨道环（各自倾斜，收紧以贴合球面、不超出画布）
     const rings = [
-      { tilt: 0.0, yaw: 0.0, scale: 1.28 },
-      { tilt: 1.15, yaw: 0.5, scale: 1.18 },
-      { tilt: -0.9, yaw: -0.6, scale: 1.4 },
+      { tilt: 0.0, yaw: 0.0, scale: 1.08 },
+      { tilt: 1.15, yaw: 0.5, scale: 1.16 },
+      { tilt: -0.9, yaw: -0.6, scale: 1.24 },
     ];
     const ringPts = rings.map((rg) => {
       const arr: V3[] = [];
@@ -102,7 +102,8 @@ export function HeroOrbit({ className }: { className?: string }) {
 
       const cx = cw / 2;
       const cy = ch / 2;
-      const R = Math.min(cw, ch) * 0.38;
+      // 留足边距：最大环 1.24 × 透视 ~1.27 ≈ 1.57R 必须 < 0.5·min
+      const R = Math.min(cw, ch) * 0.3;
 
       // 白底上的柔光底，让球体跳出来
       const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.7);
