@@ -35,7 +35,7 @@ export default function NeonStackCityPage() {
           <button
             type="button"
             onClick={() => router.push("/course-spaces")}
-            className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-slate-900"
+            className="inline-flex items-center gap-2 text-sm text-slate-600 transition hover:text-slate-900"
           >
             <ArrowLeft size={16} />
             返回课程空间
@@ -67,7 +67,7 @@ export default function NeonStackCityPage() {
 
           {/* 秩序协议进度 */}
           <div className="mt-8 max-w-md">
-            <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+            <div className="mb-2 flex items-center justify-between text-xs text-slate-600">
               <span className="font-mono tracking-wider">秩序协议 · 恢复度</span>
               <span>
                 {playableCount} / {total} 城区在线
@@ -114,7 +114,7 @@ export default function NeonStackCityPage() {
                   </h2>
                 </div>
               </div>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">{chapter.theme}</p>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">{chapter.theme}</p>
 
               {/* 该章城区 */}
               <div className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -126,7 +126,7 @@ export default function NeonStackCityPage() {
           ))}
         </div>
 
-        <p className="mt-12 text-center text-xs text-slate-400">
+        <p className="mt-12 text-center text-xs text-slate-600">
           每个城区都将是一个亲手操作的小游戏 · 按知识点顺序逐步开放
         </p>
       </section>
@@ -170,13 +170,13 @@ function DistrictCard({ d, onEnter }: { d: District; onEnter: () => void }) {
         <StatusBadge status={d.status} />
       </div>
 
-      <p className="mt-4 text-sm leading-6 text-slate-500">{d.hook}</p>
+      <p className="mt-4 text-sm leading-6 text-slate-600">{d.hook}</p>
 
       <div className="mt-4 flex flex-wrap gap-1.5">
         {d.topics.map((t) => (
           <span
             key={t}
-            className="rounded-md bg-slate-50 px-2 py-0.5 text-[11px] text-slate-500 ring-1 ring-slate-200"
+            className="rounded-md bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600 ring-1 ring-slate-200"
           >
             {t}
           </span>
@@ -190,7 +190,7 @@ function DistrictCard({ d, onEnter }: { d: District; onEnter: () => void }) {
             <ArrowRight size={15} className="transition group-hover:translate-x-0.5" />
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500">
+          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">
             <Lock size={14} />
             {soon ? "即将开放" : "规划中"}
           </span>
@@ -216,12 +216,12 @@ function StatusBadge({ status }: { status: District["status"] }) {
     );
   if (status === "soon")
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-slate-200">
+      <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200">
         即将开放
       </span>
     );
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-slate-200">
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200">
       规划中
     </span>
   );

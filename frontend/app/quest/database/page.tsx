@@ -59,7 +59,7 @@ export default function DatabaseSeasonHub() {
                 <div className="flex w-full items-center justify-between">
                   <span
                     className={`grid size-8 place-items-center rounded-lg text-sm font-bold ${
-                      ready ? "bg-emerald-500/15 text-emerald-600" : "bg-slate-50 text-slate-400"
+                      ready ? "bg-emerald-500/15 text-emerald-600" : "bg-slate-50 text-slate-600"
                     }`}
                   >
                     {entry.order}

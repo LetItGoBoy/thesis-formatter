@@ -351,7 +351,7 @@ export default function ArchivePage() {
         </div>
       }
     >
-      <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-500">
+      <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-600">
         <span>ARCHIVE TOWER · 档案塔</span>
         <span>结点 {values.length} · 深度 {d}</span>
       </div>

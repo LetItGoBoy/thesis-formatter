@@ -360,20 +360,20 @@ export default function SortingPage() {
         <>
           {level.mode === "bubble" && (
             <>
-              <button type="button" onClick={() => bubbleDecide(true)} disabled={status !== "playing"} className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:bg-slate-50 disabled:text-slate-400">
+              <button type="button" onClick={() => bubbleDecide(true)} disabled={status !== "playing"} className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:bg-slate-50 disabled:text-slate-600">
                 交换 ↔
               </button>
-              <button type="button" onClick={() => bubbleDecide(false)} disabled={status !== "playing"} className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:bg-slate-50 disabled:text-slate-400">
+              <button type="button" onClick={() => bubbleDecide(false)} disabled={status !== "playing"} className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:bg-slate-50 disabled:text-slate-600">
                 保持 ✓
               </button>
             </>
           )}
           {level.mode === "partition" && (
             <>
-              <button type="button" onClick={() => partDecide("left")} disabled={status !== "playing"} className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:bg-slate-50 disabled:text-slate-400">
+              <button type="button" onClick={() => partDecide("left")} disabled={status !== "playing"} className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:bg-slate-50 disabled:text-slate-600">
                 ≤ {pivot} 进左堆
               </button>
-              <button type="button" onClick={() => partDecide("right")} disabled={status !== "playing"} className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:bg-slate-50 disabled:text-slate-400">
+              <button type="button" onClick={() => partDecide("right")} disabled={status !== "playing"} className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:bg-slate-50 disabled:text-slate-600">
                 &gt; {pivot} 进右堆
               </button>
             </>
@@ -386,7 +386,7 @@ export default function SortingPage() {
               <button type="button" onClick={() => setBet("quick")} className={`w-full rounded-xl px-4 py-2 text-xs font-bold transition ${bet === "quick" ? "bg-amber-400 text-slate-950" : "bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"}`}>
                 押 快排组 ⚡
               </button>
-              <button type="button" onClick={startRace} disabled={!bet} className="w-full rounded-xl bg-emerald-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-emerald-300 disabled:bg-slate-50 disabled:text-slate-400">
+              <button type="button" onClick={startRace} disabled={!bet} className="w-full rounded-xl bg-emerald-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-emerald-300 disabled:bg-slate-50 disabled:text-slate-600">
                 🏁 鸣枪开赛
               </button>
             </>
@@ -398,7 +398,7 @@ export default function SortingPage() {
         <RaceBoard level={level} racePhase={racePhase} frame={frame} framesRef={framesRef} maxV={maxV} />
       ) : (
         <>
-          <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-500">
+          <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-600">
             <span>CONVEYOR · 传送带</span>
             {level.mode === "bubble" && <span>本轮范围 0..{passEnd}</span>}
             {level.mode === "select" && <span>第 {roundR + 1} 轮</span>}
@@ -491,7 +491,7 @@ export default function SortingPage() {
                 <div style={crateStyle(pivot, maxV)} className="flex h-14 w-14 items-center justify-center rounded-lg text-lg font-black ring-2 ring-amber-300/80">
                   {pivot}
                 </div>
-                <div className="mt-1 text-center font-mono text-[10px] text-amber-600">基准</div>
+                <div className="mt-1 text-center font-mono text-[11px] text-amber-600">基准</div>
               </div>
               <div>
                 <div className="mb-1 font-mono text-[11px] text-fuchsia-600">右堆 &gt; {pivot}</div>
@@ -542,7 +542,7 @@ function RaceBoard({
         { name: "快排组 ⚡", a: qArr, done: qDone, swaps: racePhase === "bet" ? "?" : `${Math.min(frame, q.length - 1)}/${q.length - 1}` },
       ].map((lane) => (
         <div key={lane.name}>
-          <div className="mb-1.5 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-500">
+          <div className="mb-1.5 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-600">
             <span>
               {lane.name} {lane.done && <span className="text-emerald-600">✓ 收工</span>}
             </span>
@@ -564,7 +564,7 @@ function RaceBoard({
         </div>
       ))}
       {racePhase === "bet" && (
-        <p className="text-center text-sm text-slate-500">在右侧操作台下注，然后鸣枪开赛。</p>
+        <p className="text-center text-sm text-slate-600">在右侧操作台下注，然后鸣枪开赛。</p>
       )}
     </div>
   );

@@ -396,7 +396,7 @@ export default function PipesPage() {
         <>
           {level.mode === "cycle" && !metConfirmed && (
             <>
-              <button type="button" onClick={stepInspectors} disabled={status !== "playing"} className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:bg-slate-50 disabled:text-slate-400">
+              <button type="button" onClick={stepInspectors} disabled={status !== "playing"} className="w-full rounded-xl bg-cyan-400/90 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:bg-slate-50 disabled:text-slate-600">
                 步进 🐢+1 / 🐇+2
               </button>
               <button type="button" onClick={confirmMeet} disabled={status !== "playing"} className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-600 transition hover:bg-amber-500/20">
@@ -406,15 +406,15 @@ export default function PipesPage() {
           )}
           {level.mode !== "traverse" && (level.mode !== "cycle" || metConfirmed) && (
             <>
-              <button type="button" onClick={pointToNull} disabled={!selected || status !== "playing"} className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:bg-slate-50 disabled:text-slate-400">
+              <button type="button" onClick={pointToNull} disabled={!selected || status !== "playing"} className="w-full rounded-xl bg-fuchsia-400/90 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-fuchsia-300 disabled:bg-slate-50 disabled:text-slate-600">
                 {selected ? `${selected} 指向 NULL` : "（先选中一个源）指向 NULL"}
               </button>
               {level.mode === "rewire" && (
                 <>
-                  <button type="button" onClick={hangOnTemp} disabled={!selected || selected === "HEAD" || status !== "playing"} className="w-full rounded-xl bg-amber-400/80 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-amber-300 disabled:bg-slate-50 disabled:text-slate-400">
+                  <button type="button" onClick={hangOnTemp} disabled={!selected || selected === "HEAD" || status !== "playing"} className="w-full rounded-xl bg-amber-400/80 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-amber-300 disabled:bg-slate-50 disabled:text-slate-600">
                     挂到暂存钩
                   </button>
-                  <button type="button" onClick={clearTemp} disabled={temp === null || status !== "playing"} className="w-full rounded-xl bg-slate-50 px-4 py-2 text-xs text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100 disabled:text-slate-400">
+                  <button type="button" onClick={clearTemp} disabled={temp === null || status !== "playing"} className="w-full rounded-xl bg-slate-50 px-4 py-2 text-xs text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-100 disabled:text-slate-600">
                     取下 / 清空暂存钩
                   </button>
                 </>
@@ -426,7 +426,7 @@ export default function PipesPage() {
     >
       {/* 主管线 */}
       <div>
-        <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-500">
+        <div className="mb-2 flex items-center justify-between font-mono text-[11px] tracking-widest text-slate-600">
           <span>MAINLINE · 主管线（从 HEAD 沿 next 延伸）</span>
           {level.mode === "cycle" && <span>步数 {steps}</span>}
         </div>
@@ -443,8 +443,8 @@ export default function PipesPage() {
           >
             HEAD
           </button>
-          <span className="text-slate-400">→</span>
-          {chain.length === 0 && <span className="px-2 text-xs text-slate-400">null（空链）</span>}
+          <span className="text-slate-600">→</span>
+          {chain.length === 0 && <span className="px-2 text-xs text-slate-600">null（空链）</span>}
           {chain.map((id, i) => (
             <span key={id} className="flex items-center gap-1.5">
               <button
@@ -469,7 +469,7 @@ export default function PipesPage() {
                   </span>
                 )}
               </button>
-              <span className="text-slate-400">{i === chain.length - 1 && !cycleBackTo ? "→ ∅" : "→"}</span>
+              <span className="text-slate-600">{i === chain.length - 1 && !cycleBackTo ? "→ ∅" : "→"}</span>
             </span>
           ))}
           {cycleBackTo && (
@@ -483,7 +483,7 @@ export default function PipesPage() {
       {/* 暂存钩 + 虚空 */}
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div>
-          <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">TEMP HOOK · 暂存钩</div>
+          <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-600">TEMP HOOK · 暂存钩</div>
           <div className="flex min-h-[4rem] items-center gap-2 rounded-xl border border-amber-500/25 bg-slate-50 p-3">
             {temp ? (
               <>
@@ -497,20 +497,20 @@ export default function PipesPage() {
                 >
                   {temp}
                 </button>
-                {next[temp] && <span className="font-mono text-[11px] text-slate-500">→ {next[temp]}</span>}
+                {next[temp] && <span className="font-mono text-[11px] text-slate-600">→ {next[temp]}</span>}
               </>
             ) : (
-              <span className="px-1 text-xs text-slate-400">钩子空着（临时指针 = null）</span>
+              <span className="px-1 text-xs text-slate-600">钩子空着（临时指针 = null）</span>
             )}
           </div>
         </div>
         <div>
-          <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">
+          <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-600">
             THE VOID · 虚空（失去引用的管段）
           </div>
           <div className="flex min-h-[4rem] items-center gap-2 rounded-xl border border-dashed border-red-500/30 bg-slate-50 p-3">
             {drifting.length === 0 && recycled.length === 0 && (
-              <span className="px-1 text-xs text-slate-400">很好，没有管段飘在这里</span>
+              <span className="px-1 text-xs text-slate-600">很好，没有管段飘在这里</span>
             )}
             {drifting.map((id) => (
               <button
@@ -538,8 +538,8 @@ export default function PipesPage() {
 
       {/* 指针表 */}
       <div className="mt-5">
-        <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-500">POINTER TABLE · 接头一览</div>
-        <div className="flex flex-wrap gap-2 rounded-xl bg-slate-50 p-3 font-mono text-[11px] text-slate-500 ring-1 ring-slate-200">
+        <div className="mb-2 font-mono text-[11px] tracking-widest text-slate-600">POINTER TABLE · 接头一览</div>
+        <div className="flex flex-wrap gap-2 rounded-xl bg-slate-50 p-3 font-mono text-[11px] text-slate-600 ring-1 ring-slate-200">
           <span className="rounded bg-slate-50 px-2 py-1">HEAD → {head ?? "∅"}</span>
           {level.nodeIds
             .filter((id) => !recycled.includes(id))

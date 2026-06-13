@@ -394,13 +394,13 @@ export function CaseRunner({ caseData }: { caseData: DetectiveCase }) {
                           ? "bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/30"
                           : open
                           ? "text-slate-600 hover:bg-slate-100"
-                          : "cursor-not-allowed text-slate-400"
+                          : "cursor-not-allowed text-slate-600"
                       }`}
                     >
                       {done ? (
                         <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />
                       ) : open ? (
-                        <span className="grid size-[15px] shrink-0 place-items-center rounded-full text-[10px] ring-1 ring-current">
+                        <span className="grid size-[15px] shrink-0 place-items-center rounded-full text-[11px] ring-1 ring-current">
                           {i + 1}
                         </span>
                       ) : (

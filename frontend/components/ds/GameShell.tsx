@@ -112,7 +112,7 @@ export function GameShell({
           <button
             type="button"
             onClick={() => router.push("/quest/data-structure")}
-            className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-slate-900"
+            className="inline-flex items-center gap-2 text-sm text-slate-600 transition hover:text-slate-900"
           >
             <ArrowLeft size={16} />
             返回城市地图
@@ -139,7 +139,7 @@ export function GameShell({
               {name}{" "}
               <span style={{ color: `hsl(${hue} 80% 65%)` }}>· {structure}</span>
             </h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">{flavor}</p>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">{flavor}</p>
           </div>
           {maxCleared >= levels.length && (
             <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-600 ring-1 ring-amber-500/25">
@@ -197,7 +197,7 @@ export function GameShell({
                   active
                     ? "bg-cyan-400 text-slate-950"
                     : locked
-                      ? "cursor-not-allowed bg-white text-slate-400 ring-1 ring-slate-200"
+                      ? "cursor-not-allowed bg-white text-slate-600 ring-1 ring-slate-200"
                       : "bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
                 }`}
               >
@@ -307,7 +307,7 @@ export function GameShell({
           {/* 侧栏 */}
           <aside className="space-y-3 self-start">
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="font-mono text-[11px] tracking-widest text-slate-500">CONSOLE</div>
+              <div className="font-mono text-[11px] tracking-widest text-slate-600">CONSOLE</div>
               <div className="mt-3 space-y-2">
                 {consoleSlot}
                 <button
@@ -318,16 +318,16 @@ export function GameShell({
                   重置本关
                 </button>
               </div>
-              <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+              <div className="mt-3 flex items-center justify-between text-[11px] text-slate-600">
                 <span>失误</span>
-                <span className={mistakes > 0 ? "font-bold text-amber-600" : "text-slate-500"}>
+                <span className={mistakes > 0 ? "font-bold text-amber-600" : "text-slate-600"}>
                   {mistakes}
                 </span>
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="flex items-center gap-1.5 font-mono text-[11px] tracking-widest text-slate-500">
+              <div className="flex items-center gap-1.5 font-mono text-[11px] tracking-widest text-slate-600">
                 <Lightbulb size={12} />
                 HINTS · 卡住了再点
               </div>
