@@ -46,9 +46,9 @@ export function HeroOrbit({ className }: { className?: string }) {
       const th = gold * i;
       pts.push({ x: Math.cos(th) * r, y, z: Math.sin(th) * r });
     }
-    // 几个强调大点
-    const accents = new Set<number>();
-    for (let i = 0; i < 7; i++) accents.add(Math.floor((i * N) / 7));
+    // 几个强调大点（彩色，光谱色相）
+    const accents = new Map<number, number>(); // index -> hue
+    for (let i = 0; i < 9; i++) accents.set(Math.floor((i * N) / 9), (i * 40) % 360);
 
     // 三道轨道环（各自倾斜）
     const rings = [
@@ -102,7 +102,15 @@ export function HeroOrbit({ className }: { className?: string }) {
 
       const cx = cw / 2;
       const cy = ch / 2;
-      const R = Math.min(cw, ch) * 0.33;
+      const R = Math.min(cw, ch) * 0.38;
+
+      // 白底上的柔光底，让球体跳出来
+      const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.7);
+      halo.addColorStop(0, "rgba(124, 58, 237, 0.10)");
+      halo.addColorStop(0.45, "rgba(56, 189, 248, 0.06)");
+      halo.addColorStop(1, "rgba(255, 255, 255, 0)");
+      ctx.fillStyle = halo;
+      ctx.fillRect(0, 0, cw, ch);
 
       // 鼠标视差倾斜
       const yaw = t + mouse.current.x * 0.5;
@@ -110,8 +118,9 @@ export function HeroOrbit({ className }: { className?: string }) {
 
       const tf = (p: V3) => rotateX(rotateY(p, yaw), pitch);
 
-      // 轨道环（铜色）
-      ringPts.forEach((arr) => {
+      // 轨道环（各环不同色相，更醒目）
+      const ringColors = ["rgba(176, 108, 56, 0.85)", "rgba(99, 102, 241, 0.7)", "rgba(20, 184, 166, 0.6)"];
+      ringPts.forEach((arr, ri) => {
         ctx.beginPath();
         arr.forEach((p0, i) => {
           const p = tf(p0);
@@ -119,8 +128,8 @@ export function HeroOrbit({ className }: { className?: string }) {
           if (i === 0) ctx.moveTo(sx, sy);
           else ctx.lineTo(sx, sy);
         });
-        ctx.strokeStyle = "rgba(176, 108, 56, 0.5)";
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = ringColors[ri % ringColors.length];
+        ctx.lineWidth = 1.6;
         ctx.stroke();
       });
 
@@ -132,21 +141,30 @@ export function HeroOrbit({ className }: { className?: string }) {
       for (const { p, i } of drawn) {
         const { sx, sy, depth, persp } = project(p, R, cx, cy);
         const fade = (depth + 1) / 2; // 0 远 1 近
-        const isAccent = accents.has(i);
-        const baseR = (isAccent ? 2.6 : 1.5) * persp;
-        ctx.beginPath();
-        ctx.arc(sx, sy, baseR * (0.5 + fade * 0.7), 0, Math.PI * 2);
+        const hue = accents.get(i);
+        const isAccent = hue !== undefined;
+        const baseR = (isAccent ? 3.4 : 1.8) * persp;
         if (isAccent) {
-          ctx.fillStyle = `rgba(176, 108, 56, ${0.35 + fade * 0.55})`;
+          // 彩色强调点 + 光晕
+          ctx.beginPath();
+          ctx.arc(sx, sy, baseR * (0.7 + fade * 0.9) * 2.2, 0, Math.PI * 2);
+          ctx.fillStyle = `hsla(${hue}, 85%, 55%, ${0.1 + fade * 0.16})`;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(sx, sy, baseR * (0.7 + fade * 0.9), 0, Math.PI * 2);
+          ctx.fillStyle = `hsla(${hue}, 80%, 50%, ${0.55 + fade * 0.4})`;
+          ctx.fill();
         } else {
-          ctx.fillStyle = `rgba(41, 37, 30, ${0.12 + fade * 0.5})`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, baseR * (0.5 + fade * 0.7), 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(30, 27, 22, ${0.22 + fade * 0.6})`;
+          ctx.fill();
         }
-        ctx.fill();
       }
 
       // 近邻连线（仅近半球，淡墨）
-      ctx.strokeStyle = "rgba(41, 37, 30, 0.06)";
-      ctx.lineWidth = 0.6;
+      ctx.strokeStyle = "rgba(40, 36, 30, 0.1)";
+      ctx.lineWidth = 0.7;
       for (let a = 0; a < drawn.length; a += 3) {
         const pa = drawn[a];
         if (pa.p.z < 0) continue;
