@@ -7,8 +7,9 @@
  * 渲染任意一个 DetectiveCase：开场指引 → 逐关写 SQL 查证 → 线索校验解锁 → 指认真凶。
  * 浏览器内置 SQLite（sql.js）执行真实 SQL，纯前端，无后端。
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { reportClear } from "@/lib/api";
 import {
   ArrowLeft,
   Database,
@@ -48,6 +49,18 @@ export function CaseRunner({ caseData }: { caseData: DetectiveCase }) {
 
   const solvedCount = solved.filter(Boolean).length;
   const allSolved = solvedCount === levels.length;
+
+  // 每解出一关上报成长值（已登录才记录），按 关卡 id 去重
+  const reportedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    solved.forEach((ok, i) => {
+      if (!ok) return;
+      const lid = levels[i]?.id || String(i);
+      if (reportedRef.current.has(lid)) return;
+      reportedRef.current.add(lid);
+      reportClear("db-detective", lid, 0, false);
+    });
+  }, [solved, levels]);
   const level = levels[active];
 
   function unlocked(i: number) {

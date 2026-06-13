@@ -7,7 +7,8 @@
  * 玩法：点击传送带最前面的货箱「入塔」，点击塔顶货箱「装车」，
  * 按订单顺序完成交付。LIFO 靠手感学会，不靠背定义。
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { reportClear } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -58,6 +59,17 @@ export default function StackDepotPage() {
   const [reportMsg, setReportMsg] = useState("");
   const [hintTier, setHintTier] = useState(0);
   const [briefOpen, setBriefOpen] = useState(false);
+
+  // 通关上报成长值（已登录才会记录），按关卡去重
+  const reportedRef = useRef<string>("");
+  useEffect(() => {
+    if (status !== "won") return;
+    const key = `ds-stack:${levelIdx}`;
+    if (reportedRef.current === key) return;
+    reportedRef.current = key;
+    reportClear("ds-stack", level.badge || String(levelIdx), mistakes, mistakes === 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, levelIdx]);
 
   function loadLevel(idx: number) {
     const lv = STACK_LEVELS[idx];

@@ -8,8 +8,9 @@
  * 任务简报 / 两层提示 / 失误计数 / 通关与失败横幅。
  * 各城区只需提供棋盘（children）与专属操作台（consoleSlot）。
  */
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { reportClear, type ClearResult } from "@/lib/api";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -70,6 +71,7 @@ export function GameShell({
   completionText,
   consoleSlot,
   children,
+  courseId,
 }: {
   code: string;
   name: string;
@@ -94,15 +96,35 @@ export function GameShell({
   completionText: string;
   consoleSlot?: ReactNode;
   children: ReactNode;
+  /** 成长系统课程代号（如 ds-stack）；提供后通关自动上报经验 */
+  courseId?: string;
 }) {
   const router = useRouter();
   const level = levels[levelIdx];
   const [briefOpen, setBriefOpen] = useState(false);
   const [hintTier, setHintTier] = useState(0);
+  const [reward, setReward] = useState<ClearResult | null>(null);
 
   useEffect(() => {
     setHintTier(0);
   }, [levelIdx]);
+
+  // 通关后上报经验（已登录才会真正记录）；按 课程+关卡 去重，避免重复上报
+  const reportedRef = useRef<string>("");
+  useEffect(() => {
+    if (status !== "won" || !courseId) return;
+    const key = `${courseId}:${levelIdx}`;
+    if (reportedRef.current === key) return;
+    reportedRef.current = key;
+    setReward(null);
+    reportClear(courseId, level.badge || String(levelIdx), mistakes, mistakes === 0).then(
+      (r) => r && setReward(r)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, courseId, levelIdx]);
+  useEffect(() => {
+    if (status === "playing") setReward(null);
+  }, [status]);
 
   return (
     <main className="min-h-screen bg-[#eef1f8] text-slate-900 selection:bg-fuchsia-500/30">
@@ -257,6 +279,16 @@ export function GameShell({
                   )}
                 </div>
                 <p className="mt-2 text-sm leading-6 text-emerald-700">{level.winNote}</p>
+                {reward && (
+                  <div className="mt-3 inline-flex flex-wrap items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    <span className="font-bold">+{reward.gained} 成长值</span>
+                    <span className="text-amber-600">·</span>
+                    <span>Lv.{reward.level} {reward.title}</span>
+                    <span className="text-amber-600">·</span>
+                    <span>🔥 连续学习 {reward.streak} 天</span>
+                    {!reward.first_time && <span className="text-amber-600">（重玩奖励）</span>}
+                  </div>
+                )}
                 <div className="mt-4 flex flex-wrap gap-3">
                   {levelIdx + 1 < levels.length ? (
                     <button

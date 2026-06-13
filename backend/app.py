@@ -27,7 +27,7 @@ from lib.polish_parser import import_docx_as_blocks
 from lib.polish_rewriter import rewrite_text, SUPPORTED_ACTIONS, PolishError
 from lib.polish_export import export_polished_docx
 from lib import db
-from lib.auth import require_auth, sign_jwt, hash_password, verify_password
+from lib.auth import require_auth, require_admin, is_admin, sign_jwt, hash_password, verify_password
 from lib.sms import send_verification_code
 
 load_dotenv()
@@ -107,14 +107,15 @@ def auth_register():
         return jsonify({"error": "密码不少于6位"}), 400
 
 
+    nickname = (data.get("nickname") or "").strip()[:20]
     try:
-        user = db.create_user(phone, hash_password(password))
+        user = db.create_user(phone, hash_password(password), nickname)
     except ValueError as e:
         return jsonify({"error": str(e)}), 409  # 409 Conflict = 手机号已注册
 
     token = sign_jwt(user["id"], phone)
     logger.info("新用户注册: phone=%s***%s uid=%s", phone[:3], phone[-4:], user["id"])
-    return jsonify({"token": token, "phone": phone})
+    return jsonify({"token": token, "phone": phone, "nickname": user["nickname"]})
 
 
 @app.route("/api/auth/login", methods=["POST"])
@@ -131,13 +132,59 @@ def auth_login():
         return jsonify({"error": "手机号或密码错误"}), 401
 
     token = sign_jwt(user["id"], phone)
-    return jsonify({"token": token, "phone": phone})
+    return jsonify({
+        "token": token,
+        "phone": phone,
+        "nickname": user.get("nickname") or f"学员{phone[-4:]}",
+        "is_admin": is_admin(phone),
+    })
 
 
 @app.route("/api/auth/me", methods=["GET"])
 @require_auth
 def auth_me():
     return jsonify(request.current_user)
+
+
+# ============================================================
+# 成长系统：通关上报 / 个人概况 / 管理后台
+# ============================================================
+@app.route("/api/progress/clear", methods=["POST"])
+@require_auth
+def progress_clear():
+    data = request.get_json(silent=True) or {}
+    course = (data.get("course") or "").strip()[:40]
+    level_id = (data.get("level_id") or "").strip()[:40]
+    mistakes = int(data.get("mistakes") or 0)
+    perfect = bool(data.get("perfect"))
+    if not course or not level_id:
+        return jsonify({"error": "缺少 course / level_id"}), 400
+    result = db.record_clear(request.current_user["user_id"], course, level_id, mistakes, perfect)
+    return jsonify(result)
+
+
+@app.route("/api/profile", methods=["GET"])
+@require_auth
+def profile():
+    p = db.get_profile(request.current_user["user_id"])
+    if not p:
+        return jsonify({"error": "用户不存在"}), 404
+    p["is_admin"] = request.current_user.get("is_admin", False)
+    return jsonify(p)
+
+
+@app.route("/api/profile/nickname", methods=["POST"])
+@require_auth
+def profile_nickname():
+    data = request.get_json(silent=True) or {}
+    db.update_nickname(request.current_user["user_id"], data.get("nickname") or "")
+    return jsonify({"ok": True})
+
+
+@app.route("/api/admin/students", methods=["GET"])
+@require_admin
+def admin_students():
+    return jsonify({"students": db.list_students()})
 
 
 @app.route("/api/health", methods=["GET"])

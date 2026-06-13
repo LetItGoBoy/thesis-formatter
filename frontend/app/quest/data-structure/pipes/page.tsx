@@ -377,6 +377,7 @@ export default function PipesPage() {
   return (
     <GameShell
       code="LST"
+      courseId="ds-pipes"
       name="管道区"
       structure="链表 Linked List"
       hue={HUE}

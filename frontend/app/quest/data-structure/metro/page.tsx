@@ -295,6 +295,7 @@ export default function MetroPage() {
   return (
     <GameShell
       code="QUE"
+      courseId="ds-metro"
       name="环线地铁"
       structure="队列 Queue"
       hue={HUE}

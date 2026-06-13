@@ -341,6 +341,7 @@ export default function SortingPage() {
   return (
     <GameShell
       code="SRT"
+      courseId="ds-sorting"
       name="分拣厂"
       structure="排序 Sorting"
       hue={HUE}

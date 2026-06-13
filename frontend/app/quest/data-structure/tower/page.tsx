@@ -271,6 +271,7 @@ export default function TowerPage() {
   return (
     <GameShell
       code="AVL"
+      courseId="ds-tower"
       name="倾斜高塔"
       structure="平衡树 AVL"
       hue={HUE}

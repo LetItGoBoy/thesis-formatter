@@ -354,6 +354,7 @@ export default function PostOfficePage() {
   return (
     <GameShell
       code="HSH"
+      courseId="ds-postoffice"
       name="中央邮局"
       structure="哈希表 Hash"
       hue={HUE}

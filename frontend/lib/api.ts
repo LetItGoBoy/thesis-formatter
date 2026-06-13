@@ -169,7 +169,7 @@ export async function checkHealth(): Promise<{ status: string; ai_provider: stri
 // 认证接口
 // ============================================================
 
-async function _authPost(path: string, body: object): Promise<{ token: string; phone: string }> {
+async function _authPost(path: string, body: object): Promise<any> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -190,16 +190,117 @@ export async function sendCode(phone: string): Promise<void> {
   if (!res.ok) throw new Error(data.error || "发送失败");
 }
 
-export async function registerUser(
-  phone: string,
-  password: string
-): Promise<{ token: string; phone: string }> {
-  return _authPost("/api/auth/register", { phone, password });
+export interface AuthResult {
+  token: string;
+  phone: string;
+  nickname?: string;
+  is_admin?: boolean;
 }
 
-export async function loginUser(
+export async function registerUser(
   phone: string,
-  password: string
-): Promise<{ token: string; phone: string }> {
+  password: string,
+  nickname?: string
+): Promise<AuthResult> {
+  return _authPost("/api/auth/register", { phone, password, nickname });
+}
+
+export async function loginUser(phone: string, password: string): Promise<AuthResult> {
   return _authPost("/api/auth/login", { phone, password });
+}
+
+// ============================================================
+// 成长系统
+// ============================================================
+export interface ClearResult {
+  gained: number;
+  first_time: boolean;
+  xp: number;
+  level: number;
+  title: string;
+  streak: number;
+  cleared_count: number;
+  perfect_count: number;
+}
+
+/** 上报一次通关（best-effort，未登录或失败时静默返回 null） */
+export async function reportClear(
+  course: string,
+  levelId: string,
+  mistakes: number,
+  perfect: boolean
+): Promise<ClearResult | null> {
+  if (!getToken()) return null;
+  try {
+    const res = await fetch(`${API_BASE}/api/progress/clear`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeader() },
+      body: JSON.stringify({ course, level_id: levelId, mistakes, perfect }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as ClearResult;
+  } catch {
+    return null;
+  }
+}
+
+export interface Profile {
+  phone: string;
+  nickname: string;
+  xp: number;
+  level: number;
+  xp_into_level: number;
+  xp_to_next: number;
+  title: string;
+  streak: number;
+  cleared_count: number;
+  perfect_count: number;
+  mistakes_total: number;
+  last_active: string | null;
+  per_course: Record<string, { cleared: number; perfect: number; total: number }>;
+  recent: { course: string; level_id: string; best_mistakes: number; perfect: number; last_at: string }[];
+  is_admin: boolean;
+}
+
+export async function getProfile(): Promise<Profile> {
+  const res = await fetch(`${API_BASE}/api/profile`, { headers: { ...authHeader() } });
+  const data = await res.json().catch(() => ({ error: res.statusText }));
+  if (!res.ok) throw new Error(data.error || "获取失败");
+  return data as Profile;
+}
+
+export interface StudentRow {
+  id: number;
+  phone: string;
+  nickname: string;
+  xp: number;
+  level: number;
+  title: string;
+  streak: number;
+  cleared_count: number;
+  total_levels: number;
+  perfect_count: number;
+  mistakes_total: number;
+  last_active: string | null;
+  created_at: string;
+}
+
+export async function updateNickname(nickname: string): Promise<void> {
+  if (!getToken()) return;
+  try {
+    await fetch(`${API_BASE}/api/profile/nickname`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeader() },
+      body: JSON.stringify({ nickname }),
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
+export async function getAdminStudents(): Promise<StudentRow[]> {
+  const res = await fetch(`${API_BASE}/api/admin/students`, { headers: { ...authHeader() } });
+  const data = await res.json().catch(() => ({ error: res.statusText }));
+  if (!res.ok) throw new Error(data.error || "获取失败");
+  return (data.students || []) as StudentRow[];
 }

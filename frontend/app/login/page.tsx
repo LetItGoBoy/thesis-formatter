@@ -73,6 +73,7 @@ export default function LoginPage() {
   const { token, setAuth } = useAuthStore();
   const [tab, setTab] = useState<Tab>("login");
   const [phone, setPhone] = useState("");
+  const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const [loading, setLoading] = useState(false);
@@ -110,8 +111,11 @@ export default function LoginPage() {
       const result =
         tab === "login"
           ? await loginUser(phone, password)
-          : await registerUser(phone, password);
-      setAuth(result.token, result.phone);
+          : await registerUser(phone, password, nickname);
+      setAuth(result.token, result.phone, {
+        nickname: result.nickname,
+        isAdmin: result.is_admin,
+      });
       router.replace("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : tab === "login" ? "登录失败" : "注册失败");
@@ -155,6 +159,20 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <PhoneInput value={phone} onChange={setPhone} disabled={loading} />
+            {tab === "register" && (
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-medium text-slate-500">昵称（游戏内显示）</span>
+                <input
+                  type="text"
+                  maxLength={20}
+                  placeholder="给自己取个名字，如「光速探员」"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  disabled={loading}
+                  className="w-full rounded-2xl border border-slate-200 bg-white py-3 px-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-300 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100 disabled:opacity-60"
+                />
+              </label>
+            )}
             <PasswordInput label="密码" value={password} onChange={setPassword} disabled={loading} />
             {tab === "register" && (
               <PasswordInput

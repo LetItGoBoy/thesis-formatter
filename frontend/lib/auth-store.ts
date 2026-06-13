@@ -20,7 +20,10 @@ function _deleteCookie() {
 interface AuthState {
   token: string | null;
   phone: string | null;
-  setAuth: (token: string, phone: string) => void;
+  nickname: string | null;
+  isAdmin: boolean;
+  setAuth: (token: string, phone: string, opts?: { nickname?: string; isAdmin?: boolean }) => void;
+  setNickname: (nickname: string) => void;
   logout: () => void;
 }
 
@@ -29,13 +32,16 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       phone: null,
-      setAuth: (token, phone) => {
+      nickname: null,
+      isAdmin: false,
+      setAuth: (token, phone, opts) => {
         _setCookie(token);
-        set({ token, phone });
+        set({ token, phone, nickname: opts?.nickname ?? null, isAdmin: !!opts?.isAdmin });
       },
+      setNickname: (nickname) => set({ nickname }),
       logout: () => {
         _deleteCookie();
-        set({ token: null, phone: null });
+        set({ token: null, phone: null, nickname: null, isAdmin: false });
       },
     }),
     { name: "thesis-auth" }
