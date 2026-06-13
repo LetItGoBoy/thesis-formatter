@@ -14,7 +14,7 @@ import {
   RotateCcw,
   Upload,
 } from "lucide-react";
-import { Logo } from "@/components/Logo";
+import { ProductTopNav } from "@/components/ProductTopNav";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import {
   runCheckup,
@@ -174,29 +174,8 @@ export default function CheckupPage() {
   const shown = filter === "all" ? issues : issues.filter((i) => i.severity === filter);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      {/* 顶栏 */}
-      <nav className="sticky top-0 z-30 border-b border-slate-100 bg-white/85 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3.5">
-          <button onClick={() => router.push("/")} className="transition hover:opacity-80">
-            <Logo />
-          </button>
-          <div className="flex items-center gap-2 text-sm">
-            <button
-              onClick={() => router.push("/polish")}
-              className="rounded-md px-3 py-2 font-medium text-slate-600 transition hover:text-blue-600"
-            >
-              AI 表达优化
-            </button>
-            <button
-              onClick={() => router.push("/tools")}
-              className="rounded-md px-3 py-2 font-medium text-slate-600 transition hover:text-blue-600"
-            >
-              格式对齐
-            </button>
-          </div>
-        </div>
-      </nav>
+    <main className="min-h-screen bg-white text-slate-900">
+      <ProductTopNav current="checkup" />
 
       <div className="mx-auto max-w-5xl px-5 py-10">
         {/* 标题区 */}

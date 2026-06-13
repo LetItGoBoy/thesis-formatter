@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Logo } from "@/components/Logo";
+import { ProductTopNav } from "@/components/ProductTopNav";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { CheckCircle2, ClipboardCheck, FileText, ListChecks } from "lucide-react";
 import { useThesisStore, MODEL_TIERS } from "@/lib/store";
@@ -124,45 +124,8 @@ export default function UploadPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 via-indigo-50 to-cyan-50">
-      {/* 顶栏品牌 */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-4 md:px-10">
-        <Logo />
-        <div className="flex items-center gap-3 md:gap-4">
-          <button
-            onClick={() => router.push("/")}
-            className="rounded-xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-white md:text-base"
-          >
-            返回首页
-          </button>
-          {phone ? (
-            <>
-              <button
-                onClick={() => router.push("/dashboard")}
-                className="rounded-xl border border-cyan-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-cyan-700 shadow-sm transition hover:bg-cyan-50 md:text-base"
-              >
-                我的工作台
-              </button>
-              <span className="hidden text-sm font-medium text-slate-500 sm:block md:text-base">
-                {maskPhone(phone)}
-              </span>
-              <button
-                onClick={() => logout()}
-                className="rounded-xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-500 shadow-sm transition hover:border-red-200 hover:text-red-500 md:text-base"
-              >
-                退出登录
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => router.push("/login")}
-              className="rounded-xl border border-indigo-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-50 md:text-base"
-            >
-              登录 / 注册
-            </button>
-          )}
-        </div>
-      </nav>
+    <main className="relative min-h-screen overflow-x-hidden bg-white">
+      <ProductTopNav current="tools" />
 
       <div className="relative z-10 flex flex-col items-center px-6 pb-16 pt-6 md:pt-12">
         <div className="w-full max-w-2xl">
