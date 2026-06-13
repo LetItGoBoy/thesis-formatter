@@ -35,13 +35,11 @@ export default function HomePage() {
   return (
     <main className="relative flex min-h-screen flex-col bg-white text-stone-900 selection:bg-indigo-500/10">
       {/* ================= 顶栏 ================= */}
-      <nav className="fixed inset-x-0 top-0 z-20 border-b border-stone-200/70 bg-gradient-to-r from-indigo-50/90 via-white/85 to-rose-50/90 shadow-[0_2px_24px_-8px_rgba(60,50,120,0.15)] backdrop-blur-xl">
+      <nav className="fixed inset-x-0 top-0 z-20 border-b border-stone-200 bg-stone-100/90 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
           <button onClick={() => router.push("/")} className="flex items-center gap-2.5">
             <LogoMark size={28} />
-            <span className="font-display bg-gradient-to-r from-indigo-600 via-violet-600 to-rose-500 bg-clip-text text-xl tracking-tight text-transparent">
-              {BRAND}
-            </span>
+            <span className="font-display text-xl tracking-tight text-stone-900">{BRAND}</span>
           </button>
           <div className="flex items-center gap-1.5 text-sm">
             {NAV.map((n) => (
@@ -68,7 +66,7 @@ export default function HomePage() {
         <div className="mx-auto grid w-full max-w-7xl items-center gap-12 py-28 lg:grid-cols-2 lg:gap-8">
           {/* 左：站点主题 */}
           <div className="order-2 lg:order-1">
-            <h1 className="font-display bg-gradient-to-br from-indigo-600 via-violet-600 to-rose-500 bg-clip-text text-6xl leading-[0.98] tracking-tight text-transparent md:text-7xl">
+            <h1 className="font-display text-6xl leading-[0.98] tracking-tight text-stone-900 md:text-7xl">
               {BRAND}
             </h1>
             <p className="font-display mt-1 text-4xl leading-tight tracking-tight text-stone-400 md:text-5xl">
