@@ -5,13 +5,13 @@
  * frontend/app/about/page.tsx
  *
  * 个人自述（AI 自动化）+ 照片 + 预约 CTA + 任务徽标 + 在做的方向。
- * 📸 把照片放到 /public/images/alex.jpg 自动生效（建议竖版 3:4）。
+ * 📸 把照片放到 /public/images/alex.png 自动生效（建议竖版 3:4）。
  */
 import { ArrowRight, CalendarClock, Mail } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 
 const EMAIL = "alex@example.com"; // ← 换成你的预约邮箱
-const PHOTO = "/images/alex.jpg"; // ← 把照片放到 frontend/public/images/alex.jpg
+const PHOTO = "/images/alex.png"; // ← 把照片放到 frontend/public/images/alex.png
 
 // 任务徽标：「无穷符号 + 刻度」隐喻「万物皆可量化」
 function MissionMark({ className }: { className?: string }) {
